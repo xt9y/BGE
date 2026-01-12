@@ -1,27 +1,22 @@
-ifeq ($(OS),Windows_NT)
-    EXE = cmake-build-debug/Debug/cpuc.exe
-else
-    EXE = cmake-build-debug/cpuc
-endif
+CC = gcc
+CFLAGS = -std=c99 -Wall -Wextra
+INC = -I/opt/homebrew/include
+LIB = -L/opt/homebrew/lib -lglfw \
+      -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
 
-all: deps configure build run
+TARGET = app
+SRC = \
+	src/main.c \
+	src/gfx.c
 
-deps:
-	git submodule update --init --recursive
+all: $(TARGET) run
 
-configure:
-	cmake -S . -B cmake-build-debug
-
-build:
-	cmake --build cmake-build-debug --target cpuc
+$(TARGET): $(SRC)
+	$(CC) $(CFLAGS) $(SRC) -o $(TARGET) $(INC) $(LIB)
 
 run:
-	$(EXE)
+	./$(TARGET)
 
 clean:
-	rm -rf cmake-build-debug compile_commands.json
+	rm -f $(TARGET)
 
-add:
-	git status
-	git add CMakeLists.txt Makefile README.md *.c *.h Engine/CMakeLists.txt Engine/*.c Engine/util/*.c Engine/util/*.h Engine/*.h 
-	git status

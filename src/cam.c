@@ -10,7 +10,7 @@ void init_camera()
     state.cam_pos = (vec3s){0.0f, 0.0f, 3.0f};
     state.cam_front = (vec3s){0.0f, 0.0f, -1.0f};
     state.cam_up = (vec3s){0.0f, 1.0f, 0.0f};
-    state.yaw = -90.0f;
+    state.yaw   = -90.0f;
     state.pitch = 0.0f;
     state.lastX = 800 / 2.0f;
     state.lastY = 600 / 2.0f;

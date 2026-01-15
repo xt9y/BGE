@@ -3,6 +3,7 @@
 
 #include <GLFW/glfw3.h>
 #include "text.h"
+#include "util/types.h"
 
 #define ASSERT(x) do { \
     if(!(x)) { printf("Assertion failed: %s\n", #x); exit(1); } \
@@ -15,15 +16,24 @@ typedef enum {
 } state_e;
 
 typedef struct {
-    unsigned int vao, vbo, ebo, program;  // Added ebo
+    u32 vao, vbo, ebo, program;  // Added ebo
 } data_t;
 
 typedef struct {
     GLFWwindow* win;
     state_e id;
-    float dt;
+    f32 dt;
     data_t* data;
     texture_t* text;
+
+    vec3s cam_pos;
+    vec3s cam_front;
+    vec3s cam_up;
+    f32 yaw;
+    f32 pitch;
+    f32 lastX;
+    f32 lastY;
+    bool firstMouse;
 } state_t;
 
 state_t state;

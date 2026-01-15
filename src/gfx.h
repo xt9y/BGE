@@ -1,9 +1,10 @@
 #ifndef GFX_H
 #define GFX_H
 #include <OpenGL/gl3.h>
+#include "util/types.h"
 
-unsigned int compile_shader(unsigned int type, const char* src);
-unsigned int create_program(const char* vs, const char* fs);
+u32 compile_shader(u32 type, const char* src);
+u32 create_program(const char* vs, const char* fs);
 
 #endif
 

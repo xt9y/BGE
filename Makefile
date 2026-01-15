@@ -4,7 +4,7 @@ INC = -I/opt/homebrew/include
 LIB = -L/opt/homebrew/lib -lglfw -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
 
 TARGET = app
-SRC = src/main.c src/gfx.c src/text.c
+SRC = src/main.c src/gfx.c src/text.c src/util/math.c src/cam.c
 
 all: $(TARGET) run
 

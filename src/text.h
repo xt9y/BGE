@@ -4,9 +4,9 @@
 #include "gfx.h"
 
 typedef struct {
-    unsigned int t1, t2;
-    unsigned char *data;  // Fixed: should be pointer
-    int width, height, nrChannels;
+    u32 t1, t2;
+    u8 *data;  // Fixed: should be pointer
+    i32 width, height, nrChannels;
 } texture_t;
 
 void init_texture();

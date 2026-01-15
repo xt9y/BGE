@@ -1,28 +1,45 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "state.h"
 #include "gfx.h"
 #include "text.h"
+#include "util/math.h"
+#include "cam.h"
 
 #define WIDTH 800
 #define HEIGHT 600
 
-float g_lastTime;
+f32 g_lastTime;
+
+void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos)
+{
+    camera_mouse_callback(xpos, ypos);
+}
+
+void framebuffer_size_callback(GLFWwindow* w, i32 width, i32 height)
+{
+    glViewport(0, 0, width, height);
+}
 
 #define process_input() do { \
-    if(glfwGetKey(state.win,GLFW_KEY_ESCAPE)==GLFW_PRESS) state.id=STATE_EXIT; \
-} while(0)
+    if(glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id=STATE_EXIT; \
+    update_camera(); \
+} while (0)
 
-// Updated shaders with texture support
+// Updated shaders with MVP support
 #define VS "#version 330 core\n" \
     "layout(location=0) in vec3 aPos;\n" \
     "layout(location=1) in vec3 aColor;\n" \
     "layout(location=2) in vec2 aTexCoord;\n" \
     "out vec3 ourColor;\n" \
     "out vec2 TexCoord;\n" \
+    "uniform mat4 model;\n" \
+    "uniform mat4 view;\n" \
+    "uniform mat4 projection;\n" \
     "void main(){\n" \
-    "    gl_Position=vec4(aPos,1.0);\n" \
+    "    gl_Position=projection * view * model * vec4(aPos,1.0);\n" \
     "    ourColor=aColor;\n" \
     "    TexCoord=aTexCoord;\n" \
     "}"
@@ -37,18 +54,13 @@ float g_lastTime;
     "    FragColor=mix(texture(texture1,TexCoord),texture(texture2,TexCoord),0.2);\n" \
     "}"
 
-void framebuffer_size_callback(GLFWwindow* w, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
-
 void init()
 {
     state.data = malloc(sizeof(*state.data));
     state.text = malloc(sizeof(*state.text));
     
     // Vertex data with positions, colors, and texture coords
-    float vertices[] = {
+    f32 vertices[] = {
         // positions          // colors           // texture coords
          0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,  // top right
          0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,  // bottom right
@@ -56,7 +68,7 @@ void init()
         -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f   // top left
     };
     
-    unsigned int indices[] = {
+    u32 indices[] = {
         0, 1, 3,  // first triangle
         1, 2, 3   // second triangle
     };
@@ -74,15 +86,15 @@ void init()
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     
     // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)0);
     glEnableVertexAttribArray(0);
     
     // Color attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(3 * sizeof(f32)));
     glEnableVertexAttribArray(1);
     
     // Texture coord attribute
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(6 * sizeof(f32)));
     glEnableVertexAttribArray(2);
     
     state.data->program = create_program(VS, FS);
@@ -94,6 +106,11 @@ void init()
     glUseProgram(state.data->program);
     glUniform1i(glGetUniformLocation(state.data->program, "texture1"), 0);
     glUniform1i(glGetUniformLocation(state.data->program, "texture2"), 1);
+
+    // Initialize camera
+    init_camera();
+
+    glEnable(GL_DEPTH_TEST);
 }
 
 void update()
@@ -104,13 +121,23 @@ void update()
 void render()
 {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     // Bind textures
     update_texture();
     
     // Render quad
     glUseProgram(state.data->program);
+
+    f32 model[16], view[16], proj[16];
+    mat4_identity(model);
+    mat4_lookat(view, state.cam_pos, vec3_add(state.cam_pos, state.cam_front), state.cam_up);
+    mat4_perspective(proj, 45.0f * 3.1415926535f / 180.0f, (f32)WIDTH/(f32)HEIGHT, 0.1f, 100.0f);
+    
+    glUniformMatrix4fv(glGetUniformLocation(state.data->program, "model"), 1, GL_FALSE, model);
+    glUniformMatrix4fv(glGetUniformLocation(state.data->program, "view"), 1, GL_FALSE, view);
+    glUniformMatrix4fv(glGetUniformLocation(state.data->program, "projection"), 1, GL_FALSE, proj);
+
     glBindVertexArray(state.data->vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
@@ -141,14 +168,17 @@ int main()
     
     glfwMakeContextCurrent(state.win);
     glfwSetFramebufferSizeCallback(state.win, framebuffer_size_callback);
+    glfwSetCursorPosCallback(state.win, mouse_callback);
+    glfwSetInputMode(state.win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     
-    g_lastTime = (float)glfwGetTime();
+    g_lastTime = (f32)glfwGetTime();
     
     init();
     state.id = STATE_PLAYING;
     
-    while(!glfwWindowShouldClose(state.win) && state.id != STATE_EXIT) {
-        float now = (float)glfwGetTime();
+    while(!glfwWindowShouldClose(state.win) && state.id != STATE_EXIT)
+	{
+        f32 now = (f32)glfwGetTime();
         state.dt = now - g_lastTime;
         g_lastTime = now;
         

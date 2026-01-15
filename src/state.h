@@ -1,29 +1,32 @@
 #ifndef STATE_H
 #define STATE_H
+
 #include <GLFW/glfw3.h>
+#include "text.h"
 
-typedef enum { 
-    STATE_MENU, 
-    STATE_PLAYING, 
-    STATE_EXIT 
-} StateID;
+#define ASSERT(x) do { \
+    if(!(x)) { printf("Assertion failed: %s\n", #x); exit(1); } \
+} while(0)
 
-typedef struct { 
-    unsigned int vao,
-                 vbo,
-                 program; 
-} PlayingData;
+typedef enum {
+    STATE_MENU,
+    STATE_PLAYING,
+    STATE_EXIT
+} state_e;
 
 typedef struct {
-    StateID id;
-    GLFWwindow* win;
-    float dt;
-    PlayingData* data;
-} State;
+    unsigned int vao, vbo, ebo, program;  // Added ebo
+} data_t;
 
-extern State state;
-void set_state(StateID id);
+typedef struct {
+    GLFWwindow* win;
+    state_e id;
+    float dt;
+    data_t* data;
+    texture_t* text;
+} state_t;
+
+state_t state;
 
 #endif
-
 

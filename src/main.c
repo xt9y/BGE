@@ -13,49 +13,31 @@
 
 f32 g_lastTime;
 
-void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos)
-{
-    camera_mouse_callback(xpos, ypos);
-}
-
-void framebuffer_size_callback(GLFWwindow* w, i32 width, i32 height)
-{
-    glViewport(0, 0, width, height);
-}
+// random callbacks
+void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos) { camera_mouse_callback(xpos, ypos); }
+void framebuffer_size_callback(GLFWwindow* w, i32 width, i32 height) { glViewport(0, 0, width, height); }
 
 #define process_input() do { \
     if(glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id=STATE_EXIT; \
     update_camera(); \
 } while (0)
 
-// Updated shaders with MVP support
-#define VS "#version 330 core\n" \
-    "layout(location=0) in vec3 aPos;\n" \
-    "layout(location=1) in vec3 aColor;\n" \
-    "layout(location=2) in vec2 aTexCoord;\n" \
-    "out vec3 ourColor;\n" \
-    "out vec2 TexCoord;\n" \
-    "uniform mat4 model;\n" \
-    "uniform mat4 view;\n" \
-    "uniform mat4 projection;\n" \
-    "void main(){\n" \
-    "    gl_Position=projection * view * model * vec4(aPos,1.0);\n" \
-    "    ourColor=aColor;\n" \
-    "    TexCoord=aTexCoord;\n" \
-    "}"
-
-#define FS "#version 330 core\n" \
-    "out vec4 FragColor;\n" \
-    "in vec3 ourColor;\n" \
-    "in vec2 TexCoord;\n" \
-    "uniform sampler2D texture1;\n" \
-    "uniform sampler2D texture2;\n" \
-    "void main(){\n" \
-    "    FragColor=mix(texture(texture1,TexCoord),texture(texture2,TexCoord),0.2);\n" \
-    "}"
-
-void init()
+int init()
 {
+	if(!glfwInit()) return 1;
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    state.win = glfwCreateWindow(WIDTH, HEIGHT, "opengl", 0, 0);
+    if(!state.win) { glfwTerminate(); return 1; }
+
+    glfwMakeContextCurrent(state.win);
+    glfwSetFramebufferSizeCallback(state.win, framebuffer_size_callback);
+    glfwSetCursorPosCallback(state.win, mouse_callback);
+    glfwSetInputMode(state.win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
     state.data = malloc(sizeof(*state.data));
     state.text = malloc(sizeof(*state.text));
     
@@ -111,6 +93,7 @@ void init()
     init_camera();
 
     glEnable(GL_DEPTH_TEST);
+	state.id = STATE_PLAYING;
 }
 
 void update()
@@ -157,25 +140,8 @@ void deinit()
 
 int main()
 {
-    if(!glfwInit()) return 1;
-    
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    
-    state.win = glfwCreateWindow(WIDTH, HEIGHT, "Texture Demo", 0, 0);
-    if(!state.win) { glfwTerminate(); return 1; }
-    
-    glfwMakeContextCurrent(state.win);
-    glfwSetFramebufferSizeCallback(state.win, framebuffer_size_callback);
-    glfwSetCursorPosCallback(state.win, mouse_callback);
-    glfwSetInputMode(state.win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    
+	ASSERT(init());
     g_lastTime = (f32)glfwGetTime();
-    
-    init();
-    state.id = STATE_PLAYING;
-    
     while(!glfwWindowShouldClose(state.win) && state.id != STATE_EXIT)
 	{
         f32 now = (f32)glfwGetTime();

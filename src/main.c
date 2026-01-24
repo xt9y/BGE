@@ -1,4 +1,3 @@
-#include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -24,14 +23,14 @@ void framebuffer_size_callback(GLFWwindow* w, i32 width, i32 height) { glViewpor
 
 i32 init()
 {
-	if(!glfwInit()) return 1;
+    ASSERT(glfwInit());
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     state.win = glfwCreateWindow(WIDTH, HEIGHT, "opengl", 0, 0);
-    if(!state.win) { glfwTerminate(); return 1; }
+    ASSERT(state.win);
 
     glfwMakeContextCurrent(state.win);
     glfwSetFramebufferSizeCallback(state.win, framebuffer_size_callback);
@@ -128,6 +127,7 @@ void render()
 void deinit()
 {
     deinit_texture();
+    glfwTerminate();
     glDeleteVertexArrays(1, &state.data->vao);
     glDeleteBuffers(1, &state.data->vbo);
     glDeleteBuffers(1, &state.data->ebo);
@@ -140,7 +140,7 @@ void deinit()
 
 i32 main()
 {
-	ASSERT(init());
+    ASSERT(init());
     g_lastTime = (f32)glfwGetTime();
     while(!glfwWindowShouldClose(state.win) && state.id != STATE_EXIT)
 	{
@@ -155,9 +155,8 @@ i32 main()
         glfwSwapBuffers(state.win);
         glfwPollEvents();
     }
-    
+
     deinit();
-    glfwTerminate();
     return 0;
 }
 

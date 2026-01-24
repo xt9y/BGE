@@ -5,9 +5,8 @@
 #include "text.h"
 #include "util/types.h"
 
-#define ASSERT(x) do { \
-    if(!(x)) { printf("Assertion failed: %s\n", #x); exit(1); } \
-} while(0)
+#define ASSERT(x) do { if (!(x)) { printf("Assertion failed: %s\n", #x); exit(1); } } while(0)
+#define LOG(x) do { printf("%s\n", x); } while(0)
 
 typedef enum {
     STATE_MENU,

@@ -22,7 +22,7 @@ void framebuffer_size_callback(GLFWwindow* w, i32 width, i32 height) { glViewpor
     update_camera(); \
 } while (0)
 
-int init()
+i32 init()
 {
 	if(!glfwInit()) return 1;
 
@@ -138,7 +138,7 @@ void deinit()
     state.data = 0;
 }
 
-int main()
+i32 main()
 {
 	ASSERT(init());
     g_lastTime = (f32)glfwGetTime();

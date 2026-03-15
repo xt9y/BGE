@@ -5,7 +5,7 @@
 
 typedef struct {
     u32 t1, t2, def;
-    u8 *data;  // Fixed: should be pointer
+    u8 *data;
     i32 width, height, nrChannels;
 } texture_t;
 

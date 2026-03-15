@@ -11,11 +11,13 @@ INC = -I/opt/homebrew/include
 LIB = -L/opt/homebrew/lib -lglfw -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
 else ifeq ($(UNAME_S),Linux)
 INC = $(GLFW_CFLAGS)
+
 ifneq ($(strip $(GLFW_LIBS)),)
 LIB = $(GLFW_LIBS) -lGL -ldl -lpthread -lX11 -lm
 else
 LIB = -lglfw -lGL -ldl -lm -lpthread -lX11
 endif
+
 else
 INC =
 LIB = -lglfw

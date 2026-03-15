@@ -7,8 +7,8 @@
 #include "util/math.h"
 #include "cam.h"
 
-#define WIDTH 800
-#define HEIGHT 600
+#define WIDTH 1980
+#define HEIGHT 1270
 
 f32 g_lastTime;
 state_t state;

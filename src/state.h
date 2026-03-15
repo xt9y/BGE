@@ -1,6 +1,8 @@
 #ifndef STATE_H
 #define STATE_H
 
+// Prevent GLFW from including legacy OpenGL headers.
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include "text.h"
 #include "util/types.h"
@@ -35,7 +37,6 @@ typedef struct {
     bool firstMouse;
 } state_t;
 
-state_t state;
+extern state_t state;
 
 #endif
-

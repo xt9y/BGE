@@ -11,6 +11,7 @@
 #define HEIGHT 600
 
 f32 g_lastTime;
+state_t state;
 
 // random callbacks
 void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos) { camera_mouse_callback(xpos, ypos); }
@@ -91,8 +92,9 @@ i32 init()
     // Initialize camera
     init_camera();
 
-    glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
 	state.id = STATE_PLAYING;
+    return 1;
 }
 
 void update()
@@ -159,4 +161,3 @@ i32 main()
     deinit();
     return 0;
 }
-

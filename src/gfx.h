@@ -1,6 +1,13 @@
 #ifndef GFX_H
 #define GFX_H
+#if defined(__APPLE__)
 #include <OpenGL/gl3.h>
+#else
+// Expose modern OpenGL prototypes on Linux without a loader.
+#define GL_GLEXT_PROTOTYPES 1
+#include <GL/gl.h>
+#include <GL/glext.h>
+#endif
 #include "util/types.h"
 
 u32 compile_shader(u32 type, const char* src);
@@ -33,4 +40,3 @@ u32 create_program(const char* vs, const char* fs);
     "}"
 
 #endif
-

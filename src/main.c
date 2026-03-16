@@ -30,7 +30,7 @@ i32 init()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    state.win = glfwCreateWindow(WIDTH, HEIGHT, "opengl", 0, 0);
+    state.win = glfwCreateWindow(WIDTH, HEIGHT, "opengl _f", 0, 0);
     ASSERT(state.win);
 
     glfwMakeContextCurrent(state.win);

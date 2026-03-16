@@ -3,7 +3,7 @@
 #if defined(__APPLE__)
 #include <OpenGL/gl3.h>
 #else
-// Expose modern OpenGL prototypes on Linux without a loader.
+
 #define GL_GLEXT_PROTOTYPES 1
 #include <GL/gl.h>
 #include <GL/glext.h>

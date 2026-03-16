@@ -1,7 +1,6 @@
 #ifndef STATE_H
 #define STATE_H
 
-// Prevent GLFW from including legacy OpenGL headers.
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include "text.h"

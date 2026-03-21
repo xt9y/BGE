@@ -21,9 +21,9 @@ void init_camera()
 void update_camera_vectors()
 {
     vec3s front;
-    front.x = cosf(state.yaw * 3.1415926535f / 180.0f) * cosf(state.pitch * 3.1415926535f / 180.0f);
-    front.y = sinf(state.pitch * 3.1415926535f / 180.0f);
-    front.z = sinf(state.yaw * 3.1415926535f / 180.0f) * cosf(state.pitch * 3.1415926535f / 180.0f);
+    front.x = cosf(state.yaw * PI / 180.0f) * cosf(state.pitch * PI / 180.0f);
+    front.y = sinf(state.pitch * PI / 180.0f);
+    front.z = sinf(state.yaw * PI / 180.0f) * cosf(state.pitch * PI / 180.0f);
     state.cam_front = vec3_normalize(front);
 }
 

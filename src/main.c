@@ -99,6 +99,7 @@ i32 init()
 
 void update()
 {
+    process_input();
     // Game logic here
 }
 
@@ -150,7 +151,6 @@ i32 main()
         state.dt = now - g_lastTime;
         g_lastTime = now;
         
-        process_input();
         update();
         render();
         

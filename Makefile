@@ -28,7 +28,7 @@ SRC = src/main.c src/gfx.c src/text.c src/util/math.c src/cam.c
 
 .PHONY: all clean run
 
-all: $(TARGET)
+all: $(TARGET) run
 
 $(TARGET): $(SRC)
 	$(CC) $(CFLAGS) $(INC) $(SRC) -o $@ $(LIB)

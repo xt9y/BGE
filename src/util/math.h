@@ -4,6 +4,10 @@
 #include "types.h"
 #include <math.h>
 
+#ifndef PI
+#define PI 3.1415926535f
+#endif
+
 void mat4_identity(f32* m);
 void mat4_perspective(f32* m, f32 fov, f32 aspect, f32 near, f32 far);
 void mat4_translate(f32* m, f32 x, f32 y, f32 z);

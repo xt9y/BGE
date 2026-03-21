@@ -14,7 +14,7 @@ void mat4_translate(f32* m, f32 x, f32 y, f32 z);
 void mat4_rotate_x(f32* m, f32 angle);
 void mat4_rotate_y(f32* m, f32 angle);
 void mat4_rotate_z(f32* m, f32 angle);
-void mat4_multiply(f32* res, f32* a, f32* b);
+void mat4_multiply(f32* res, const f32* a, const f32* b);
 void mat4_lookat(f32* m, vec3s eye, vec3s center, vec3s up);
 
 vec3s vec3_add(vec3s a, vec3s b);

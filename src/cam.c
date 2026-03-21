@@ -29,14 +29,14 @@ void update_camera_vectors()
 
 void update_camera()
 {
-    f32 speed = 2.5f * state.dt;
+    const f32 speed = 2.5f * state.dt;
     if (glfwGetKey(state.win, GLFW_KEY_W) == GLFW_PRESS) state.cam_pos = vec3_add(state.cam_pos, vec3_scale(state.cam_front, speed));
     if (glfwGetKey(state.win, GLFW_KEY_S) == GLFW_PRESS) state.cam_pos = vec3_sub(state.cam_pos, vec3_scale(state.cam_front, speed));
     if (glfwGetKey(state.win, GLFW_KEY_A) == GLFW_PRESS) state.cam_pos = vec3_sub(state.cam_pos, vec3_scale(vec3_normalize(vec3_cross(state.cam_front, state.cam_up)), speed));
     if (glfwGetKey(state.win, GLFW_KEY_D) == GLFW_PRESS) state.cam_pos = vec3_add(state.cam_pos, vec3_scale(vec3_normalize(vec3_cross(state.cam_front, state.cam_up)), speed));
 }
 
-void camera_mouse_callback(f64 xpos, f64 ypos)
+void camera_mouse_callback(const f64 xpos, const f64 ypos)
 {
     if (state.firstMouse) {
         state.lastX = (f32)xpos;
@@ -49,7 +49,7 @@ void camera_mouse_callback(f64 xpos, f64 ypos)
     state.lastX = (f32)xpos;
     state.lastY = (f32)ypos;
 
-    f32 sensitivity = 0.1f;
+    const f32 sensitivity = 0.1f;
     xoffset *= sensitivity;
     yoffset *= sensitivity;
 

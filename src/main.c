@@ -147,7 +147,7 @@ i32 main()
     g_lastTime = (f32)glfwGetTime();
     while(!glfwWindowShouldClose(state.win) && state.id != STATE_EXIT)
 	{
-        f32 now = (f32)glfwGetTime();
+        const f32 now = (f32)glfwGetTime();
         state.dt = now - g_lastTime;
         g_lastTime = now;
         

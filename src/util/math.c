@@ -88,9 +88,10 @@ vec3s vec3_add(const vec3s a, const vec3s b) { return (vec3s){a.x + b.x, a.y + b
 vec3s vec3_sub(const vec3s a, const vec3s b) { return (vec3s){a.x - b.x, a.y - b.y, a.z - b.z}; }
 vec3s vec3_scale(const vec3s a, const f32 s) { return (vec3s){a.x * s, a.y * s, a.z * s}; }
 f32 vec3_dot(const vec3s a, const vec3s b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+f32 vec3_magnitude(const vec3s a) { return sqrtf(vec3_dot(a, a)); }
 
 vec3s vec3_normalize(const vec3s a) {
-    const f32 mag = sqrtf(vec3_dot(a, a));
+    const f32 mag = vec3_magnitude(a);
     if (mag == 0) return a;
     return vec3_scale(a, 1.0f / mag);
 }
@@ -102,3 +103,7 @@ vec3s vec3_cross(const vec3s a, const vec3s b) {
         a.x * b.y - a.y * b.x
     };
 }
+
+vec2s vec2_add(const vec2s a, const vec2s b) { return (vec2s){a.x + b.x, a.y + b.y}; }
+vec2s vec2_sub(const vec2s a, const vec2s b) { return (vec2s){a.x - b.x, a.y - b.y}; }
+vec2s vec2_scale(const vec2s a, const f32 s) { return (vec2s){a.x * s, a.y * s}; }

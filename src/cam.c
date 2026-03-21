@@ -21,19 +21,25 @@ void init_camera()
 void update_camera_vectors()
 {
     vec3s front;
-    front.x = cosf(state.yaw * PI / 180.0f) * cosf(state.pitch * PI / 180.0f);
-    front.y = sinf(state.pitch * PI / 180.0f);
-    front.z = sinf(state.yaw * PI / 180.0f) * cosf(state.pitch * PI / 180.0f);
+    front.x = cosf(DEG2RAD(state.yaw)) * cosf(DEG2RAD(state.pitch));
+    front.y = sinf(DEG2RAD(state.pitch));
+    front.z = sinf(DEG2RAD(state.yaw)) * cosf(DEG2RAD(state.pitch));
     state.cam_front = vec3_normalize(front);
 }
 
 void update_camera()
 {
     const f32 speed = 2.5f * state.dt;
-    if (glfwGetKey(state.win, GLFW_KEY_W) == GLFW_PRESS) state.cam_pos = vec3_add(state.cam_pos, vec3_scale(state.cam_front, speed));
-    if (glfwGetKey(state.win, GLFW_KEY_S) == GLFW_PRESS) state.cam_pos = vec3_sub(state.cam_pos, vec3_scale(state.cam_front, speed));
-    if (glfwGetKey(state.win, GLFW_KEY_A) == GLFW_PRESS) state.cam_pos = vec3_sub(state.cam_pos, vec3_scale(vec3_normalize(vec3_cross(state.cam_front, state.cam_up)), speed));
-    if (glfwGetKey(state.win, GLFW_KEY_D) == GLFW_PRESS) state.cam_pos = vec3_add(state.cam_pos, vec3_scale(vec3_normalize(vec3_cross(state.cam_front, state.cam_up)), speed));
+    const vec3s right = vec3_normalize(vec3_cross(state.cam_front, state.cam_up));
+    
+    if (glfwGetKey(state.win, GLFW_KEY_W) == GLFW_PRESS)
+        state.cam_pos = vec3_add(state.cam_pos, vec3_scale(state.cam_front, speed));
+    if (glfwGetKey(state.win, GLFW_KEY_S) == GLFW_PRESS)
+        state.cam_pos = vec3_sub(state.cam_pos, vec3_scale(state.cam_front, speed));
+    if (glfwGetKey(state.win, GLFW_KEY_A) == GLFW_PRESS)
+        state.cam_pos = vec3_sub(state.cam_pos, vec3_scale(right, speed));
+    if (glfwGetKey(state.win, GLFW_KEY_D) == GLFW_PRESS)
+        state.cam_pos = vec3_add(state.cam_pos, vec3_scale(right, speed));
 }
 
 void camera_mouse_callback(const f64 xpos, const f64 ypos)
@@ -44,14 +50,10 @@ void camera_mouse_callback(const f64 xpos, const f64 ypos)
         state.firstMouse = false;
     }
 
-    f32 xoffset = (f32)xpos - state.lastX;
-    f32 yoffset = state.lastY - (f32)ypos;
+    const f32 xoffset = ((f32)xpos - state.lastX) * 0.1f;
+    const f32 yoffset = (state.lastY - (f32)ypos) * 0.1f;
     state.lastX = (f32)xpos;
     state.lastY = (f32)ypos;
-
-    const f32 sensitivity = 0.1f;
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
 
     state.yaw   += xoffset;
     state.pitch += yoffset;

@@ -16,7 +16,7 @@ typedef enum {
 } state_e;
 
 typedef struct {
-    u32 vao, vbo, ebo, program;  // Added ebo
+    u32 vao, vbo, ebo, program;
 } data_t;
 
 typedef struct {
@@ -24,7 +24,7 @@ typedef struct {
     state_e id;
     f32 dt;
     data_t* data;
-    texture_t* text;
+    texture_registry_t* text;
 
     vec3s cam_pos;
     vec3s cam_front;

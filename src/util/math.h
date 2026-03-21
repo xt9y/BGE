@@ -8,6 +8,9 @@
 #define PI 3.1415926535f
 #endif
 
+#define DEG2RAD(deg) ((deg) * PI / 180.0f)
+#define RAD2DEG(rad) ((rad) * 180.0f / PI)
+
 void mat4_identity(f32* m);
 void mat4_perspective(f32* m, f32 fov, f32 aspect, f32 near, f32 far);
 void mat4_translate(f32* m, f32 x, f32 y, f32 z);
@@ -23,5 +26,10 @@ vec3s vec3_scale(vec3s a, f32 s);
 vec3s vec3_normalize(vec3s a);
 vec3s vec3_cross(vec3s a, vec3s b);
 f32 vec3_dot(vec3s a, vec3s b);
+f32 vec3_magnitude(vec3s a);
+
+vec2s vec2_add(vec2s a, vec2s b);
+vec2s vec2_sub(vec2s a, vec2s b);
+vec2s vec2_scale(vec2s a, f32 s);
 
 #endif

@@ -44,7 +44,7 @@ i32 init()
 
     // Vertex data with positions, colors, and texture coords
     // Two triangles sharing one texture
-    f32 vertices[] = {
+    const f32 vertices[] = {
         // positions          // colors           // texture coords
          0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,  // top right
          0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,  // bottom right
@@ -52,7 +52,7 @@ i32 init()
         -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f   // top left
     };
 
-    u32 indices[] = {
+    const u32 indices[] = {
         0, 1, 3,  // first triangle
         1, 2, 3   // second triangle
     };
@@ -87,9 +87,9 @@ i32 init()
     texture_registry_init(state.text);
 
     // Create textures 
-    state.text->textures[0] = *texture_create("res/ground.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    state.text->textures[1] = *texture_create("res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    state.text->textures[2] = *texture_create("res/awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+    state.text->textures[0] = *texture_create("res/1ground.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+    state.text->textures[1] = *texture_create("res/1stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+    state.text->textures[2] = *texture_create("res/1awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
 
     // Set texture uniforms
     glUseProgram(state.data->program);

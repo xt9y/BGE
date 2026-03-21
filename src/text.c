@@ -8,7 +8,7 @@
 
 static texture_registry_t g_registry;
 
-static void texture_set_params(texture_t* tex)
+static void texture_set_params(const texture_t* tex)
 {
     glBindTexture(GL_TEXTURE_2D, tex->id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, 
@@ -36,7 +36,7 @@ static texture_t* texture_alloc_slot(void)
     return &g_registry.textures[g_registry.count++];
 }
 
-texture_t* texture_create(const char* path, tex_filter_t filter, tex_wrap_t wrap)
+texture_t* texture_create(const char* path, const tex_filter_t filter, const tex_wrap_t wrap)
 {
     texture_t* tex = texture_alloc_slot();
     if (!tex) return &g_registry.fallback;
@@ -59,28 +59,25 @@ texture_t* texture_create(const char* path, tex_filter_t filter, tex_wrap_t wrap
         tex->width = w;
         tex->height = h;
         tex->channels = channels;
-        tex->has_alpha = (channels == 4);
+        tex->has_alpha = (tex->channels == 4);
 
-        GLenum format = (channels == 4) ? GL_RGBA : GL_RGB;
+        const GLenum format = (channels == 4) ? GL_RGBA : GL_RGB;
         glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
         stbi_image_free(data);
     } else {
         printf("Failed to load texture: %s, using fallback\n", path);
-        tex->width = tex->height = 2;
-        tex->channels = 3;
-        const u8 fallback_px[2 * 2 * 3] = {
-            255, 0, 255,  0, 0, 0,
-            0, 0, 0,      255, 0, 255
-        };
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_UNSIGNED_BYTE, fallback_px);
+        tex->width = tex->height = state.text->fallback.height;
+        tex->channels = state.text->fallback.channels;
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, (u8[12]){ 255,0,255,  0,0,0,  0,0,0, 255,0,255 });
     }
 
     texture_set_params(tex);
     return tex;
 }
 
-texture_t* texture_create_solid(u32 r, u32 g, u32 b)
+texture_t* texture_create_solid(const u32 r, const u32 g, const u32 b)
 {
     texture_t* tex = texture_alloc_slot();
     if (!tex) return &g_registry.fallback;
@@ -96,8 +93,7 @@ texture_t* texture_create_solid(u32 r, u32 g, u32 b)
     tex->has_alpha = false;
     strcpy(tex->name, "solid_color");
 
-    const u8 pixel[3] = { (u8)r, (u8)g, (u8)b };
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, pixel);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, (u8[3]){ (u8)r,(u8)g,(u8)b });
     texture_set_params(tex);
     return tex;
 }
@@ -109,7 +105,7 @@ texture_t* texture_get_by_name(const char* name)
     return 0;
 }
 
-void texture_bind(texture_t* tex, u32 unit)
+void texture_bind(texture_t* tex, const u32 unit)
 {
     if (!tex) tex = &g_registry.fallback;
     glActiveTexture(GL_TEXTURE0 + unit);
@@ -138,11 +134,7 @@ void texture_registry_init(texture_registry_t* reg)
     reg->fallback.channels = 3;
     strcpy(reg->fallback.name, "fallback");
 
-    const u8 fallback_px[2 * 2 * 3] = {
-        255, 0, 255,  0, 0, 0,
-        0, 0, 0,      255, 0, 255
-    };
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_UNSIGNED_BYTE, fallback_px);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_UNSIGNED_BYTE, (u8[12]){ 255,0,255, 0,0,0, 255,0,255, 0,0,0 });
     glGenerateMipmap(GL_TEXTURE_2D);
     texture_set_params(&reg->fallback);
 }

@@ -3,7 +3,7 @@
 
 #### THIS IS IT:
 
-![Alt text](./GAME.png)
+![Alt text](./Engine/res/GAME.png)
 
 #### NOTES:
 - `git clone --recursive ...` is required to fetch the GLFW submodule.

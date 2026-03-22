@@ -33,12 +33,12 @@ void RUN()
     {   // Primitives
         primitive_registry_init(state.prim);
 #define T(t, rt) (((t) >= 0 && (t) < MAX_TEXTURES) ? &(rt)->textures[(t)] : NULL)
-        primitive_create_quad(state.prim,  (vec3s){2.0f, 2.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){4.0f, 4.0f},    T(-1, state.text));
-        primitive_create_quad(state.prim,  (vec3s){2.0f, 0.0f, 2.0f},   (vec3s){90.0f, 0.0f, 0.0f},   (vec2s){4.0f, 4.0f},    T(0, state.text));
-        primitive_create_quad(state.prim,  (vec3s){0.0f, 2.0f, 2.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){4.0f, 4.0f},    T(1, state.text));
-        primitive_create_quad(state.prim,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){100.0f, 0.03f},  T(7, state.text));
-        primitive_create_quad(state.prim,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){90.0f, 90.0f, 90.0f}, (vec2s){0.03f, 100.0f},  T(8, state.text));
-        primitive_create_quad(state.prim,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){100.0f, 0.03f},  T(9, state.text));
+        primitive_create_quad(state.prim,  (vec3s){2.0f, 2.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){4.0f, 4.0f},      T(-1, state.text));
+        primitive_create_quad(state.prim,  (vec3s){2.0f, 0.0f, 2.0f},   (vec3s){90.0f, 0.0f, 0.0f},   (vec2s){4.0f, 4.0f},      T(0, state.text));
+        primitive_create_quad(state.prim,  (vec3s){0.0f, 2.0f, 2.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){4.0f, 4.0f},      T(1, state.text));
+        primitive_create_quad(state.prim,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){100.0f, 0.03f},   T(7, state.text));
+        primitive_create_quad(state.prim,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){90.0f, 90.0f, 90.0f}, (vec2s){0.03f, 100.0f},   T(8, state.text));
+        primitive_create_quad(state.prim,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){100.0f, 0.03f},   T(9, state.text));
 #undef T
     }
 

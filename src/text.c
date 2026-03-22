@@ -1,5 +1,4 @@
 #include "text.h"
-#include "state.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -7,6 +6,14 @@
 #include "../ext/stb_image.h"
 
 static texture_registry_t g_registry;
+
+static void texture_upload_fallback(texture_t* tex)
+{
+    tex->filter = TEX_FILTER_NEAREST;
+    tex->width = tex->height = 2;
+    tex->channels = 3; tex->has_alpha = (tex->channels == 4);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, (u8[12]){255,0,255, 0,0,0, 255,0,255, 0,0,0 });
+}
 
 static void texture_set_params(const texture_t* tex)
 {
@@ -67,10 +74,7 @@ texture_t* texture_create(const char* path, const tex_filter_t filter, const tex
         stbi_image_free(data);
     } else {
         printf("Failed to load texture: %s, using fallback\n", path);
-        tex->width = tex->height = state.text->fallback.height;
-        tex->channels = state.text->fallback.channels;
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, (u8[12]){ 255,0,255,  0,0,0,  0,0,0, 255,0,255 });
+        texture_upload_fallback(tex);
     }
 
     texture_set_params(tex);
@@ -127,15 +131,14 @@ void texture_registry_init(texture_registry_t* reg)
     // Create fallback texture
     glGenTextures(1, &reg->fallback.id);
     glBindTexture(GL_TEXTURE_2D, reg->fallback.id);
-    reg->fallback.filter = TEX_FILTER_LINEAR;
+    reg->fallback.filter = TEX_FILTER_NEAREST;
     reg->fallback.wrap_s = TEX_WRAP_REPEAT;
     reg->fallback.wrap_t = TEX_WRAP_REPEAT;
     reg->fallback.width = reg->fallback.height = 2;
     reg->fallback.channels = 3;
     strcpy(reg->fallback.name, "fallback");
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_UNSIGNED_BYTE, (u8[12]){ 255,0,255, 0,0,0, 255,0,255, 0,0,0 });
-    glGenerateMipmap(GL_TEXTURE_2D);
+    texture_upload_fallback(&reg->fallback);
     texture_set_params(&reg->fallback);
 }
 
@@ -147,4 +150,3 @@ void texture_registry_cleanup(texture_registry_t* reg)
     glDeleteTextures(1, &reg->fallback.id);
     memset(reg, 0, sizeof(*reg));
 }
-

@@ -8,7 +8,7 @@ void RUN()
 {
     GL_START();
 
-    {
+    {   // Camera
         state.cam->pos = (vec3s){3.0f, 2.0f, 6.0f};
         state.cam->front = (vec3s){0.0f, 0.0f, -1.0f};
         state.cam->up = (vec3s){0.0f, 1.0f, 0.0f};
@@ -20,7 +20,7 @@ void RUN()
         update_camera_vectors(state.cam);
     }
 
-    {
+    {   // Textures
         texture_registry_init(state.text);
         state.text->textures[0] = *texture_create("Engine/res/ground.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
         state.text->textures[1] = *texture_create("Engine/res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
@@ -30,7 +30,7 @@ void RUN()
         state.text->textures[9] = *texture_create_solid(0, 0, 255);
     }
 
-    {
+    {   // Primitives
         primitive_registry_init(state.prim);
 #define T(t, rt) (((t) >= 0 && (t) < MAX_TEXTURES) ? &(rt)->textures[(t)] : NULL)
         primitive_create_quad(state.prim,  (vec3s){2.0f, 2.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){4.0f, 4.0f},    T(-1, state.text));

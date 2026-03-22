@@ -24,7 +24,7 @@ LIB = -lglfw
 endif
 
 TARGET = app
-SRC = src/main.c src/gfx.c src/text.c src/prim.c src/util/math.c src/cam.c
+SRC = main.c Engine/App.c # src/main.c src/gfx.c src/text.c src/prim.c src/util/math.c src/cam.c
 
 .PHONY: all clean run
 

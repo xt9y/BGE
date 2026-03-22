@@ -4,3 +4,7 @@
 #### THIS IS IT:
 
 ![Alt text](./GAME.png)
+
+#### NOTES:
+- `git clone --recursive ...` is required to fetch the GLFW submodule.
+- Linux build requirements : OpenGL loader/headers, X11 

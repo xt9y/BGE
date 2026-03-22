@@ -30,4 +30,6 @@ void GL_START(void);
 int  GL_FRAME(void);
 void GL_END(void);
 
-extern bool cursor_locked;
+#include "Engine/gfx.h"
+#include "Engine/state.h"
+#include "Engine/util/math.h"

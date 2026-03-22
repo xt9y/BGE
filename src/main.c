@@ -39,57 +39,16 @@ i32 init()
     glfwSetInputMode(state.win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     state.data = malloc(sizeof(*state.data));
-    state.text = malloc(sizeof(*state.text));
-    memset(state.text, 0, sizeof(*state.text));
-
-    // Vertex data with positions, colors, and texture coords
-    // Two triangles sharing one texture
-    const f32 vertices[] = {
-         // positions         // colors           // texture coords
-         0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,  // top right
-         0.5f, -0.5f, 0.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,  // top left
-    };
-
-    const u32 indices[] = {
-        0, 1, 3,  // first triangle
-        1, 2, 3   // second triangle
-    };
-
-    glGenVertexArrays(1, &state.data->vao);
-    glGenBuffers(1, &state.data->vbo);
-    glGenBuffers(1, &state.data->ebo);
-
-    glBindVertexArray(state.data->vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, state.data->vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, state.data->ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // Color attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(3 * sizeof(f32)));
-    glEnableVertexAttribArray(1);
-
-    // Texture coord attribute
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(6 * sizeof(f32)));
-    glEnableVertexAttribArray(2);
+    state.text = malloc(sizeof(*state.text)); memset(state.text, 0, sizeof(*state.text));
+    state.prim = malloc(sizeof(*state.prim)); memset(state.prim, 0, sizeof(*state.prim));
 
     state.data->program = create_program(VS, FS);
 
-    // Initialize texture registry
-    texture_registry_init(state.text);
+    // Initialize Registry + Create textures
+    texture_init(state.text);
 
-    // Create textures 
-    state.text->textures[0] = *texture_create("res/ground.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    state.text->textures[1] = *texture_create("res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    state.text->textures[2] = *texture_create("res/awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+    // Initialize Registry + Create primitives
+    primitive_init(state.prim, state.text);
 
     // Set texture uniforms
     glUseProgram(state.data->program);
@@ -115,11 +74,6 @@ void render()
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Bind textures two triangles share texture1
-    texture_bind(&state.text->textures[0], 0);
-    texture_bind(&state.text->textures[2], 1);
-
-    // Render quad 
     glUseProgram(state.data->program);
 
     f32 model[16], view[16], proj[16];
@@ -127,25 +81,23 @@ void render()
     mat4_lookat(view, state.cam_pos, vec3_add(state.cam_pos, state.cam_front), state.cam_up);
     mat4_perspective(proj, DEG2RAD(45.0f), (f32)WIDTH / (f32)HEIGHT, 0.1f, 100.0f);
 
-    glUniformMatrix4fv(glGetUniformLocation(state.data->program, "model"), 1, GL_FALSE, model);
     glUniformMatrix4fv(glGetUniformLocation(state.data->program, "view"), 1, GL_FALSE, view);
     glUniformMatrix4fv(glGetUniformLocation(state.data->program, "projection"), 1, GL_FALSE, proj);
 
-    glBindVertexArray(state.data->vao);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    primitive_draw_all(state.prim, state.data->program);
 }
 
 void deinit()
 {
     texture_registry_cleanup(state.text);
     glfwTerminate();
-    glDeleteVertexArrays(1, &state.data->vao);
-    glDeleteBuffers(1, &state.data->vbo);
-    glDeleteBuffers(1, &state.data->ebo);
+    primitive_registry_cleanup(state.prim);
     glDeleteProgram(state.data->program);
     free(state.text);
+    free(state.prim);
     free(state.data);
     state.text = 0;
+    state.prim = 0;
     state.data = 0;
 }
 

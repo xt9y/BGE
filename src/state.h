@@ -4,6 +4,7 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include "text.h"
+#include "primv.h"
 #include "util/types.h"
 
 #define ASSERT(x) do { if (!(x)) { printf("Assertion failed: %s\n", #x); exit(1); } } while(0)
@@ -25,6 +26,7 @@ typedef struct {
     f32 dt;
     data_t* data;
     texture_registry_t* text;
+    primitive_registry_t* prim;
 
     vec3s cam_pos;
     vec3s cam_front;

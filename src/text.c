@@ -151,3 +151,11 @@ void texture_registry_cleanup(texture_registry_t* reg)
     glDeleteTextures(1, &reg->fallback.id);
     memset(reg, 0, sizeof(*reg));
 }
+
+void texture_init(texture_registry_t* reg)
+{
+    texture_registry_init(reg);
+    reg->textures[0] = *texture_create("res/ground.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+    reg->textures[1] = *texture_create("res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+    reg->textures[2] = *texture_create("res/awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+}

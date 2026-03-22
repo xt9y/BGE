@@ -118,21 +118,14 @@ void primitive_draw_all(primitive_registry_t* reg, const u32 program)
     for (i32 i = 0; i < reg->count; i++) primitive_draw(&reg->primitives[i], program);
 }
 
-void primitive_init(primitive_registry_t* reg, const texture_registry_t* reg_text)
-{
+void primitive_init(primitive_registry_t* reg, const texture_registry_t* reg_text) {
     primitive_registry_init(reg);
-    const vec3s rot[] = {
-        { 0.0f, 0.0f, 0.0f },  // XY plane (X/Y)
-        { 90.0f, 0.0f, 0.0f }, // XZ plane (X/Z)
-        { 0.0f, 90.0f, 0.0f }  // YZ plane (Y/Z)
-    };
-
-    const vec2s size = { 4.0f, 4.0f };
-    const i32 text[] = { 0, 1, 17 };
-    const i32 count = (i32)(sizeof(text) / sizeof(text[0]));
-
-    for (i32 i = 0; i < count; i++) {
-        const texture_t* tex = (text[i] >= 0 && text[i] < MAX_TEXTURES) ? &reg_text->textures[text[i]] : NULL;
-        primitive_quad_create(reg, (vec3s){0.0f, 0.0f, 0.0f}, rot[i], size, tex);
-    }
+#define T(t, rt) (((t) >= 0 && (t) < MAX_TEXTURES) ? &(rt)->textures[(t)] : NULL)
+    primitive_quad_create(reg, (vec3s){2.0f, 2.0f, 0.0f}, (vec3s){0.0f, 0.0f, 0.0f}, (vec2s){4.0f, 4.0f}, T(-1, reg_text));
+    primitive_quad_create(reg, (vec3s){2.0f, 0.0f, 2.0f}, (vec3s){90.0f, 0.0f, 0.0f}, (vec2s){4.0f, 4.0f}, T(0, reg_text));
+    primitive_quad_create(reg, (vec3s){0.0f, 2.0f, 2.0f}, (vec3s){0.0f, 90.0f, 0.0f}, (vec2s){4.0f, 4.0f}, T(1, reg_text));
+    primitive_quad_create(reg, (vec3s){0.0f, 0.0f, 0.0f}, (vec3s){0.0f, 0.0f, 0.0f}, (vec2s){10.0f, 0.03f}, T(5, reg_text));
+    primitive_quad_create(reg, (vec3s){0.0f, 0.0f, 0.0f}, (vec3s){90.0f, 90.0f, 90.0f}, (vec2s){0.03f, 10.0f}, T(6, reg_text));
+    primitive_quad_create(reg, (vec3s){0.0f, 0.0f, 0.0f}, (vec3s){0.0f, 90.0f, 0.0f}, (vec2s){10.0f, 0.03f}, T(7, reg_text));
+#undef T
 }

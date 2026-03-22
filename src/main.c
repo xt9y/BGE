@@ -17,8 +17,13 @@
 f32 g_lastTime;
 state_t state;
 camera_t cam;
+static bool cursor_locked = true;
 
-void mouse_callback(GLFWwindow* w, const f64 xpos, const f64 ypos) { camera_mouse_callback(&cam, xpos, ypos); }
+void mouse_callback(GLFWwindow* w, const f64 xpos, const f64 ypos)
+{
+    if (!cursor_locked) return;
+    camera_mouse_callback(&cam, xpos, ypos);
+}
 
 i32 init()
 {
@@ -63,8 +68,19 @@ i32 init()
 
 void update()
 {
-    if(glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id=STATE_EXIT;
-    camera_update(&cam, state.win, state.dt);
+    if (glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id = STATE_EXIT;
+
+    const bool shift_active = glfwGetKey(state.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+    if (shift_active && cursor_locked) {
+        glfwSetInputMode(state.win, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        cursor_locked = false;
+    } else if (!shift_active && !cursor_locked) {
+        glfwSetInputMode(state.win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        cursor_locked = true;
+        cam.firstMouse = true;
+    }
+
+    if (cursor_locked) camera_update(&cam, state.win, state.dt);
     // Game logic here
 }
 

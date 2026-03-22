@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define MAIN
 #include "state.h"
+#undef MAIN
+
 #include "gfx.h"
 #include "text.h"
 #include "util/math.h"
@@ -13,14 +17,7 @@
 f32 g_lastTime;
 state_t state;
 
-// random callbacks
-void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos) { camera_mouse_callback(xpos, ypos); }
-void framebuffer_size_callback(GLFWwindow* w, i32 width, i32 height) { glViewport(0, 0, width, height); }
-
-#define process_input() do { \
-    if(glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id=STATE_EXIT; \
-    camera_update(); \
-} while (0)
+void mouse_callback(GLFWwindow* w, const f64 xpos, const f64 ypos) { camera_mouse_callback(&state.cam, xpos, ypos); }
 
 i32 init()
 {
@@ -34,7 +31,7 @@ i32 init()
     ASSERT(state.win);
 
     glfwMakeContextCurrent(state.win);
-    glfwSetFramebufferSizeCallback(state.win, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(state.win, NULL);
     glfwSetCursorPosCallback(state.win, mouse_callback);
     glfwSetInputMode(state.win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -56,7 +53,7 @@ i32 init()
     glUniform1i(glGetUniformLocation(state.data->program, "texture2"), 1);
 
     // Initialize camera
-    camera_init();
+    camera_init(&state.cam, WIDTH, HEIGHT);
 
 	glEnable(GL_DEPTH_TEST);
 	state.id = STATE_PLAYING;
@@ -65,7 +62,8 @@ i32 init()
 
 void update()
 {
-    process_input();
+    if(glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id=STATE_EXIT;
+    camera_update(&state.cam, state.win, state.dt);
     // Game logic here
 }
 
@@ -78,7 +76,7 @@ void render()
 
     f32 model[16], view[16], proj[16];
     mat4_identity(model);
-    mat4_lookat(view, state.cam_pos, vec3_add(state.cam_pos, state.cam_front), state.cam_up);
+    mat4_lookat(view, state.cam.cam_pos, vec3_add(state.cam.cam_pos, state.cam.cam_front), state.cam.cam_up);
     mat4_perspective(proj, DEG2RAD(45.0f), (f32)WIDTH / (f32)HEIGHT, 0.1f, 100.0f);
 
     glUniformMatrix4fv(glGetUniformLocation(state.data->program, "view"), 1, GL_FALSE, view);

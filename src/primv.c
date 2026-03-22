@@ -109,5 +109,5 @@ void primitive_init(primitive_registry_t* reg, const texture_registry_t* reg_tex
 {
     primitive_registry_init(reg);
     reg->primitives[0] = *primitive_create(reg, (vec3s){0.0f, 0.0f, 0.0f}, (vec2s){1.0f, 1.0f}, reg_text->textures[0]);
-    reg->primitives[1] = *primitive_create(reg, (vec3s){0.0f, 1.0f, 0.0f}, (vec2s){1.0f, 1.0f}, reg_text->textures[1]);
+    reg->primitives[1] = *primitive_create(reg, (vec3s){0.0f, 1.0f, 0.0f}, (vec2s){4.0f, 1.0f}, reg_text->textures[1]);
 }

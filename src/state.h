@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include "text.h"
 #include "primv.h"
+#include "cam.h"
 #include "util/types.h"
 
 #define ASSERT(x) do { if (!(x)) { printf("Assertion failed: %s\n", #x); exit(1); } } while(0)
@@ -20,24 +21,19 @@ typedef struct {
     u32 vao, vbo, ebo, program;
 } data_t;
 
+#ifdef MAIN
+#define MAIN
 typedef struct {
     GLFWwindow* win;
     state_e id;
     f32 dt;
     data_t* data;
+    camera_t cam;
     texture_registry_t* text;
     primitive_registry_t* prim;
-
-    vec3s cam_pos;
-    vec3s cam_front;
-    vec3s cam_up;
-    f32 yaw;
-    f32 pitch;
-    f32 lastX;
-    f32 lastY;
-    bool firstMouse;
 } state_t;
 
 extern state_t state;
+#endif
 
 #endif

@@ -23,18 +23,26 @@ INC =
 LIB = -lglfw
 endif
 
-TARGET = app
-SRC = main.c Engine/App.c # src/main.c src/gfx.c src/text.c src/prim.c src/util/math.c src/cam.c
+BIN = cmake-build-debug
+TARGET = $(BIN)/app
+SRC = main.c
+ENGINE_LIB = $(BIN)/Engine/libengine.a
+ENGINE_SRCS = $(shell find Engine -type f \( -name '*.c' -o -name '*.h' \))
 
 .PHONY: all clean run
 
 all: $(TARGET) run
 
-$(TARGET): $(SRC)
-	$(CC) $(CFLAGS) $(INC) $(SRC) -o $@ $(LIB)
+$(ENGINE_LIB): $(ENGINE_SRCS)
+	$(MAKE) -C Engine
+
+$(TARGET): $(SRC) $(ENGINE_LIB)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(INC) $(SRC) -o $@ $(ENGINE_LIB) $(LIB)
 
 run: $(TARGET)
 	./$(TARGET)
 
 clean:
 	rm -f $(TARGET)
+	$(MAKE) -C Engine clean

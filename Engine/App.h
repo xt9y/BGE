@@ -1,7 +1,15 @@
 #pragma once
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 // Engine Application API
-// Simple interface for creating Vulkan applications
+// Simple interface for creating OpenGL applications
 
 // Main macro
 // and the engine handles the rest
@@ -17,3 +25,9 @@ void RUN();
 #define TITLE  "opengl _f"
 #define WIDTH  1980
 #define HEIGHT 1270
+
+void GL_START(void);
+int  GL_FRAME(void);
+void GL_END(void);
+
+extern bool cursor_locked;

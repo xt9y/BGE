@@ -3,13 +3,10 @@
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include "text.h"
-#include "prim.h"
 #include "cam.h"
+#include "prim.h"
+#include "text.h"
 #include "util/types.h"
-
-#define ASSERT(x) do { if (!(x)) { printf("Assertion failed: %s\n", #x); exit(1); } } while(0)
-#define LOG(x) do { printf("%s\n", x); } while(0)
 
 typedef enum {
     STATE_MENU,
@@ -21,19 +18,17 @@ typedef struct {
     u32 vao, vbo, ebo, program;
 } data_t;
 
-#ifdef MAIN
-#define MAIN
 typedef struct {
+    bool cursor_locked;
     GLFWwindow* win;
     state_e id;
     f32 dt;
     data_t* data;
-    camera_t cam;
+    camera_t* cam;
     texture_registry_t* text;
     primitive_registry_t* prim;
 } state_t;
 
 extern state_t state;
-#endif
 
 #endif

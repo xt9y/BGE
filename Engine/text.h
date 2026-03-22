@@ -36,16 +36,14 @@ typedef struct {
     texture_t fallback;
 } texture_registry_t;
 
-// texture_t* texture_create(const char* path, tex_filter_t filter, tex_wrap_t wrap);
-// texture_t* texture_create_solid(u32 r, u32 g, u32 b);
-// texture_t* texture_get_by_name(const char* name);
+texture_t* texture_create(const char* path, tex_filter_t filter, tex_wrap_t wrap);
+texture_t* texture_create_solid(u32 r, u32 g, u32 b);
+texture_t* texture_get_by_name(const char* name);
 void texture_bind(texture_t* tex, u32 unit);
 void texture_destroy(texture_t* tex);
-// void texture_registry_init(texture_registry_t* reg);
+void texture_registry_init(texture_registry_t* reg);
 void texture_registry_cleanup(texture_registry_t* reg);
 
 const texture_t* texture_get_fallback(void);
-
-void texture_init(texture_registry_t* reg);
 
 #endif

@@ -162,13 +162,3 @@ const texture_t* texture_get_fallback(void)
     return &g_registry.fallback;
 }
 
-void texture_init(texture_registry_t* reg)
-{
-    texture_registry_init(reg);
-    reg->textures[0] = *texture_create("Engine/res/ground.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    reg->textures[1] = *texture_create("Engine/res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    reg->textures[2] = *texture_create("Engine/res/awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    reg->textures[7] = *texture_create_solid(255, 0, 0);
-    reg->textures[8] = *texture_create_solid(0, 255, 0);
-    reg->textures[9] = *texture_create_solid(0, 0, 255);
-}

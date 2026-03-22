@@ -13,7 +13,6 @@
 u32 compile_shader(u32 type, const char* src);
 u32 create_program(const char* vs, const char* fs);
 
-// Updated shaders with MVP support
 #define VS "#version 330 core\n" \
     "layout(location=0) in vec3 aPos;\n" \
     "layout(location=1) in vec3 aColor;\n" \

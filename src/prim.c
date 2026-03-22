@@ -28,7 +28,7 @@ void primitive_registry_cleanup(primitive_registry_t* reg)
     memset(reg, 0, sizeof(*reg));
 }
 
-primitive_t* primitive_quad_create(primitive_registry_t* reg, const vec3s pos, const vec3s rot, const vec2s size, const texture_t* tex)
+primitive_t* primitive_create_quad(primitive_registry_t* reg, const vec3s pos, const vec3s rot, const vec2s size, const texture_t* tex)
 {
     if (!reg) return 0;
     primitive_t* prim = primitive_alloc_slot(reg);
@@ -121,11 +121,11 @@ void primitive_draw_all(primitive_registry_t* reg, const u32 program)
 void primitive_init(primitive_registry_t* reg, const texture_registry_t* reg_text) {
     primitive_registry_init(reg);
 #define T(t, rt) (((t) >= 0 && (t) < MAX_TEXTURES) ? &(rt)->textures[(t)] : NULL)
-    primitive_quad_create(reg,  (vec3s){2.0f, 2.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){4.0f, 4.0f},    T(-1, reg_text));
-    primitive_quad_create(reg,  (vec3s){2.0f, 0.0f, 2.0f},   (vec3s){90.0f, 0.0f, 0.0f},   (vec2s){4.0f, 4.0f},    T(0, reg_text));
-    primitive_quad_create(reg,  (vec3s){0.0f, 2.0f, 2.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){4.0f, 4.0f},    T(1, reg_text));
-    primitive_quad_create(reg,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){10.0f, 0.03f},  T(5, reg_text));
-    primitive_quad_create(reg,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){90.0f, 90.0f, 90.0f}, (vec2s){0.03f, 10.0f},  T(6, reg_text));
-    primitive_quad_create(reg,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){10.0f, 0.03f},  T(7, reg_text));
+    primitive_create_quad(reg,  (vec3s){2.0f, 2.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){4.0f, 4.0f},    T(-1, reg_text));
+    primitive_create_quad(reg,  (vec3s){2.0f, 0.0f, 2.0f},   (vec3s){90.0f, 0.0f, 0.0f},   (vec2s){4.0f, 4.0f},    T(0, reg_text));
+    primitive_create_quad(reg,  (vec3s){0.0f, 2.0f, 2.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){4.0f, 4.0f},    T(1, reg_text));
+    primitive_create_quad(reg,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){100.0f, 0.03f},  T(7, reg_text));
+    primitive_create_quad(reg,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){90.0f, 90.0f, 90.0f}, (vec2s){0.03f, 100.0f},  T(8, reg_text));
+    primitive_create_quad(reg,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){100.0f, 0.03f},  T(9, reg_text));
 #undef T
 }

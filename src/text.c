@@ -168,21 +168,7 @@ void texture_init(texture_registry_t* reg)
     reg->textures[0] = *texture_create("res/ground.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
     reg->textures[1] = *texture_create("res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
     reg->textures[2] = *texture_create("res/awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    static const u32 solid_colors[][3] = {
-        { 255,   0,   0 }, // red
-        {   0, 255,   0 }, // green
-        {   0,   0, 255 }, // blue
-        { 255, 255,   0 }, // yellow
-        { 255,   0, 255 }, // magenta
-        {   0, 255, 255 }, // cyan
-    };
-    const i32 base_index = 5;
-    const i32 color_count = (i32)(sizeof(solid_colors) / sizeof(solid_colors[0]));
-    for (i32 i = 0; i < color_count; i++) {
-        const i32 slot = base_index + i;
-        if (slot >= MAX_TEXTURES) break;
-        texture_t* solid = texture_create_solid(solid_colors[i][0], solid_colors[i][1], solid_colors[i][2]);
-        if (!solid) continue;
-        reg->textures[slot] = *solid;
-    }
+    reg->textures[7] = *texture_create_solid(255, 0, 0);
+    reg->textures[8] = *texture_create_solid(0, 255, 0);
+    reg->textures[9] = *texture_create_solid(0, 0, 255);
 }

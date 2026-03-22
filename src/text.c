@@ -12,7 +12,8 @@ static void texture_upload_fallback(texture_t* tex)
     tex->filter = TEX_FILTER_NEAREST;
     tex->width = tex->height = 2;
     tex->channels = 3; tex->has_alpha = (tex->channels == 4);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, (u8[12]){255,0,255, 0,0,0, 255,0,255, 0,0,0 });
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, (u8[12]){255,0,255, 0,0,0, 0,0,0, 255,0,255 });
 }
 
 static void texture_set_params(const texture_t* tex)

@@ -87,9 +87,9 @@ i32 init()
     texture_registry_init(state.text);
 
     // Create textures 
-    state.text->textures[0] = *texture_create("res/1ground.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    state.text->textures[1] = *texture_create("res/1stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    state.text->textures[2] = *texture_create("res/1awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+    state.text->textures[0] = *texture_create("res/ground.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+    state.text->textures[1] = *texture_create("res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+    state.text->textures[2] = *texture_create("res/awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
 
     // Set texture uniforms
     glUseProgram(state.data->program);

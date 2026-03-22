@@ -17,10 +17,10 @@ void camera_init(camera_t* cam, const f32 viewport_width, const f32 viewport_hei
 {
     if (!cam) return;
     *cam = (camera_t){
-        .cam_pos = (vec3s){0.0f, 0.0f, 3.0f},
+        .cam_pos = (vec3s){3.0f, 2.0f, 6.0f},
         .cam_front = (vec3s){0.0f, 0.0f, -1.0f},
         .cam_up = (vec3s){0.0f, 1.0f, 0.0f},
-        .yaw = -90.0f, .pitch = 0.0f,
+        .yaw = -120.0f, .pitch = -20.0f,
         .lastX = viewport_width * 0.5f,
         .lastY = viewport_height * 0.5f,
         .firstMouse = true,

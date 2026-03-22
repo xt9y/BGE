@@ -44,6 +44,8 @@ void texture_destroy(texture_t* tex);
 // void texture_registry_init(texture_registry_t* reg);
 void texture_registry_cleanup(texture_registry_t* reg);
 
+const texture_t* texture_get_fallback(void);
+
 void texture_init(texture_registry_t* reg);
 
 #endif

@@ -1,8 +1,10 @@
-#include "primv.h"
+#include "prim.h"
 #include "gfx.h"
 #include "util/math.h"
 #include <stdio.h>
 #include <string.h>
+
+#define FALLBACK_TEXTURE (*texture_get_fallback())
 
 static primitive_t* primitive_alloc_slot(primitive_registry_t* reg)
 {
@@ -22,31 +24,31 @@ void primitive_registry_init(primitive_registry_t* reg)
 void primitive_registry_cleanup(primitive_registry_t* reg)
 {
     if (!reg) return;
-    for (i32 i = 0; i < reg->count; i++)
-        primitive_destroy(&reg->primitives[i]);
+    for (i32 i = 0; i < reg->count; i++) primitive_destroy(&reg->primitives[i]);
     memset(reg, 0, sizeof(*reg));
 }
 
-primitive_t* primitive_create(primitive_registry_t* reg, const vec3s pos, const vec2s scale, const texture_t tex)
+primitive_t* primitive_quad_create(primitive_registry_t* reg, const vec3s pos, const vec3s rot, const vec2s size, const texture_t* tex)
 {
     if (!reg) return 0;
     primitive_t* prim = primitive_alloc_slot(reg);
     if (!prim) return 0;
+    prim->rot = rot;
     prim->pos = pos;
-    prim->tex = tex;
+    prim->tex = tex ? *tex : FALLBACK_TEXTURE;
 
+    const f32 half_x = 0.5f * size.x;
+    const f32 half_y = 0.5f * size.y;
+    const f32 u_repeat = 6.0f, v_repeat = u_repeat;
     const f32 vertices[] = {
-         // positions     // colors               // texture coords
-         0.5f * scale.x,  0.5f * scale.y, 0.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,  // top right
-         0.5f * scale.x, -0.5f * scale.y, 0.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,  // bottom right
-        -0.5f * scale.x, -0.5f * scale.y, 0.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,  // bottom left
-        -0.5f * scale.x,  0.5f * scale.y, 0.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,  // top left
+         // positions             // colors           // texture coords
+         half_x,  half_y, 0.0f,   1.0f, 1.0f, 1.0f,   u_repeat, v_repeat,  // top right
+         half_x, -half_y, 0.0f,   1.0f, 1.0f, 1.0f,   u_repeat, 0.0f,      // bottom right
+        -half_x, -half_y, 0.0f,   1.0f, 1.0f, 1.0f,   0.0f,     0.0f,      // bottom left
+        -half_x,  half_y, 0.0f,   1.0f, 1.0f, 1.0f,   0.0f,     v_repeat,  // top left
     };
 
-    const u32 indices[] = {
-        0, 1, 3,  // first triangle
-        1, 2, 3   // second triangle
-    };
+    const u32 indices[] = { 0, 1, 3, 1, 2, 3 };
 
     glGenVertexArrays(1, &prim->vao);
     glGenBuffers(1, &prim->vbo);
@@ -79,8 +81,19 @@ void primitive_draw(primitive_t* prim, const u32 program)
 {
     if (!prim) return;
 
-    f32 model[16];
-    mat4_translate(model, prim->pos.x, prim->pos.y, prim->pos.z);
+    f32 rot_x[16], rot_y[16], rot_z[16], rot_yx[16], rot_xyz[16], model[16];
+
+    mat4_rotate_x(rot_x, DEG2RAD(prim->rot.x));
+    mat4_rotate_y(rot_y, DEG2RAD(prim->rot.y));
+    mat4_rotate_z(rot_z, DEG2RAD(prim->rot.z));
+    mat4_multiply(rot_yx, rot_y, rot_x);
+    mat4_multiply(rot_xyz, rot_z, rot_yx);
+
+    memcpy(model, rot_xyz, sizeof(model));
+    model[12] = prim->pos.x;
+    model[13] = prim->pos.y;
+    model[14] = prim->pos.z;
+
     glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, model);
 
     texture_bind(&prim->tex, 0);
@@ -108,6 +121,18 @@ void primitive_draw_all(primitive_registry_t* reg, const u32 program)
 void primitive_init(primitive_registry_t* reg, const texture_registry_t* reg_text)
 {
     primitive_registry_init(reg);
-    reg->primitives[0] = *primitive_create(reg, (vec3s){0.0f, 0.0f, 0.0f}, (vec2s){1.0f, 1.0f}, reg_text->textures[0]);
-    reg->primitives[1] = *primitive_create(reg, (vec3s){0.0f, 1.0f, 0.0f}, (vec2s){4.0f, 1.0f}, reg_text->textures[1]);
+    const vec3s rot[] = {
+        { 0.0f, 0.0f, 0.0f },  // XY plane (X/Y)
+        { 90.0f, 0.0f, 0.0f }, // XZ plane (X/Z)
+        { 0.0f, 90.0f, 0.0f }  // YZ plane (Y/Z)
+    };
+
+    const vec2s size = { 4.0f, 4.0f };
+    const i32 text[] = { 0, 1, 17 };
+    const i32 count = (i32)(sizeof(text) / sizeof(text[0]));
+
+    for (i32 i = 0; i < count; i++) {
+        const texture_t* tex = (text[i] >= 0 && text[i] < MAX_TEXTURES) ? &reg_text->textures[text[i]] : NULL;
+        primitive_quad_create(reg, (vec3s){0.0f, 0.0f, 0.0f}, rot[i], size, tex);
+    }
 }

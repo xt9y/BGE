@@ -16,8 +16,9 @@
 
 f32 g_lastTime;
 state_t state;
+camera_t cam;
 
-void mouse_callback(GLFWwindow* w, const f64 xpos, const f64 ypos) { camera_mouse_callback(&state.cam, xpos, ypos); }
+void mouse_callback(GLFWwindow* w, const f64 xpos, const f64 ypos) { camera_mouse_callback(&cam, xpos, ypos); }
 
 i32 init()
 {
@@ -53,7 +54,7 @@ i32 init()
     glUniform1i(glGetUniformLocation(state.data->program, "texture2"), 1);
 
     // Initialize camera
-    camera_init(&state.cam, WIDTH, HEIGHT);
+    camera_init(&cam, WIDTH, HEIGHT);
 
 	glEnable(GL_DEPTH_TEST);
 	state.id = STATE_PLAYING;
@@ -63,7 +64,7 @@ i32 init()
 void update()
 {
     if(glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id=STATE_EXIT;
-    camera_update(&state.cam, state.win, state.dt);
+    camera_update(&cam, state.win, state.dt);
     // Game logic here
 }
 
@@ -76,7 +77,7 @@ void render()
 
     f32 model[16], view[16], proj[16];
     mat4_identity(model);
-    mat4_lookat(view, state.cam.cam_pos, vec3_add(state.cam.cam_pos, state.cam.cam_front), state.cam.cam_up);
+    mat4_lookat(view, cam.cam_pos, vec3_add(cam.cam_pos, cam.cam_front), cam.cam_up);
     mat4_perspective(proj, DEG2RAD(45.0f), (f32)WIDTH / (f32)HEIGHT, 0.1f, 100.0f);
 
     glUniformMatrix4fv(glGetUniformLocation(state.data->program, "view"), 1, GL_FALSE, view);

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -std=c99 -g -Wall -Wextra -W -Wdeprecated-declarations
+CFLAGS = -std=c99 -g -Wall -Wextra -W -Wdeprecated-declarations -Wunused-parameter
 
 UNAME_S := $(shell uname -s)
 PKG_CONFIG ?= pkg-config

@@ -5,7 +5,7 @@
 
 void update_camera_vectors();
 
-void init_camera()
+void camera_init()
 {
     state.cam_pos = (vec3s){0.0f, 0.0f, 3.0f};
     state.cam_front = (vec3s){0.0f, 0.0f, -1.0f};
@@ -27,7 +27,7 @@ void update_camera_vectors()
     state.cam_front = vec3_normalize(front);
 }
 
-void update_camera()
+void camera_update()
 {
     const f32 speed = 2.5f * state.dt;
     const vec3s right = vec3_normalize(vec3_cross(state.cam_front, state.cam_up));

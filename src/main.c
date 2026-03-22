@@ -19,7 +19,7 @@ void framebuffer_size_callback(GLFWwindow* w, i32 width, i32 height) { glViewpor
 
 #define process_input() do { \
     if(glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id=STATE_EXIT; \
-    update_camera(); \
+    camera_update(); \
 } while (0)
 
 i32 init()
@@ -45,11 +45,11 @@ i32 init()
     // Vertex data with positions, colors, and texture coords
     // Two triangles sharing one texture
     const f32 vertices[] = {
-        // positions          // colors           // texture coords
-         0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,  // top right
-         0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f   // top left
+         // positions         // colors           // texture coords
+         0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,  // top right
+         0.5f, -0.5f, 0.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f,  // bottom left
+        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f,  // top left
     };
 
     const u32 indices[] = {
@@ -97,7 +97,7 @@ i32 init()
     glUniform1i(glGetUniformLocation(state.data->program, "texture2"), 1);
 
     // Initialize camera
-    init_camera();
+    camera_init();
 
 	glEnable(GL_DEPTH_TEST);
 	state.id = STATE_PLAYING;

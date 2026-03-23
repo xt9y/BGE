@@ -13,18 +13,6 @@ void update_camera_vectors(camera_t* cam)
     cam->front = vec3_normalize(front);
 }
 
-void camera_update(camera_t* cam, GLFWwindow* window, const f32 dt)
-{
-    if (!cam || !window) return;
-    const f32 speed = 2.5f * dt;
-    const vec3s right = vec3_normalize(vec3_cross(cam->front, cam->up));
-    
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) cam->pos = vec3_add(cam->pos, vec3_scale(cam->front, speed));
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) cam->pos = vec3_sub(cam->pos, vec3_scale(cam->front, speed));
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) cam->pos = vec3_sub(cam->pos, vec3_scale(right, speed));
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) cam->pos = vec3_add(cam->pos, vec3_scale(right, speed));
-}
-
 void camera_mouse_callback(camera_t* cam, const f64 xpos, const f64 ypos)
 {
     if (!cam) return;

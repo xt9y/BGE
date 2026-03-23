@@ -12,7 +12,6 @@ typedef struct {
 } camera_t;
 
 void update_camera_vectors(camera_t* cam);
-void camera_update(camera_t* cam, GLFWwindow* window, f32 dt);
 void camera_mouse_callback(camera_t* cam, f64 xpos, f64 ypos);
 
 #endif

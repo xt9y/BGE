@@ -79,7 +79,17 @@ void INPUT()
         state.cam->firstMouse = true;
     }
 
-    if (state.cursor_locked) camera_update(state.cam, state.win, state.dt);
+    if (state.cursor_locked)
+    {
+        if (!state.cam || !state.win) return;
+        const f32 speed = 2.5f * state.dt;
+        const vec3s right = vec3_normalize(vec3_cross(state.cam->front, state.cam->up));
+
+        if (glfwGetKey(state.win, GLFW_KEY_W) == GLFW_PRESS) state.cam->pos = vec3_add(state.cam->pos, vec3_scale(state.cam->front, speed));
+        if (glfwGetKey(state.win, GLFW_KEY_S) == GLFW_PRESS) state.cam->pos = vec3_sub(state.cam->pos, vec3_scale(state.cam->front, speed));
+        if (glfwGetKey(state.win, GLFW_KEY_A) == GLFW_PRESS) state.cam->pos = vec3_sub(state.cam->pos, vec3_scale(right, speed));
+        if (glfwGetKey(state.win, GLFW_KEY_D) == GLFW_PRESS) state.cam->pos = vec3_add(state.cam->pos, vec3_scale(right, speed));
+    }
 }
 
 ENGINE_ENTRY_POINT

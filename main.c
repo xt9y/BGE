@@ -29,7 +29,7 @@ void RUN()
 
     {   // Primitives
         primitive_registry_init(state.prim);
-#define T(t, rt) (((t) >= 0 && (t) < MAX_TEXTURES) ? &(rt)->textures[(t)] : NULL)
+#define T(_idx, _reg_text) (((_idx) >= 0 && (_idx) < MAX_TEXTURES) ? &(_reg_text)->textures[(_idx)] : NULL)
         primitive_create_quad(state.prim,  (vec3s){2.0f, 2.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){4.0f, 4.0f},      T(-1, state.text));
         primitive_create_quad(state.prim,  (vec3s){2.0f, 0.0f, 2.0f},   (vec3s){90.0f, 0.0f, 0.0f},   (vec2s){4.0f, 4.0f},      T(0, state.text));
         primitive_create_quad(state.prim,  (vec3s){0.0f, 2.0f, 2.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){4.0f, 4.0f},      T(1, state.text));

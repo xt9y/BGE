@@ -6,19 +6,24 @@
 
 #define FALLBACK_TEXTURE (*texture_get_fallback())
 
-static primitive_t* primitive_alloc_slot(primitive_registry_t* reg)
+static primitive_registry_t g_registry;
+
+static primitive_t* primitive_alloc_slot(void)
 {
-    if (reg->count >= MAX_PRIMITIVES) {
+    if (g_registry.count >= MAX_PRIMITIVES) {
         printf("Primitive registry full!\n");
         return 0;
     }
-    return &reg->primitives[reg->count++];
+    return &g_registry.primitives[g_registry.count++];
 }
 
 void primitive_registry_init(primitive_registry_t* reg)
 {
     memset(reg, 0, sizeof(*reg));
     reg->count = 0;
+
+    memset(&g_registry, 0, sizeof(g_registry));
+    g_registry.count = 0;
 }
 
 void primitive_registry_cleanup(primitive_registry_t* reg)
@@ -26,12 +31,12 @@ void primitive_registry_cleanup(primitive_registry_t* reg)
     if (!reg) return;
     for (i32 i = 0; i < reg->count; i++) primitive_destroy(&reg->primitives[i]);
     memset(reg, 0, sizeof(*reg));
+    memset(&g_registry, 0, sizeof(g_registry));
 }
 
-primitive_t* primitive_create_quad(primitive_registry_t* reg, const vec3s pos, const vec3s rot, const vec2s size, const texture_t* tex)
+primitive_t* primitive_create_quad(const vec3s pos, const vec3s rot, const vec2s size, const texture_t* tex)
 {
-    if (!reg) return 0;
-    primitive_t* prim = primitive_alloc_slot(reg);
+    primitive_t* prim = primitive_alloc_slot();
     if (!prim) return 0;
     prim->rot = rot;
     prim->pos = pos;

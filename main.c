@@ -6,42 +6,48 @@ void RUN()
     GL_START();
 
     {   // Camera
+        int fbw = WIDTH, fbh = HEIGHT;
+        glfwGetFramebufferSize(state.win, &fbw, &fbh);
         state.cam->pos = (vec3s){3.0f, 2.0f, 6.0f};
         state.cam->front = (vec3s){0.0f, 0.0f, -1.0f};
         state.cam->up = (vec3s){0.0f, 1.0f, 0.0f};
         state.cam->yaw = -120.0f;
         state.cam->pitch = -20.0f;
-        state.cam->lastX = WIDTH * 0.5f;
-        state.cam->lastY = HEIGHT * 0.5f;
+        state.cam->lastX = (f32)fbw * 0.5f;
+        state.cam->lastY = (f32)fbh * 0.5f;
         state.cam->firstMouse = true;
         update_camera_vectors(state.cam);
     }
 
     {   // Textures
         texture_registry_init(state.text);
-        state.text->textures[0] = *texture_create("Engine/res/ground.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-        state.text->textures[1] = *texture_create("Engine/res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-        state.text->textures[2] = *texture_create("Engine/res/awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-        state.text->textures[7] = *texture_create_solid(255, 0, 0);
-        state.text->textures[8] = *texture_create_solid(0, 255, 0);
-        state.text->textures[9] = *texture_create_solid(0, 0, 255);
+        state.text->textures[state.text->count++] = *texture_create("Engine/res/ground.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+        state.text->textures[state.text->count++] = *texture_create("Engine/res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+        state.text->textures[state.text->count++] = *texture_create("Engine/res/awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+        state.text->textures[state.text->count++] = *texture_create_solid(255, 0, 0);
+        state.text->textures[state.text->count++] = *texture_create_solid(0, 255, 0);
+        state.text->textures[state.text->count++] = *texture_create_solid(0, 0, 255);
     }
 
     {   // Primitives
         primitive_registry_init(state.prim);
 #define T(_idx, _reg_text) (((_idx) >= 0 && (_idx) < MAX_TEXTURES) ? &(_reg_text)->textures[(_idx)] : NULL)
-        primitive_create_quad(state.prim,  (vec3s){2.0f, 2.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){4.0f, 4.0f},      T(-1, state.text));
-        primitive_create_quad(state.prim,  (vec3s){2.0f, 0.0f, 2.0f},   (vec3s){90.0f, 0.0f, 0.0f},   (vec2s){4.0f, 4.0f},      T(0, state.text));
-        primitive_create_quad(state.prim,  (vec3s){0.0f, 2.0f, 2.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){4.0f, 4.0f},      T(1, state.text));
-        primitive_create_quad(state.prim,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){100.0f, 0.03f},   T(7, state.text));
-        primitive_create_quad(state.prim,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){90.0f, 90.0f, 90.0f}, (vec2s){0.03f, 100.0f},   T(8, state.text));
-        primitive_create_quad(state.prim,  (vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){100.0f, 0.03f},   T(9, state.text));
+        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){2.0f, 2.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){4.0f, 4.0f},      T(-1, state.text));
+        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){2.0f, 0.0f, 2.0f},   (vec3s){90.0f, 0.0f, 0.0f},   (vec2s){4.0f, 4.0f},      T(0, state.text));
+        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){0.0f, 2.0f, 2.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){4.0f, 4.0f},      T(1, state.text));
+        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){100.0f, 0.03f},   T(3, state.text));
+        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){0.0f, 0.0f, 0.0f},   (vec3s){90.0f, 90.0f, 90.0f}, (vec2s){0.03f, 100.0f},   T(4, state.text));
+        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){100.0f, 0.03f},   T(5, state.text));
+        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){2.0f, 2.0f, 2.0f},   (vec3s){90.0f, 90.0f, 90.0f}, (vec2s){2.0f, 2.0f},      T(2, state.text));
 #undef T
     }
 
     while (GL_FRAME())
     {
-
+        state.prim->primitives[6].rot.x += 0.2f; state.prim->primitives[6].rot.z += 0.2f; state.prim->primitives[6].rot.y += 0.2f;
+        // state.prim->primitives[0].rot.z += 0.2f;
+        // state.prim->primitives[1].rot.z += 0.2f;
+        // state.prim->primitives[2].rot.x += 0.2f;
     }
 
     GL_END();
@@ -49,6 +55,10 @@ void RUN()
 
 void RENDER()
 {
+    int fbw = 0, fbh = 0;
+    glfwGetFramebufferSize(state.win, &fbw, &fbh);
+    glViewport(0, 0, fbw, fbh);
+
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -57,7 +67,7 @@ void RENDER()
     f32 model[16], view[16], proj[16];
     mat4_identity(model);
     mat4_lookat(view, state.cam->pos, vec3_add(state.cam->pos, state.cam->front), state.cam->up);
-    mat4_perspective(proj, DEG2RAD(45.0f), (f32)WIDTH / (f32)HEIGHT, 0.1f, 100.0f);
+    mat4_perspective(proj, DEG2RAD(45.0f), (f32)fbw / (f32)fbh, 0.1f, 100.0f);
 
     glUniformMatrix4fv(glGetUniformLocation(state.data->program, "view"), 1, GL_FALSE, view);
     glUniformMatrix4fv(glGetUniformLocation(state.data->program, "projection"), 1, GL_FALSE, proj);

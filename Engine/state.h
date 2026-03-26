@@ -27,6 +27,8 @@ typedef struct {
     camera_t* cam;
     texture_registry_t* text;
     primitive_registry_t* prim;
+    vertex_t text_vertices[MAX_TEXT_VERTICES];
+    u32 text_vertex_count;
 } state_t;
 
 extern state_t state;

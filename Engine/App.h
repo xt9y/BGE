@@ -29,6 +29,8 @@ void RUN();
 void GL_START(void);
 int  GL_FRAME(void);
 void GL_END(void);
+float GL_GETDELTATIME(void);
+double GL_GETFPS(void);
 
 #include "Engine/gfx.h"
 #include "Engine/state.h"

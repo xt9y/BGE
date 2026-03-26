@@ -1,4 +1,7 @@
 #include "text.h"
+#include "state.h"
+#include "util/math.h"
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -6,6 +9,12 @@
 #include "../Vendor/stb_image.h"
 
 static texture_registry_t g_registry;
+glyph_uv_t glyphs[128];
+
+static u32 g_text_vao = 0;
+static u32 g_text_vbo = 0;
+static u32 g_text_program = 0;
+static texture_t* g_font_tex = NULL;
 
 static void texture_upload_fallback(texture_t* tex)
 {
@@ -162,3 +171,220 @@ const texture_t* texture_get_fallback(void)
     return &g_registry.fallback;
 }
 
+static void text_init_glyphs(void)
+{
+    memset(glyphs, 0, sizeof(glyphs));
+    glyphs[':'] = (glyph_uv_t){10, 3};
+    glyphs[';'] = (glyph_uv_t){11, 3};
+    glyphs['<'] = (glyph_uv_t){12, 3};
+    glyphs['='] = (glyph_uv_t){13, 3};
+    glyphs['>'] = (glyph_uv_t){14, 3};
+    glyphs['?'] = (glyph_uv_t){15, 3};
+    glyphs['0'] = (glyph_uv_t){0, 3};
+    glyphs['1'] = (glyph_uv_t){1, 3};
+    glyphs['2'] = (glyph_uv_t){2, 3};
+    glyphs['3'] = (glyph_uv_t){3, 3};
+    glyphs['4'] = (glyph_uv_t){4, 3};
+    glyphs['5'] = (glyph_uv_t){5, 3};
+    glyphs['6'] = (glyph_uv_t){6, 3};
+    glyphs['7'] = (glyph_uv_t){7, 3};
+    glyphs['8'] = (glyph_uv_t){8, 3};
+    glyphs['9'] = (glyph_uv_t){9, 3};
+    glyphs[' '] = (glyph_uv_t){0, 2};
+    glyphs['.'] = (glyph_uv_t){14, 2};
+    glyphs['A'] = (glyph_uv_t){1, 4};
+    glyphs['B'] = (glyph_uv_t){2, 4};
+    glyphs['C'] = (glyph_uv_t){3, 4};
+    glyphs['D'] = (glyph_uv_t){4, 4};
+    glyphs['E'] = (glyph_uv_t){5, 4};
+    glyphs['F'] = (glyph_uv_t){6, 4};
+    glyphs['G'] = (glyph_uv_t){7, 4};
+    glyphs['H'] = (glyph_uv_t){8, 4};
+    glyphs['I'] = (glyph_uv_t){9, 4};
+    glyphs['J'] = (glyph_uv_t){10, 4};
+    glyphs['K'] = (glyph_uv_t){11, 4};
+    glyphs['L'] = (glyph_uv_t){12, 4};
+    glyphs['M'] = (glyph_uv_t){13, 4};
+    glyphs['N'] = (glyph_uv_t){14, 4};
+    glyphs['O'] = (glyph_uv_t){15, 4};
+    glyphs['P'] = (glyph_uv_t){0, 5};
+    glyphs['Q'] = (glyph_uv_t){1, 5};
+    glyphs['R'] = (glyph_uv_t){2, 5};
+    glyphs['S'] = (glyph_uv_t){3, 5};
+    glyphs['T'] = (glyph_uv_t){4, 5};
+    glyphs['U'] = (glyph_uv_t){5, 5};
+    glyphs['V'] = (glyph_uv_t){6, 5};
+    glyphs['W'] = (glyph_uv_t){7, 5};
+    glyphs['X'] = (glyph_uv_t){8, 5};
+    glyphs['Y'] = (glyph_uv_t){9, 5};
+    glyphs['Z'] = (glyph_uv_t){10, 5};
+    glyphs['_'] = (glyph_uv_t){15, 5};
+    glyphs['a'] = (glyph_uv_t){1, 6};
+    glyphs['b'] = (glyph_uv_t){2, 6};
+    glyphs['c'] = (glyph_uv_t){3, 6};
+    glyphs['d'] = (glyph_uv_t){4, 6};
+    glyphs['e'] = (glyph_uv_t){5, 6};
+    glyphs['f'] = (glyph_uv_t){6, 6};
+    glyphs['g'] = (glyph_uv_t){7, 6};
+    glyphs['h'] = (glyph_uv_t){8, 6};
+    glyphs['i'] = (glyph_uv_t){9, 6};
+    glyphs['j'] = (glyph_uv_t){10, 6};
+    glyphs['k'] = (glyph_uv_t){11, 6};
+    glyphs['l'] = (glyph_uv_t){12, 6};
+    glyphs['m'] = (glyph_uv_t){13, 6};
+    glyphs['n'] = (glyph_uv_t){14, 6};
+    glyphs['o'] = (glyph_uv_t){15, 6};
+    glyphs['p'] = (glyph_uv_t){0, 7};
+    glyphs['q'] = (glyph_uv_t){1, 7};
+    glyphs['r'] = (glyph_uv_t){2, 7};
+    glyphs['s'] = (glyph_uv_t){3, 7};
+    glyphs['t'] = (glyph_uv_t){4, 7};
+    glyphs['u'] = (glyph_uv_t){5, 7};
+    glyphs['v'] = (glyph_uv_t){6, 7};
+    glyphs['w'] = (glyph_uv_t){7, 7};
+    glyphs['x'] = (glyph_uv_t){8, 7};
+    glyphs['y'] = (glyph_uv_t){9, 7};
+    glyphs['z'] = (glyph_uv_t){10, 7};
+}
+
+static void text_ortho(f32* m, const f32 left, const f32 right, const f32 bottom, const f32 top)
+{
+    const f32 rl = right - left;
+    const f32 tb = top - bottom;
+    mat4_identity(m);
+    m[0] = 2.0f / rl;
+    m[5] = 2.0f / tb;
+    m[10] = -1.0f;
+    m[12] = -(right + left) / rl;
+    m[13] = -(top + bottom) / tb;
+}
+
+void text_init(texture_t* font_tex)
+{
+    if (!font_tex) return;
+    g_font_tex = font_tex;
+    text_init_glyphs();
+
+    static const char* vs =
+        "#version 330 core\n"
+        "layout(location=0) in vec3 aPos;\n"
+        "layout(location=1) in vec2 aUV;\n"
+        "layout(location=2) in vec4 aColor;\n"
+        "out vec2 vUV;\n"
+        "out vec4 vColor;\n"
+        "uniform mat4 u_proj;\n"
+        "void main(){\n"
+        "    vUV = aUV;\n"
+        "    vColor = aColor;\n"
+        "    gl_Position = u_proj * vec4(aPos, 1.0);\n"
+        "}\n";
+    static const char* fs =
+        "#version 330 core\n"
+        "in vec2 vUV;\n"
+        "in vec4 vColor;\n"
+        "out vec4 FragColor;\n"
+        "uniform sampler2D u_font;\n"
+        "void main(){\n"
+        "    vec4 tex = texture(u_font, vUV);\n"
+        "    FragColor = tex * vColor;\n"
+        "}\n";
+
+    g_text_program = create_program(vs, fs);
+
+    glGenVertexArrays(1, &g_text_vao);
+    glGenBuffers(1, &g_text_vbo);
+    glBindVertexArray(g_text_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_text_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_t) * MAX_TEXT_VERTICES, NULL, GL_DYNAMIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*)(sizeof(f32) * 3));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*)(sizeof(f32) * 5));
+
+    glBindVertexArray(0);
+}
+
+void text_shutdown(void)
+{
+    if (g_text_vbo) glDeleteBuffers(1, &g_text_vbo);
+    if (g_text_vao) glDeleteVertexArrays(1, &g_text_vao);
+    if (g_text_program) glDeleteProgram(g_text_program);
+    g_text_vbo = 0;
+    g_text_vao = 0;
+    g_text_program = 0;
+    g_font_tex = NULL;
+}
+
+void text_begin(void)
+{
+    state.text_vertex_count = 0;
+}
+
+static void _draw_char(const char c, const float x, const float y, const float char_width, const float char_height)
+{
+    if (state.text_vertex_count + 6 > MAX_TEXT_VERTICES) return;
+
+    const float u0 = glyphs[(u8)c].x * 1.0f / 16.0f;
+    const float v0 = glyphs[(u8)c].y * 1.0f / 16.0f;
+    const float u1 = u0 + 1.0f / 16.0f;
+    const float v1 = v0 + 1.0f / 16.0f;
+    const float z = 0.0f;
+
+    state.text_vertices[state.text_vertex_count++] = (vertex_t){{x, y, z}, {u0, v0}, {1.0f, 1.0f, 1.0f, 1.0f}};
+    state.text_vertices[state.text_vertex_count++] = (vertex_t){{x + char_width, y + char_height, z}, {u1, v1}, {1.0f, 1.0f, 1.0f, 1.0f}};
+    state.text_vertices[state.text_vertex_count++] = (vertex_t){{x + char_width, y, z}, {u1, v0}, {1.0f, 1.0f, 1.0f, 1.0f}};
+    state.text_vertices[state.text_vertex_count++] = (vertex_t){{x, y, z}, {u0, v0}, {1.0f, 1.0f, 1.0f, 1.0f}};
+    state.text_vertices[state.text_vertex_count++] = (vertex_t){{x, y + char_height, z}, {u0, v1}, {1.0f, 1.0f, 1.0f, 1.0f}};
+    state.text_vertices[state.text_vertex_count++] = (vertex_t){{x + char_width, y + char_height, z}, {u1, v1}, {1.0f, 1.0f, 1.0f, 1.0f}};
+}
+
+void text_draw_string(const char* str, const float x, const float y)
+{
+    if (!str) return;
+    float current_x = x;
+    for (const char* p = str; *p; p++) {
+        _draw_char(*p, current_x, y, CHAR_WIDTH, CHAR_HEIGHT);
+        current_x += CHAR_WIDTH * CHAR_SPACING;
+    }
+}
+
+void text_draw_textf(const float x, const float y, const char* fmt, ...)
+{
+    char buffer[256];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+    text_draw_string(buffer, x, y);
+}
+
+void text_flush(const int fbw, const int fbh)
+{
+    if (state.text_vertex_count == 0 || !g_font_tex) return;
+    if (fbw <= 0 || fbh <= 0) return;
+
+    f32 proj[16];
+    text_ortho(proj, 0.0f, (f32)fbw, (f32)fbh, 0.0f);
+
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glUseProgram(g_text_program);
+    glUniformMatrix4fv(glGetUniformLocation(g_text_program, "u_proj"), 1, GL_FALSE, proj);
+    glUniform1i(glGetUniformLocation(g_text_program, "u_font"), 0);
+
+    texture_bind(g_font_tex, 0);
+
+    glBindVertexArray(g_text_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_text_vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex_t) * state.text_vertex_count, state.text_vertices);
+    glDrawArrays(GL_TRIANGLES, 0, (i32)state.text_vertex_count);
+    glBindVertexArray(0);
+
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+}

@@ -12,6 +12,9 @@
 #include <stdlib.h>
 
 static f32 g_last_time = 0.0f;
+static double g_fps_accum = 0.0;
+static u32 g_fps_frames = 0;
+static double g_fps_value = 0.0;
 
 state_t state;
 
@@ -97,4 +100,21 @@ void GL_END(void)
     state.prim = 0;
     state.cam = 0;
     state.data = 0;
+}
+
+float GL_GETDELTATIME(void)
+{
+    return state.dt;
+}
+
+double GL_GETFPS(void)
+{
+    g_fps_accum += (double)state.dt;
+    g_fps_frames += 1;
+    if (g_fps_accum >= 0.5) {
+        g_fps_value = (double)g_fps_frames / g_fps_accum;
+        g_fps_accum = 0.0;
+        g_fps_frames = 0;
+    }
+    return g_fps_value;
 }

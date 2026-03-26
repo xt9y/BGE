@@ -27,12 +27,14 @@ void RUN()
         state.text->textures[state.text->count++] = *texture_create_solid(255, 0, 0);
         state.text->textures[state.text->count++] = *texture_create_solid(0, 255, 0);
         state.text->textures[state.text->count++] = *texture_create_solid(0, 0, 255);
+        state.text->textures[state.text->count++] = *texture_create("Engine/res/font.png", TEX_FILTER_NEAREST, TEX_WRAP_CLAMP_TO_EDGE);
+        text_init(&state.text->textures[state.text->count - 1]);
     }
 
     {   // Primitives
         primitive_registry_init(state.prim);
-#define T(_idx, _reg_text) (((_idx) >= 0 && (_idx) < MAX_TEXTURES) ? &(_reg_text)->textures[(_idx)] : NULL)
-        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){2.0f, 2.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){4.0f, 4.0f},      T(-1, state.text));
+#define T(_idx, _reg_text) (((_idx) >= 0 && (_idx) < (_reg_text)->count) ? &(_reg_text)->textures[(_idx)] : NULL)
+        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){2.0f, 2.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){4.0f, 4.0f},      T(9, state.text));
         state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){2.0f, 0.0f, 2.0f},   (vec3s){90.0f, 0.0f, 0.0f},   (vec2s){4.0f, 4.0f},      T(0, state.text));
         state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){0.0f, 2.0f, 2.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){4.0f, 4.0f},      T(1, state.text));
         state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){100.0f, 0.03f},   T(3, state.text));
@@ -50,6 +52,7 @@ void RUN()
         // state.prim->primitives[2].rot.x += 0.2f;
     }
 
+    text_shutdown();
     GL_END();
 }
 
@@ -73,6 +76,10 @@ void RENDER()
     glUniformMatrix4fv(glGetUniformLocation(state.data->program, "projection"), 1, GL_FALSE, proj);
 
     primitive_draw_all(state.prim, state.data->program);
+
+    VK_BEGINTEXT;
+    VK_DRAWTEXTF(10.0f, 10.0f, "FPS %.1f", GL_GETFPS());
+    text_flush(fbw, fbh);
 }
 
 void INPUT()

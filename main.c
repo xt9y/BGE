@@ -6,15 +6,15 @@ void RUN()
     GL_START();
 
     {   // Camera
-        int fbw = WIDTH, fbh = HEIGHT;
-        glfwGetFramebufferSize(state.win, &fbw, &fbh);
+        state.fb->w = WIDTH, state.fb->h = HEIGHT;
+        glfwGetFramebufferSize(state.win, &state.fb->w, &state.fb->h);
         state.cam->pos = (vec3s){3.0f, 2.0f, 6.0f};
         state.cam->front = (vec3s){0.0f, 0.0f, -1.0f};
         state.cam->up = (vec3s){0.0f, 1.0f, 0.0f};
         state.cam->yaw = -120.0f;
         state.cam->pitch = -20.0f;
-        state.cam->lastX = (f32)fbw * 0.5f;
-        state.cam->lastY = (f32)fbh * 0.5f;
+        state.cam->lastX = (f32)state.fb->w * 0.5f;
+        state.cam->lastY = (f32)state.fb->h * 0.5f;
         state.cam->firstMouse = true;
         update_camera_vectors(state.cam);
     }
@@ -56,9 +56,9 @@ void RUN()
 
 void RENDER()
 {
-    int fbw = 0, fbh = 0;
-    glfwGetFramebufferSize(state.win, &fbw, &fbh);
-    glViewport(0, 0, fbw, fbh);
+    state.fb->w = 0, state.fb->h = 0;
+    glfwGetFramebufferSize(state.win, &state.fb->w, &state.fb->h);
+    glViewport(0, 0, state.fb->w, state.fb->h);
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -68,12 +68,17 @@ void RENDER()
     f32 model[16], view[16], proj[16];
     mat4_identity(model);
     mat4_lookat(view, state.cam->pos, vec3_add(state.cam->pos, state.cam->front), state.cam->up);
-    mat4_perspective(proj, DEG2RAD(45.0f), (f32)fbw / (f32)fbh, 0.1f, 100.0f);
+    mat4_perspective(proj, DEG2RAD(45.0f), (f32)state.fb->w / (f32)state.fb->h, 0.1f, 100.0f);
 
     glUniformMatrix4fv(glGetUniformLocation(state.data->program, "view"), 1, GL_FALSE, view);
     glUniformMatrix4fv(glGetUniformLocation(state.data->program, "projection"), 1, GL_FALSE, proj);
 
     primitive_draw_all(state.prim, state.data->program);
+
+    text_begin();
+    text_draw(":;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz. ", 10.0f, 10.0f);
+    text_drawf(10.0f, 26.0f, "FPS %.1f", GL_GETFPS());
+    text_flush(state.fb->w, state.fb->h);
 }
 
 void INPUT()

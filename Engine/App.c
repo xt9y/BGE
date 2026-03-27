@@ -54,11 +54,12 @@ void GL_START(void)
     glfwGetFramebufferSize(state.win, &fbw, &fbh);
     glViewport(0, 0, fbw, fbh);
 
+    state.fb   = malloc(sizeof(*state.fb));   memset(state.fb,   0, sizeof(*state.fb));
     state.data = malloc(sizeof(*state.data));
     state.cam  = malloc(sizeof(*state.cam));  memset(state.cam,  0, sizeof(*state.cam));
     state.text = malloc(sizeof(*state.text)); memset(state.text, 0, sizeof(*state.text));
     state.prim = malloc(sizeof(*state.prim)); memset(state.prim, 0, sizeof(*state.prim));
-    ASSERT(state.data && state.cam && state.text && state.prim);
+    ASSERT(state.fb && state.data && state.cam && state.text && state.prim);
 
     state.data->program = create_program(VS, FS);
 
@@ -96,10 +97,12 @@ void GL_END(void)
     if (state.prim) free(state.prim);
     if (state.cam) free(state.cam);
     if (state.data) free(state.data);
+    if (state.fb) free(state.fb);
     state.text = 0;
     state.prim = 0;
     state.cam = 0;
     state.data = 0;
+    state.fb = 0;
 }
 
 float GL_GETDELTATIME(void)

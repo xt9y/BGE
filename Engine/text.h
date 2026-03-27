@@ -68,12 +68,8 @@ const texture_t* texture_get_fallback(void);
 void text_init(texture_t* font_tex);
 void text_shutdown(void);
 void text_begin(void);
-void text_draw_string(const char* str, float x, float y);
-void text_draw_textf(float x, float y, const char* fmt, ...);
+void text_draw(const char* str, float x, float y);
+void text_drawf(float x, float y, const char* fmt, ...);
 void text_flush(int fbw, int fbh);
-
-#define VK_BEGINTEXT do { text_begin(); } while (0)
-#define VK_DRAWTEXT(x, y, str) text_draw_string((str), (x), (y))
-#define VK_DRAWTEXTF(x, y, fmt, ...) text_draw_textf((x), (y), (fmt), __VA_ARGS__)
 
 #endif

@@ -69,7 +69,7 @@ texture_t* texture_create(const char* path, const tex_filter_t filter, const tex
     tex->name[sizeof(tex->name) - 1] = '\0';
 
     i32 w, h, channels;
-    stbi_set_flip_vertically_on_load(1);
+    stbi_set_flip_vertically_on_load(0);
     u8* data = stbi_load(path, &w, &h, &channels, 0);
 
     if (data) {
@@ -159,9 +159,7 @@ void texture_registry_init(texture_registry_t* reg)
 
 void texture_registry_cleanup(texture_registry_t* reg)
 {
-    for (i32 i = 0; i < reg->count; i++) {
-        glDeleteTextures(1, &reg->textures[i].id);
-    }
+    for (i32 i = 0; i < reg->count; i++) glDeleteTextures(1, &reg->textures[i].id);
     glDeleteTextures(1, &reg->fallback.id);
     memset(reg, 0, sizeof(*reg));
 }
@@ -323,7 +321,7 @@ void text_begin(void)
     state.text_vertex_count = 0;
 }
 
-static void _draw_char(const char c, const float x, const float y, const float char_width, const float char_height)
+static void __draw_char(const char c, const float x, const float y, const float char_width, const float char_height)
 {
     if (state.text_vertex_count + 6 > MAX_TEXT_VERTICES) return;
 
@@ -341,24 +339,24 @@ static void _draw_char(const char c, const float x, const float y, const float c
     state.text_vertices[state.text_vertex_count++] = (vertex_t){{x + char_width, y + char_height, z}, {u1, v1}, {1.0f, 1.0f, 1.0f, 1.0f}};
 }
 
-void text_draw_string(const char* str, const float x, const float y)
+void text_draw(const char* str, const float x, const float y)
 {
     if (!str) return;
     float current_x = x;
     for (const char* p = str; *p; p++) {
-        _draw_char(*p, current_x, y, CHAR_WIDTH, CHAR_HEIGHT);
+        __draw_char(*p, current_x, y, CHAR_WIDTH, CHAR_HEIGHT);
         current_x += CHAR_WIDTH * CHAR_SPACING;
     }
 }
 
-void text_draw_textf(const float x, const float y, const char* fmt, ...)
+void text_drawf(const float x, const float y, const char* fmt, ...)
 {
     char buffer[256];
     va_list args;
     va_start(args, fmt);
     vsnprintf(buffer, sizeof(buffer), fmt, args);
     va_end(args);
-    text_draw_string(buffer, x, y);
+    text_draw(buffer, x, y);
 }
 
 void text_flush(const int fbw, const int fbh)

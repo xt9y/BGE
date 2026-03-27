@@ -19,10 +19,15 @@ typedef struct {
 } data_t;
 
 typedef struct {
+    i32 w, h;
+} framebuffer_t;
+
+typedef struct {
     bool cursor_locked;
     GLFWwindow* win;
     state_e id;
     f32 dt;
+    framebuffer_t* fb;
     data_t* data;
     camera_t* cam;
     texture_registry_t* text;

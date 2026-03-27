@@ -28,6 +28,7 @@ void RUN()
         state.text->textures[state.text->count++] = *texture_create_solid(0, 255, 0);
         state.text->textures[state.text->count++] = *texture_create_solid(0, 0, 255);
         state.text->textures[state.text->count++] = *texture_create("Engine/res/font.png", TEX_FILTER_NEAREST, TEX_WRAP_CLAMP_TO_EDGE);
+        text_init(&state.text->textures[state.text->count - 1]);
     }
 
     {   // Primitives
@@ -51,6 +52,7 @@ void RUN()
         // state.prim->primitives[2].rot.x += 0.2f;
     }
 
+    text_shutdown();
     GL_END();
 }
 
@@ -76,8 +78,8 @@ void RENDER()
     primitive_draw_all(state.prim, state.data->program);
 
     text_begin();
-    text_draw(":;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz. ", 10.0f, 10.0f);
-    text_drawf(10.0f, 26.0f, "FPS %.1f", GL_GETFPS());
+    text_draw((vec2s){10.0f, 10.0f}, ":;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz. ");
+    text_drawf((vec2s){10.0f, 26.0f}, "FPS %.1f", GL_GETFPS());
     text_flush(state.fb->w, state.fb->h);
 }
 

@@ -68,8 +68,8 @@ const texture_t* texture_get_fallback(void);
 void text_init(texture_t* font_tex);
 void text_shutdown(void);
 void text_begin(void);
-void text_draw(const char* str, float x, float y);
-void text_drawf(float x, float y, const char* fmt, ...);
+void text_draw(vec2s pos, const char* str);
+void text_drawf(vec2s pos, const char* fmt, ...);
 void text_flush(int fbw, int fbh);
 
 #endif

@@ -22,7 +22,7 @@ static void texture_upload_fallback(texture_t* tex)
     tex->width = tex->height = 2;
     tex->channels = 3; tex->has_alpha = (tex->channels == 4);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, (u8[12]){255,0,255, 0,0,0, 0,0,0, 255,0,255 });
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, (u8[12]){ 255,0,255, 0,0,0, 0,0,0, 255,0,255 });
 }
 
 static void texture_set_params(const texture_t* tex)
@@ -69,7 +69,7 @@ texture_t* texture_create(const char* path, const tex_filter_t filter, const tex
     tex->name[sizeof(tex->name) - 1] = '\0';
 
     i32 w, h, channels;
-    stbi_set_flip_vertically_on_load(1);
+    stbi_set_flip_vertically_on_load(0);
     u8* data = stbi_load(path, &w, &h, &channels, 0);
 
     if (data) {
@@ -341,24 +341,24 @@ static void _draw_char(const char c, const float x, const float y, const float c
     state.text_vertices[state.text_vertex_count++] = (vertex_t){{x + char_width, y + char_height, z}, {u1, v1}, {1.0f, 1.0f, 1.0f, 1.0f}};
 }
 
-void text_draw_string(const char* str, const float x, const float y)
+void text_draw(const vec2s pos, const char* str)
 {
     if (!str) return;
-    float current_x = x;
+    float current_x = pos.x;
     for (const char* p = str; *p; p++) {
-        _draw_char(*p, current_x, y, CHAR_WIDTH, CHAR_HEIGHT);
+        _draw_char(*p, current_x, pos.y, CHAR_WIDTH, CHAR_HEIGHT);
         current_x += CHAR_WIDTH * CHAR_SPACING;
     }
 }
 
-void text_draw_textf(const float x, const float y, const char* fmt, ...)
+void text_drawf(const vec2s pos, const char* fmt, ...)
 {
     char buffer[256];
     va_list args;
     va_start(args, fmt);
     vsnprintf(buffer, sizeof(buffer), fmt, args);
     va_end(args);
-    text_draw_string(buffer, x, y);
+    text_draw(pos, buffer);
 }
 
 void text_flush(const int fbw, const int fbh)

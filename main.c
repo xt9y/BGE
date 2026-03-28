@@ -46,7 +46,9 @@ void RUN()
 
     while (GL_FRAME())
     {
-        state.prim->primitives[6].rot.x += 0.2f; state.prim->primitives[6].rot.z += 0.2f; state.prim->primitives[6].rot.y += 0.2f;
+        RENDER();
+        const f32 rot_speed = 18.0f * state.dt;
+        state.prim->primitives[6].rot.x += rot_speed; state.prim->primitives[6].rot.z += rot_speed; state.prim->primitives[6].rot.y += rot_speed;
         // state.prim->primitives[0].rot.z += 0.2f;
         // state.prim->primitives[1].rot.z += 0.2f;
         // state.prim->primitives[2].rot.x += 0.2f;

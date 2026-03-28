@@ -34,18 +34,21 @@ void GL_START(void)
 {
     state = (state_t){0};
     state.cursor_locked = true;
-    
+
     ASSERT(glfwInit());
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#if defined(GLFW_PLATFORM_X11)
     glfwWindowHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+#endif
 
     state.win = glfwCreateWindow(WIDTH, HEIGHT, TITLE, 0, 0);
     ASSERT(state.win);
 
     glfwMakeContextCurrent(state.win);
+    glfwSwapInterval(0);
     glfwSetFramebufferSizeCallback(state.win, framebuffer_size_callback);
     glfwSetCursorPosCallback(state.win, mouse_callback);
     glfwSetInputMode(state.win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);

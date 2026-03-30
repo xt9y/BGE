@@ -4,11 +4,11 @@
 #include "level.h"
 
 static const level_quad_t level2_sector0_quads[] = {
-    { .pos = { 10.0f, 0.0f, 1.0f }, .rot = {0.0f, 25.0f, 0.0f}, .size = {3.0f, 0.0f}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {0.0f, 1.0f, 0.0f} },
-    { .pos = { 12.0f, 0.0f, -1.0f }, .rot = {0.0f, 0.0f, 0.0f}, .size = {4.0f, 0.0f}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {1.0f, 0.0f, 0.0f} },
+    { .pos = { 10.0f, 0.0f,  1.0f }, .rot = {0.0f, 20.0f, 0.0f}, .size = {3.0f, 3.0f}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 0.0f, 1.0f} },
 };
 
 static const level_quad_t level2_sector1_quads[] = {
+    { .pos = { 12.0f, 0.0f, -1.0f }, .rot = {0.0f, 80.0f, 0.0f}, .size = {4.0f, 3.0f}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {1.0f, 0.0f, 0.0f} },
 };
 
 static const level_sector_data_t level2_sectors[] = {

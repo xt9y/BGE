@@ -215,7 +215,7 @@ static void render_wall_quad(const wall_t *wall, f32 bottom, f32 top, const vec4
     // Calculate rotation from wall direction
     f32 dx = wall->pos_end.x - wall->pos_start.x;
     f32 dz = wall->pos_end.z - wall->pos_start.z;
-    f32 angle = atan2f(dx, dz) * 180.0f / PI;
+    f32 angle = atan2f(dz, dx) * 180.0f / PI;
     
     f32 rot_y_mat[16], model[16];
     mat4_rotate_y(rot_y_mat, DEG2RAD(angle));

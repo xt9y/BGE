@@ -5,6 +5,7 @@
 
 #include "Engine/res/level1.h"
 #include "Engine/res/level2.h"
+#include "Engine/res/level3.h"
 
 void RUN()
 {
@@ -36,27 +37,16 @@ void RUN()
 
     {   // Levels 
         state.level_count = 0;
-        state.levels[state.level_count++] = load_1();
+        state.levels[state.level_count++] = load_3();
         state.levels[state.level_count++] = load_2();
+        state.levels[state.level_count++] = load_1();
 
         state.current_sector = level_find_player_sector(&state.levels[0], state.cam->pos);
     }
 
-    while (GL_FRAME())
-    {
-        RENDER();
+    while (GL_FRAME()) RENDER();
 
-        const vec3s old_pos = state.cam->pos;
-        level_check_collision(&state.levels[state.level_id], &state.cam->pos, old_pos);
-        
-        state.current_sector = level_find_player_sector(&state.levels[state.level_id], state.cam->pos);
-    }
-
-#define END() do { \
-    GL_END(); \
-    for (int i = 0; i < state.level_count; i++) \
-        level_cleanup(&state.levels[i]); \
-} while (0)
+#define END() do { GL_END(); for (int i = 0; i < state.level_count; i++) level_cleanup(&state.levels[i]); } while (0)
     END();
 }
 
@@ -86,8 +76,11 @@ void RENDER()
     text_begin();
     text_draw((vec2s){10.0f, 10.0f}, ":;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz. ");
     text_drawf((vec2s){10.0f, 26.0f}, "FPS %.1f", GL_GETFPS());
-    text_drawf((vec2s){10.0f, 42.0f}, "Level: %d/%d", state.level_id + 1, state.level_count);
+    text_drawf((vec2s){10.0f, 42.0f}, "current_level: %d max_levels: %d", state.level_id + 1, state.level_count);
     text_flush(state.fb->w, state.fb->h);
+    const vec3s old_pos = state.cam->pos;
+    level_check_collision(&state.levels[state.level_id], &state.cam->pos, old_pos);
+    state.current_sector = level_find_player_sector(&state.levels[state.level_id], state.cam->pos);
 }
 
 void INPUT()

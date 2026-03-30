@@ -1,5 +1,10 @@
+#define LEVEL_RENDERING
+#include "level.h"
 #include "Engine/App.h"
 #include "Engine/util.h"
+
+#include "Engine/res/level1.h"
+#include "Engine/res/level2.h"
 
 void RUN()
 {
@@ -8,11 +13,11 @@ void RUN()
     {   // Camera
         state.fb->w = WIDTH, state.fb->h = HEIGHT;
         glfwGetFramebufferSize(state.win, &state.fb->w, &state.fb->h);
-        state.cam->pos = (vec3s){3.0f, 2.0f, 6.0f};
+        state.cam->pos = (vec3s){0.0f, 1.5f, 0.0f};
         state.cam->front = (vec3s){0.0f, 0.0f, -1.0f};
         state.cam->up = (vec3s){0.0f, 1.0f, 0.0f};
-        state.cam->yaw = -120.0f;
-        state.cam->pitch = -20.0f;
+        state.cam->yaw = 0.0f;
+        state.cam->pitch = 0.0f;
         state.cam->lastX = (f32)state.fb->w * 0.5f;
         state.cam->lastY = (f32)state.fb->h * 0.5f;
         state.cam->firstMouse = true;
@@ -24,38 +29,35 @@ void RUN()
         state.text->textures[state.text->count++] = *texture_create("Engine/res/ground.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
         state.text->textures[state.text->count++] = *texture_create("Engine/res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
         state.text->textures[state.text->count++] = *texture_create("Engine/res/awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-        state.text->textures[state.text->count++] = *texture_create_solid(255, 0, 0);
-        state.text->textures[state.text->count++] = *texture_create_solid(0, 255, 0);
-        state.text->textures[state.text->count++] = *texture_create_solid(0, 0, 255);
+        state.text->textures[state.text->count++] = *texture_create_solid(255, 255, 255);
         state.text->textures[state.text->count++] = *texture_create("Engine/res/font.png", TEX_FILTER_NEAREST, TEX_WRAP_CLAMP_TO_EDGE);
         text_init(&state.text->textures[state.text->count - 1]);
     }
 
-    {   // Primitives
-        primitive_registry_init(state.prim);
-#define T(_idx, _reg_text) (((_idx) >= 0 && (_idx) < (_reg_text)->count) ? &(_reg_text)->textures[(_idx)] : NULL)
-        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){2.0f, 2.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){4.0f, 4.0f},      T(9, state.text));
-        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){2.0f, 0.0f, 2.0f},   (vec3s){90.0f, 0.0f, 0.0f},   (vec2s){4.0f, 4.0f},      T(0, state.text));
-        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){0.0f, 2.0f, 2.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){4.0f, 4.0f},      T(1, state.text));
-        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 0.0f, 0.0f},    (vec2s){100.0f, 0.03f},   T(3, state.text));
-        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){0.0f, 0.0f, 0.0f},   (vec3s){90.0f, 90.0f, 90.0f}, (vec2s){0.03f, 100.0f},   T(4, state.text));
-        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){0.0f, 0.0f, 0.0f},   (vec3s){0.0f, 90.0f, 0.0f},   (vec2s){100.0f, 0.03f},   T(5, state.text));
-        state.prim->primitives[state.prim->count++] = *primitive_create_quad((vec3s){2.0f, 2.0f, 2.0f},   (vec3s){90.0f, 90.0f, 90.0f}, (vec2s){2.0f, 2.0f},      T(2, state.text));
-#undef T
+    {   // Levels 
+        state.level_count = 0;
+        state.levels[state.level_count++] = load_1();
+        state.levels[state.level_count++] = load_2();
+
+        state.current_sector = level_find_player_sector(&state.levels[0], state.cam->pos);
     }
 
     while (GL_FRAME())
     {
         RENDER();
-        const f32 rot_speed = 18.0f * state.dt;
-        state.prim->primitives[6].rot.x += rot_speed; state.prim->primitives[6].rot.z += rot_speed; state.prim->primitives[6].rot.y += rot_speed;
-        // state.prim->primitives[0].rot.z += 0.2f;
-        // state.prim->primitives[1].rot.z += 0.2f;
-        // state.prim->primitives[2].rot.x += 0.2f;
+
+        const vec3s old_pos = state.cam->pos;
+        level_check_collision(&state.levels[state.level_id], &state.cam->pos, old_pos);
+        
+        state.current_sector = level_find_player_sector(&state.levels[state.level_id], state.cam->pos);
     }
 
-    text_shutdown();
-    GL_END();
+#define END() do { \
+    GL_END(); \
+    for (int i = 0; i < state.level_count; i++) \
+        level_cleanup(&state.levels[i]); \
+} while (0)
+    END();
 }
 
 void RENDER()
@@ -77,11 +79,14 @@ void RENDER()
     glUniformMatrix4fv(glGetUniformLocation(state.data->program, "view"), 1, GL_FALSE, view);
     glUniformMatrix4fv(glGetUniformLocation(state.data->program, "projection"), 1, GL_FALSE, proj);
 
-    primitive_draw_all(state.prim, state.data->program);
+    // Render level
+    level_render(&state.levels[state.level_id]);
 
+    // Draw UI text
     text_begin();
     text_draw((vec2s){10.0f, 10.0f}, ":;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz. ");
     text_drawf((vec2s){10.0f, 26.0f}, "FPS %.1f", GL_GETFPS());
+    text_drawf((vec2s){10.0f, 42.0f}, "Level: %d/%d", state.level_id + 1, state.level_count);
     text_flush(state.fb->w, state.fb->h);
 }
 
@@ -110,6 +115,17 @@ void INPUT()
         if (glfwGetKey(state.win, GLFW_KEY_A) == GLFW_PRESS) state.cam->pos = vec3_sub(state.cam->pos, vec3_scale(right, speed));
         if (glfwGetKey(state.win, GLFW_KEY_D) == GLFW_PRESS) state.cam->pos = vec3_add(state.cam->pos, vec3_scale(right, speed));
     }
+
+    static bool b_pressed = false;
+    if (glfwGetKey(state.win, GLFW_KEY_B) == GLFW_PRESS)
+    {
+        if (!b_pressed)
+        {
+            state.level_id = (state.level_id + 1) % state.level_count;
+            b_pressed = true;
+        }
+    }
+    else b_pressed = false;
 }
 
 ENGINE_ENTRY_POINT

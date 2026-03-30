@@ -35,7 +35,8 @@ u32 create_program(const char* vs, const char* fs);
     "uniform sampler2D texture1;\n" \
     "uniform sampler2D texture2;\n" \
     "void main(){\n" \
-    "    FragColor=mix(texture(texture1,TexCoord),texture(texture2,TexCoord),0.2);\n" \
+    "    vec4 texColor = mix(texture(texture1,TexCoord),texture(texture2,TexCoord),0.2);\n" \
+    "    FragColor = vec4(texColor.rgb * ourColor, 1.0);\n" \
     "}"
 
 #endif

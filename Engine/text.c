@@ -22,7 +22,7 @@ static void texture_upload_fallback(texture_t* tex)
     tex->width = tex->height = 2;
     tex->channels = 3; tex->has_alpha = (tex->channels == 4);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, (u8[12]){ 255,0,255, 0,0,0, 0,0,0, 255,0,255 });
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->width, tex->height, 0, GL_RGB, GL_UNSIGNED_BYTE, (u8[12]){ 180,180,180, 255,255,255, 255,255,255, 180,180,180 });
 }
 
 static void texture_set_params(const texture_t* tex)
@@ -159,9 +159,7 @@ void texture_registry_init(texture_registry_t* reg)
 
 void texture_registry_cleanup(texture_registry_t* reg)
 {
-    for (i32 i = 0; i < reg->count; i++) {
-        glDeleteTextures(1, &reg->textures[i].id);
-    }
+    for (i32 i = 0; i < reg->count; i++) glDeleteTextures(1, &reg->textures[i].id);
     glDeleteTextures(1, &reg->fallback.id);
     memset(reg, 0, sizeof(*reg));
 }

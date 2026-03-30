@@ -93,6 +93,7 @@ int GL_FRAME(void)
 void GL_END(void)
 {
     if (state.text) texture_registry_cleanup(state.text);
+    text_shutdown();
     glfwTerminate();
     if (state.prim) primitive_registry_cleanup(state.prim);
     if (state.data) glDeleteProgram(state.data->program);

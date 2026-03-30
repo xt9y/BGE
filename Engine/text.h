@@ -6,6 +6,7 @@
 
 #define MAX_TEXTURES 16
 #define MAX_TEXT_VERTICES 4096
+#define MAX_LEVELS 8
 
 #define CHAR_WIDTH 8.0f
 #define CHAR_HEIGHT 8.0f

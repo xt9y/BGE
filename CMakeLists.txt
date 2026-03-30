@@ -3,6 +3,7 @@ project(openglc C)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -W")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -15,6 +16,11 @@ add_subdirectory(Engine)
 
 add_executable(openglc main.c)
 target_link_libraries(openglc PRIVATE engine m)
+
+add_custom_command(TARGET openglc POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/compile_commands.json ${CMAKE_SOURCE_DIR}/compile_commands.json
+    COMMENT "Copying compile_commands.json to project root"
+)
 
 if(APPLE)
     find_library(OPENGL_FRAMEWORK OpenGL REQUIRED)

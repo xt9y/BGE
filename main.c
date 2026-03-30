@@ -5,7 +5,6 @@
 
 #include "Engine/res/level1.h"
 #include "Engine/res/level2.h"
-#include "Engine/res/level3.h"
 
 void RUN()
 {
@@ -37,9 +36,8 @@ void RUN()
 
     {   // Levels 
         state.level_count = 0;
-        state.levels[state.level_count++] = load_3();
-        state.levels[state.level_count++] = load_2();
         state.levels[state.level_count++] = load_1();
+        state.levels[state.level_count++] = load_2();
 
         state.current_sector = level_find_player_sector(&state.levels[0], state.cam->pos);
     }

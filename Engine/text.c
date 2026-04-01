@@ -259,9 +259,14 @@ static void text_ortho(f32* m, const f32 left, const f32 right, const f32 bottom
 
 void text_init(texture_t* font_tex)
 {
-    if (!font_tex) return;
-    g_font_tex = font_tex;
+    (void)font_tex; // Font is now loaded internally
     text_init_glyphs();
+
+    g_font_tex = texture_create("Engine/res/font.png", TEX_FILTER_NEAREST, TEX_WRAP_CLAMP_TO_EDGE);
+    if (!g_font_tex) {
+        printf("Failed to load font texture, using fallback\n");
+        g_font_tex = texture_get_fallback();
+    }
 
     static const char* vs =
         "#version 330 core\n"

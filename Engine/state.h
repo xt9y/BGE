@@ -4,7 +4,6 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include "cam.h"
-#include "prim.h"
 #include "text.h"
 #include "util/types.h"
 
@@ -34,18 +33,16 @@ typedef struct {
     camera_t* cam;
 
     texture_registry_t* text;
-    primitive_registry_t* prim;
 
     vertex_t text_vertices[MAX_TEXT_VERTICES];
     u32 text_vertex_count;
 
     int level_id;
     int level_count;
-    level_t levels[MAX_LEVELS];
+    level_data_t levels[MAX_LEVELS];
 
     vertex_t wall_vertices[MAX_WALL_VERTICES];
     uint32_t wall_vertex_count;
-    sector_t *current_sector;
 } state_t;
 
 extern state_t state;

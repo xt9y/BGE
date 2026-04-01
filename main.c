@@ -30,8 +30,7 @@ void RUN()
         state.text->textures[state.text->count++] = *texture_create("Engine/res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
         state.text->textures[state.text->count++] = *texture_create("Engine/res/awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
         state.text->textures[state.text->count++] = *texture_create_solid(255, 255, 255);
-        state.text->textures[state.text->count++] = *texture_create("Engine/res/font.png", TEX_FILTER_NEAREST, TEX_WRAP_CLAMP_TO_EDGE);
-        text_init(&state.text->textures[state.text->count - 1]);
+        text_init(NULL);
     }
 
     {   // Levels 
@@ -39,13 +38,14 @@ void RUN()
         state.levels[state.level_count++] = load_1();
         state.levels[state.level_count++] = load_2();
         state.levels[state.level_count++] = load_3();
-
-        state.current_sector = level_find_player_sector(&state.levels[0], state.cam->pos);
     }
 
-    while (GL_FRAME()) RENDER();
+    while (GL_FRAME()) 
+    {
+        // Do whatever
+    }
 
-#define END() do { GL_END(); for (int i = 0; i < state.level_count; i++) level_cleanup(&state.levels[i]); } while (0)
+#define END() do { GL_END(); } while (0)
     END();
 }
 
@@ -77,11 +77,6 @@ void RENDER()
     text_draw((vec2s){10.0f, 30.0f}, "FPS %.1f", GL_GETFPS());
     text_draw((vec2s){10.0f, 50.0f}, "current_level: %d max_levels: %d", state.level_id + 1, state.level_count);
     text_flush(state.fb->w, state.fb->h);
-
-    // Update level
-    const vec3s old_pos = state.cam->pos;
-    level_check_collision(&state.levels[state.level_id], &state.cam->pos, old_pos);
-    state.current_sector = level_find_player_sector(&state.levels[state.level_id], state.cam->pos);
 }
 
 void INPUT()

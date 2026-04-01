@@ -3,7 +3,6 @@
 
 #include "cam.h"
 #include "gfx.h"
-#include "prim.h"
 #include "state.h"
 #include "text.h"
 #include "util.h"
@@ -61,8 +60,7 @@ void GL_START(void)
     state.data = malloc(sizeof(*state.data));
     state.cam  = malloc(sizeof(*state.cam));  memset(state.cam,  0, sizeof(*state.cam));
     state.text = malloc(sizeof(*state.text)); memset(state.text, 0, sizeof(*state.text));
-    state.prim = malloc(sizeof(*state.prim)); memset(state.prim, 0, sizeof(*state.prim));
-    ASSERT(state.fb && state.data && state.cam && state.text && state.prim);
+    ASSERT(state.fb && state.data && state.cam && state.text);
 
     state.data->program = create_program(VS, FS);
 
@@ -95,15 +93,12 @@ void GL_END(void)
     if (state.text) texture_registry_cleanup(state.text);
     text_shutdown();
     glfwTerminate();
-    if (state.prim) primitive_registry_cleanup(state.prim);
     if (state.data) glDeleteProgram(state.data->program);
     if (state.text) free(state.text);
-    if (state.prim) free(state.prim);
     if (state.cam) free(state.cam);
     if (state.data) free(state.data);
     if (state.fb) free(state.fb);
     state.text = 0;
-    state.prim = 0;
     state.cam = 0;
     state.data = 0;
     state.fb = 0;

@@ -16,15 +16,14 @@ static const level_sector_data_t level1_sectors[] = {
     { .id = 1, .light_intensity = 0.1f, .quads = level1_sector1_quads, .quad_count = sizeof(level1_sector1_quads) / sizeof(level1_sector1_quads[0]) },
 };
 
-static inline level_t load_1(void)
+static inline level_data_t load_1(void)
 {
-    const level_data_t data = {
+    return (level_data_t){
         .name = "Level 1",
         .path = "level1.h",
         .sectors = level1_sectors,
         .sector_count = sizeof(level1_sectors) / sizeof(level1_sectors[0])
     };
-    return level_load(&data);
 }
 
 #endif

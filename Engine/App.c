@@ -6,7 +6,7 @@
 #include "prim.h"
 #include "state.h"
 #include "text.h"
-#include "util/math.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <stdlib.h>

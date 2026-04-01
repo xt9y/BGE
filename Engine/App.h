@@ -35,3 +35,4 @@ double GL_GETFPS(void);
 #include "Engine/gfx.h"
 #include "Engine/state.h"
 #include "Engine/util/math.h"
+#include "Engine/util.h"

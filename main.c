@@ -1,7 +1,6 @@
 #define LEVEL_RENDERING
 #include "level.h"
 #include "Engine/App.h"
-#include "Engine/util.h"
 
 #include "Engine/res/level1.h"
 #include "Engine/res/level2.h"
@@ -76,6 +75,8 @@ void RENDER()
     text_drawf((vec2s){10.0f, 26.0f}, "FPS %.1f", GL_GETFPS());
     text_drawf((vec2s){10.0f, 42.0f}, "current_level: %d max_levels: %d", state.level_id + 1, state.level_count);
     text_flush(state.fb->w, state.fb->h);
+
+    // Update level
     const vec3s old_pos = state.cam->pos;
     level_check_collision(&state.levels[state.level_id], &state.cam->pos, old_pos);
     state.current_sector = level_find_player_sector(&state.levels[state.level_id], state.cam->pos);

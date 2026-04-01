@@ -3,7 +3,6 @@
 
 #include "Engine/util/types.h"
 #include "Engine/util/math.h"
-#include "Engine/text.h"
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -28,6 +27,7 @@ typedef struct
     bool is_solid;
     bool is_invisible;
     i32 tex_idx;
+    vec2s size;
 } wall_t;
 
 typedef struct
@@ -36,7 +36,6 @@ typedef struct
     f32 light_intensity;
     wall_t *walls;
     u32 wall_count;
-    f32 floor_height, ceil_height;
 } sector_t;
 
 typedef struct
@@ -46,10 +45,6 @@ typedef struct
     sector_t *sectors;
     u32 sector_count;
 } level_t;
-
-// ============================================================================
-// LEVEL DATA STRUCTURES
-// ============================================================================
 
 // Quad definition - same as primitive_create_quad parameters
 typedef struct
@@ -67,8 +62,6 @@ typedef struct
 {
     i32 id;
     f32 light_intensity;
-    f32 floor_height;
-    f32 ceil_height;
     const level_quad_t* quads;
     i32 quad_count;
 } level_sector_data_t;
@@ -81,12 +74,12 @@ typedef struct
     i32 sector_count;
 } level_data_t;
 
-static inline wall_t wall_from_quad(const level_quad_t* quad, f32 floor_h, f32 ceil_h)
+static inline wall_t wall_from_quad(const level_quad_t* quad)
 {
     f32 rad = DEG2RAD(quad->rot.y);
     f32 cos_r = cosf(rad);
     f32 sin_r = sinf(rad);
-    
+
     f32 half_len = quad->size.x * 0.5f;
     vec3s start = {
         quad->pos.x - half_len * cos_r,
@@ -106,16 +99,14 @@ static inline wall_t wall_from_quad(const level_quad_t* quad, f32 floor_h, f32 c
         .color = quad->color,
         .is_solid = quad->is_solid,
         .is_invisible = quad->is_invisible,
-        .tex_idx = quad->tex_idx
+        .tex_idx = quad->tex_idx,
+        .size = quad->size
     };
     return wall;
 }
 
 level_t level_load(const level_data_t* data);
 
-// ============================================================================
-// LEVEL RENDERING IMPLEMENTATION
-// ============================================================================
 #ifdef  LEVEL_RENDERING
 #define LEVEL_RENDERING
 
@@ -195,35 +186,35 @@ static void ensure_wall_vao(void)
     g_wall_vao_initialized = true;
 }
 
-static void render_wall_quad(const wall_t *wall, f32 bottom, f32 top, const vec4s color, i32 tex_idx)
+static void render_wall_quad(const wall_t *wall, const vec4s color, i32 tex_idx)
 {
     ensure_wall_vao();
-    
+
     vec3s center = {
         (wall->pos_start.x + wall->pos_end.x) * 0.5f,
-        (bottom + top) * 0.5f,
+        wall->pos_start.y + wall->size.y * 0.5f,
         (wall->pos_start.z + wall->pos_end.z) * 0.5f
     };
-    
+
     f32 length = sqrtf(
         (wall->pos_end.x - wall->pos_start.x) * (wall->pos_end.x - wall->pos_start.x) +
         (wall->pos_end.z - wall->pos_start.z) * (wall->pos_end.z - wall->pos_start.z)
     );
-    
-    f32 height = top - bottom;
-    
+
+    f32 height = wall->size.y;
+
     // Calculate rotation from wall direction
     f32 dx = wall->pos_end.x - wall->pos_start.x;
     f32 dz = wall->pos_end.z - wall->pos_start.z;
     f32 angle = atan2f(dz, dx) * 180.0f / PI;
-    
+
     f32 rot_y_mat[16], model[16];
     mat4_rotate_y(rot_y_mat, DEG2RAD(angle));
     memcpy(model, rot_y_mat, sizeof(model));
     model[12] = center.x;
     model[13] = center.y;
     model[14] = center.z;
-    
+
     GLint model_loc = glGetUniformLocation(state.data->program, "model");
     glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
 
@@ -233,7 +224,7 @@ static void render_wall_quad(const wall_t *wall, f32 bottom, f32 top, const vec4
     } else {
         texture_bind(texture_get_fallback(), 0);
     }
-    
+
     f32 half_x = 0.5f * length;
     f32 half_y = 0.5f * height;
     f32 u_repeat = length * 0.5f, v_repeat = height * 0.5f;
@@ -290,32 +281,8 @@ static void render_sector(const level_t *level, const sector_t *sector)
             wall->color.z * sector->light_intensity,
             1.0f
         };
-        
-        if (!wall->is_invisible)
-        {
-            render_wall_quad(wall, sector->floor_height, sector->ceil_height, wall_color, wall->tex_idx);
-        }
-        else
-        {
-            const sector_t *adj = find_adjacent_sector(level, sector, wall);
-            if (adj)
-            {
-                const f32 eps = 0.0001f;
-                const f32 f_bottom = fminf(sector->floor_height, adj->floor_height);
-                const f32 f_top    = fmaxf(sector->floor_height, adj->floor_height);
-                if (f_top - f_bottom > eps)
-                {
-                    render_wall_quad(wall, f_bottom, f_top, wall_color, wall->tex_idx);
-                }
-                
-                const f32 c_bottom = fminf(sector->ceil_height, adj->ceil_height);
-                const f32 c_top    = fmaxf(sector->ceil_height, adj->ceil_height);
-                if (c_top - c_bottom > eps)
-                {
-                    render_wall_quad(wall, c_bottom, c_top, wall_color, wall->tex_idx);
-                }
-            }
-        }
+
+        render_wall_quad(wall, wall_color, wall->tex_idx);
     }
 }
 
@@ -400,17 +367,13 @@ level_t level_load(const level_data_t* data)
         sector_t new_sector = {
             .id = sector_data->id,
             .light_intensity = sector_data->light_intensity,
-            .floor_height = sector_data->floor_height,
-            .ceil_height = sector_data->ceil_height,
             .wall_count = sector_data->quad_count,
             .walls = malloc(sizeof(wall_t) * sector_data->quad_count)
         };
 
         for (i32 i = 0; i < sector_data->quad_count; i++)
         {
-            new_sector.walls[i] = wall_from_quad(&sector_data->quads[i], 
-                                                  sector_data->floor_height, 
-                                                  sector_data->ceil_height);
+            new_sector.walls[i] = wall_from_quad(&sector_data->quads[i]);
         }
 
         level.sectors = realloc(level.sectors, sizeof(sector_t) * (level.sector_count + 1));

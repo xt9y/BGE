@@ -12,8 +12,8 @@ static const level_quad_t level1_sector1_quads[] = {
 };
 
 static const level_sector_data_t level1_sectors[] = {
-    { .id = 0, .light_intensity = 1.0f, .floor_height = 0.0f, .ceil_height = 3.0f, .quads = level1_sector0_quads, .quad_count = sizeof(level1_sector0_quads) / sizeof(level1_sector0_quads[0]) },
-    { .id = 1, .light_intensity = 0.1f, .floor_height = 0.0f, .ceil_height = 3.0f, .quads = level1_sector1_quads, .quad_count = sizeof(level1_sector1_quads) / sizeof(level1_sector1_quads[0]) },
+    { .id = 0, .light_intensity = 1.0f, .quads = level1_sector0_quads, .quad_count = sizeof(level1_sector0_quads) / sizeof(level1_sector0_quads[0]) },
+    { .id = 1, .light_intensity = 0.1f, .quads = level1_sector1_quads, .quad_count = sizeof(level1_sector1_quads) / sizeof(level1_sector1_quads[0]) },
 };
 
 static inline level_t load_1(void)

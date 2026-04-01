@@ -8,8 +8,8 @@
 #define MAX_TEXT_VERTICES 4096
 #define MAX_LEVELS 8
 
-#define CHAR_WIDTH 8.0f
-#define CHAR_HEIGHT 8.0f
+#define CHAR_WIDTH 18.0f
+#define CHAR_HEIGHT CHAR_WIDTH 
 #define CHAR_SPACING 1.0f
 
 typedef enum {
@@ -69,8 +69,7 @@ const texture_t* texture_get_fallback(void);
 void text_init(texture_t* font_tex);
 void text_shutdown(void);
 void text_begin(void);
-void text_draw(vec2s pos, const char* str);
-void text_drawf(vec2s pos, const char* fmt, ...);
+void text_draw(vec2s pos, const char* fmt, ...);
 void text_flush(int fbw, int fbh);
 
 #endif

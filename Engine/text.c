@@ -339,24 +339,20 @@ static void _draw_char(const char c, const float x, const float y, const float c
     state.text_vertices[state.text_vertex_count++] = (vertex_t){{x + char_width, y + char_height, z}, {u1, v1}, {1.0f, 1.0f, 1.0f, 1.0f}};
 }
 
-void text_draw(const vec2s pos, const char* str)
-{
-    if (!str) return;
-    float current_x = pos.x;
-    for (const char* p = str; *p; p++) {
-        _draw_char(*p, current_x, pos.y, CHAR_WIDTH, CHAR_HEIGHT);
-        current_x += CHAR_WIDTH * CHAR_SPACING;
-    }
-}
-
-void text_drawf(const vec2s pos, const char* fmt, ...)
+void text_draw(const vec2s pos, const char* fmt, ...)
 {
     char buffer[256];
     va_list args;
     va_start(args, fmt);
     vsnprintf(buffer, sizeof(buffer), fmt, args);
     va_end(args);
-    text_draw(pos, buffer);
+    if (!buffer) return;
+    float x = pos.x;
+    for (const char* p = buffer; *p; p++) {
+        _draw_char(*p, x, pos.y, CHAR_WIDTH, CHAR_HEIGHT);
+        x += CHAR_WIDTH * CHAR_SPACING;
+    }
+
 }
 
 void text_flush(const int fbw, const int fbh)

@@ -4,6 +4,7 @@
 
 #include "Engine/res/level1.h"
 #include "Engine/res/level2.h"
+#include "Engine/res/level3.h"
 
 void RUN()
 {
@@ -37,6 +38,7 @@ void RUN()
         state.level_count = 0;
         state.levels[state.level_count++] = load_1();
         state.levels[state.level_count++] = load_2();
+        state.levels[state.level_count++] = load_3();
 
         state.current_sector = level_find_player_sector(&state.levels[0], state.cam->pos);
     }
@@ -72,8 +74,8 @@ void RENDER()
     // Draw UI text
     text_begin();
     text_draw((vec2s){10.0f, 10.0f}, ":;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz. ");
-    text_drawf((vec2s){10.0f, 26.0f}, "FPS %.1f", GL_GETFPS());
-    text_drawf((vec2s){10.0f, 42.0f}, "current_level: %d max_levels: %d", state.level_id + 1, state.level_count);
+    text_draw((vec2s){10.0f, 30.0f}, "FPS %.1f", GL_GETFPS());
+    text_draw((vec2s){10.0f, 50.0f}, "current_level: %d max_levels: %d", state.level_id + 1, state.level_count);
     text_flush(state.fb->w, state.fb->h);
 
     // Update level

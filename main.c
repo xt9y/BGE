@@ -7,6 +7,14 @@
 #include "Engine/res/level3.h"
 #include "Engine/res/level4.h"
 
+/*
+ * TL:DR
+ * > start with 'make'
+ * > press b to switch between all levels
+ * > press e to enter editor mode
+ * > walk look around w a s d + mouse
+ */
+
 void RUN()
 {
     GL_START();

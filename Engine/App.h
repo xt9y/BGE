@@ -23,8 +23,8 @@ void RUN();
     }
 
 #define TITLE  "opengl _f"
-#define WIDTH  1980
-#define HEIGHT 1270
+#define WIDTH 1270 
+#define HEIGHT 850
 
 void GL_START(void);
 int  GL_FRAME(void);

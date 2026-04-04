@@ -1,10 +1,11 @@
 #define LEVEL_RENDERING
-#include "level.h"
+#include "Engine/level.h"
 #include "Engine/App.h"
 
 #include "Engine/res/level1.h"
 #include "Engine/res/level2.h"
 #include "Engine/res/level3.h"
+#include "Engine/res/level4.h"
 
 void RUN()
 {
@@ -20,7 +21,7 @@ void RUN()
         state.cam->pitch = 0.0f;
         state.cam->lastX = (f32)state.fb->w * 0.5f;
         state.cam->lastY = (f32)state.fb->h * 0.5f;
-        state.cam->firstMouse = true;
+        state.cursor_locked = false;
         update_camera_vectors(state.cam);
     }
 
@@ -38,6 +39,7 @@ void RUN()
         state.levels[state.level_count++] = load_1();
         state.levels[state.level_count++] = load_2();
         state.levels[state.level_count++] = load_3();
+        state.levels[state.level_count++] = load_4();
     }
 
     while (GL_FRAME()) 
@@ -75,7 +77,8 @@ void RENDER()
     text_begin();
     text_draw((vec2s){10.0f, 10.0f}, ":;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz. ");
     text_draw((vec2s){10.0f, 30.0f}, "FPS %.1f", GL_GETFPS());
-    text_draw((vec2s){10.0f, 50.0f}, "current_level: %d max_levels: %d", state.level_id + 1, state.level_count);
+    text_draw((vec2s){10.0f, 50.0f}, "POS: %.1f %.1f %.1f ; YAW %.1f ; PITCH %.1f", state.cam->pos.x, state.cam->pos.y, state.cam->pos.z, state.cam->yaw, state.cam->pitch);
+    text_draw((vec2s){10.0f, 70.0f}, "CURRENT_LVL: %d ; MAX_LVLS: %d", state.level_id + 1, state.level_count);
     text_flush(state.fb->w, state.fb->h);
 }
 
@@ -83,15 +86,20 @@ void INPUT()
 {
     if (glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id = STATE_EXIT;
 
-    const bool shift_active = glfwGetKey(state.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
-    if (shift_active && state.cursor_locked) {
-        glfwSetInputMode(state.win, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        state.cursor_locked = false;
-    } else if (!shift_active && !state.cursor_locked) {
-        glfwSetInputMode(state.win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        state.cursor_locked = true;
-        state.cam->firstMouse = true;
+    static bool shift_pressed = false;
+    if (glfwGetKey(state.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+        if (!shift_pressed) {
+            state.cursor_locked = !state.cursor_locked;
+            if (state.cursor_locked) {
+                glfwSetCursorPos(state.win, state.fb->w * 0.5f, state.fb->h * 0.5f);
+                state.cam->firstMouse = true;
+            }
+            shift_pressed = true;
+        }
     }
+    else shift_pressed = false;
+
+    glfwSetInputMode(state.win, GLFW_CURSOR, state.cursor_locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 
     if (state.cursor_locked)
     {
@@ -103,18 +111,18 @@ void INPUT()
         if (glfwGetKey(state.win, GLFW_KEY_S) == GLFW_PRESS) state.cam->pos = vec3_sub(state.cam->pos, vec3_scale(state.cam->front, speed));
         if (glfwGetKey(state.win, GLFW_KEY_A) == GLFW_PRESS) state.cam->pos = vec3_sub(state.cam->pos, vec3_scale(right, speed));
         if (glfwGetKey(state.win, GLFW_KEY_D) == GLFW_PRESS) state.cam->pos = vec3_add(state.cam->pos, vec3_scale(right, speed));
-    }
 
-    static bool b_pressed = false;
-    if (glfwGetKey(state.win, GLFW_KEY_B) == GLFW_PRESS)
-    {
-        if (!b_pressed)
+        static bool b_pressed = false;
+        if (glfwGetKey(state.win, GLFW_KEY_B) == GLFW_PRESS)
         {
-            state.level_id = (state.level_id + 1) % state.level_count;
-            b_pressed = true;
+            if (!b_pressed)
+            {
+                state.level_id = (state.level_id + 1) % state.level_count;
+                b_pressed = true;
+            }
         }
+        else b_pressed = false;
     }
-    else b_pressed = false;
 }
 
 ENGINE_ENTRY_POINT

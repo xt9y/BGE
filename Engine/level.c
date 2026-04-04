@@ -1,55 +1,13 @@
-#ifndef LEVEL_H
-#define LEVEL_H
-
-#include "Engine/util/types.h"
-#include "Engine/util/math.h"
+#include "level.h"
+#include "state.h"
+#include "gfx.h"
+#include "util/types.h"
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include <math.h>
-
-#define MAX_WALL_VERTICES 4096
-#define MAX_SECTORS_PER_LEVEL 64
-
-typedef struct
-{
-    vec3s pos;
-    vec3s rot;
-    vec2s size;
-    i32 tex_idx;
-    bool is_solid;
-    bool is_invisible;
-    vec3s color;
-} level_quad_t;
-
-typedef struct
-{
-    i32 id;
-    f32 light_intensity;
-    const level_quad_t* quads;
-    i32 quad_count;
-} level_sector_data_t;
-
-typedef struct
-{
-    const char* name;
-    const char* path;
-    const level_sector_data_t* sectors;
-    i32 sector_count;
-} level_data_t;
-
-void level_render(const level_data_t *level);
-
-#ifdef  LEVEL_RENDERING
-#define LEVEL_RENDERING
-
-#include "Engine/state.h"
 
 static u32 g_wall_vao = 0;
 static u32 g_wall_vbo = 0;
@@ -87,6 +45,7 @@ static void render_wall_quad(const level_quad_t* quad, const vec4s color)
         quad->pos.x - (quad->size.x * 0.5f) * cosf(DEG2RAD(quad->rot.y)), quad->pos.y,
         quad->pos.z - (quad->size.x * 0.5f) * sinf(DEG2RAD(quad->rot.y))
     };
+
     vec3s end = {
         quad->pos.x + (quad->size.x * 0.5f) * cosf(DEG2RAD(quad->rot.y)), quad->pos.y,
         quad->pos.z + (quad->size.x * 0.5f) * sinf(DEG2RAD(quad->rot.y))
@@ -129,7 +88,9 @@ static void render_wall_quad(const level_quad_t* quad, const vec4s color)
         -half_x,  half_y, 0.0f,   color.x, color.y, color.z,   0.0f,     v_repeat,
     };
 
-    u32 indices[] = { 0, 1, 3, 1, 2, 3 };
+    u32 indices[] = { 
+        0, 1, 3, 1, 2, 3 
+    };
 
     glBindBuffer(GL_ARRAY_BUFFER, g_wall_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -160,6 +121,3 @@ void level_render(const level_data_t *level)
 {
     for (i32 i = 0; i < level->sector_count; i++) render_sector(&level->sectors[i]);
 }
-
-#endif // LEVEL_RENDERING
-#endif // LEVEL_H

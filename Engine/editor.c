@@ -39,6 +39,7 @@ static void ensure_wall_vao(void)
 
 static void render_wall_quad(const level_quad_t* quad, const vec4s color)
 {
+    // TODO: actually render the damn editor (top view, edge points, ...)
     ensure_wall_vao();
 
     vec3s start = {
@@ -117,7 +118,8 @@ static void render_sector(const level_sector_data_t *sector)
     }
 }
 
-void level_render(const level_data_t *level)
+void editor_render(const level_data_t *level)
 {
     for (i32 i = 0; i < level->sector_count; i++) render_sector(&level->sectors[i]);
 }
+

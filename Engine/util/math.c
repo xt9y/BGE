@@ -16,6 +16,17 @@ void mat4_perspective(f32* m, const f32 fov, const f32 aspect, const f32 near, c
     m[14] = -(2.0f * far * near) / (far - near);
 }
 
+void mat4_ortho(f32* m, const f32 left, const f32 right, const f32 bottom, const f32 top, const f32 near, const f32 far) {
+    memset(m, 0, 16 * sizeof(f32));
+    m[0] = 2.0f / (right - left);
+    m[5] = 2.0f / (top - bottom);
+    m[10] = -2.0f / (far - near);
+    m[12] = -(right + left) / (right - left);
+    m[13] = -(top + bottom) / (top - bottom);
+    m[14] = -(far + near) / (far - near);
+    m[15] = 1.0f;
+}
+
 void mat4_translate(f32* m, const f32 x, const f32 y, const f32 z) {
     mat4_identity(m);
     m[12] = x;

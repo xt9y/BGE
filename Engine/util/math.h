@@ -13,6 +13,7 @@
 
 void mat4_identity(f32* m);
 void mat4_perspective(f32* m, f32 fov, f32 aspect, f32 near, f32 far);
+void mat4_ortho(f32* m, f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
 void mat4_translate(f32* m, f32 x, f32 y, f32 z);
 void mat4_rotate_x(f32* m, f32 angle);
 void mat4_rotate_y(f32* m, f32 angle);

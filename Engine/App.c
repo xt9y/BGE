@@ -34,6 +34,11 @@ void GL_START(void)
     state = (state_t){0};
     state.cursor_locked = true;
 
+    state.toString[STATE_MENU] = "STATE_MENU";
+    state.toString[STATE_PLAYING] = "STATE_PLAYING";
+    state.toString[STATE_EDITOR] = "STATE_EDITOR";
+    state.toString[STATE_EXIT] = "STATE_EXIT";
+
     ASSERT(glfwInit());
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -60,7 +65,8 @@ void GL_START(void)
     state.data = malloc(sizeof(*state.data));
     state.cam  = malloc(sizeof(*state.cam));  memset(state.cam,  0, sizeof(*state.cam));
     state.text = malloc(sizeof(*state.text)); memset(state.text, 0, sizeof(*state.text));
-    ASSERT(state.fb && state.data && state.cam && state.text);
+    state.editor = malloc(sizeof(*state.editor)); memset(state.editor, 0, sizeof(*state.editor));
+    ASSERT(state.fb && state.data && state.cam && state.text && state.editor);
 
     state.data->program = create_program(VS, FS);
 
@@ -98,15 +104,11 @@ void GL_END(void)
     if (state.cam) free(state.cam);
     if (state.data) free(state.data);
     if (state.fb) free(state.fb);
+    if (state.editor) free(state.editor);
     state.text = 0;
     state.cam = 0;
     state.data = 0;
     state.fb = 0;
-}
-
-float GL_GETDELTATIME(void)
-{
-    return state.dt;
 }
 
 double GL_GETFPS(void)

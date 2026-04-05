@@ -21,7 +21,7 @@ typedef struct
 typedef struct
 {
     i32 id;
-    f32 light_intensity;
+    vec3s light;
     const level_quad_t* quads;
     i32 quad_count;
 } level_sector_data_t;

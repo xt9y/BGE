@@ -39,38 +39,20 @@ static void ensure_wall_vao(void)
 
 static void render_wall_quad(const level_quad_t* quad, const vec4s color)
 {
-    // TODO: actually render the damn editor (top view, edge points, ...)
     ensure_wall_vao();
 
-    vec3s start = {
-        quad->pos.x - (quad->size.x * 0.5f) * cosf(DEG2RAD(quad->rot.y)), quad->pos.y,
-        quad->pos.z - (quad->size.x * 0.5f) * sinf(DEG2RAD(quad->rot.y))
-    };
+    f32 rot_y[16], rot_x[16], rot_z[16];
+    mat4_rotate_y(rot_y, -DEG2RAD(quad->rot.y));
+    mat4_rotate_x(rot_x, -DEG2RAD(quad->rot.x));
+    mat4_rotate_z(rot_z, -DEG2RAD(quad->rot.z));
 
-    vec3s end = {
-        quad->pos.x + (quad->size.x * 0.5f) * cosf(DEG2RAD(quad->rot.y)), quad->pos.y,
-        quad->pos.z + (quad->size.x * 0.5f) * sinf(DEG2RAD(quad->rot.y))
-    };
-  
-    vec3s center = {
-        (start.x + end.x) * 0.5f,
-        (start.y + quad->size.y) * 0.5f,
-        (start.z + end.z) * 0.5f
-    };
+    f32 temp[16], model[16];
+    mat4_multiply(temp, rot_y, rot_x);
+    mat4_multiply(model, temp, rot_z);
 
-    f32 length = sqrtf(
-        (end.x - start.x) * (end.x - start.x) +
-        (end.z - start.z) * (end.z - start.z)
-    );
-
-    f32 angle = atan2f(end.z - start.z, end.x - start.x) * 180.0f / PI;
-
-    f32 rot_y_mat[16], model[16];
-    mat4_rotate_y(rot_y_mat, DEG2RAD(angle));
-    memcpy(model, rot_y_mat, sizeof(model));
-    model[12] = center.x;
-    model[13] = center.y;
-    model[14] = center.z;
+    model[12] = quad->pos.x;
+    model[13] = quad->pos.y + quad->size.y * 0.5f;
+    model[14] = quad->pos.z;
 
     GLint model_loc = glGetUniformLocation(state.data->program, "model");
     glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
@@ -78,9 +60,9 @@ static void render_wall_quad(const level_quad_t* quad, const vec4s color)
     if (quad->tex_idx >= 0 && quad->tex_idx < state.text->count) texture_bind(&state.text->textures[quad->tex_idx], 0);
     else texture_bind(texture_get_fallback(), 0);
 
-    f32 half_x = 0.5f * length;
+    f32 half_x = 0.5f * quad->size.x;
     f32 half_y = 0.5f * quad->size.y;
-    f32 u_repeat = length * 0.5f, v_repeat = quad->size.y * 0.5f;
+    f32 u_repeat = quad->size.x * 0.5f, v_repeat = quad->size.y * 0.5f;
 
     f32 vertices[] = {
          half_x,  half_y, 0.0f,   color.x, color.y, color.z,   u_repeat, v_repeat,
@@ -89,8 +71,8 @@ static void render_wall_quad(const level_quad_t* quad, const vec4s color)
         -half_x,  half_y, 0.0f,   color.x, color.y, color.z,   0.0f,     v_repeat,
     };
 
-    u32 indices[] = { 
-        0, 1, 3, 1, 2, 3 
+    u32 indices[] = {
+        0, 1, 3, 1, 2, 3
     };
 
     glBindBuffer(GL_ARRAY_BUFFER, g_wall_vbo);
@@ -108,9 +90,9 @@ static void render_sector(const level_sector_data_t *sector)
     for (i32 i = 0; i < sector->quad_count; i++)
     {
         const vec4s wall_color = {
-            sector->quads[i].color.x * sector->light_intensity,
-            sector->quads[i].color.y * sector->light_intensity,
-            sector->quads[i].color.z * sector->light_intensity,
+            sector->quads[i].color.x * sector->light.x,
+            sector->quads[i].color.y * sector->light.y,
+            sector->quads[i].color.z * sector->light.z,
             1.0f
         };
 

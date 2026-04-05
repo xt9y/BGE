@@ -39,6 +39,19 @@ static void ensure_wall_vao(void)
 
 static void render_wall_quad(const level_quad_t* quad, const vec4s color)
 {
+    // TODO: 
+    // -> actually render the damn editor (wireframe: edge is colored / corner points / center points 
+    //      (draggable -> holding tab to grid snap onto 0.1f), ...)
+    // -> right now this is 1:1 of level.c but i want that these wireframe + edgepoints are drawn over the level.c rendering, 
+    //      so remove this current implementation of the rendering, and just render when STATE_EDITOR, on top of what is rendered 
+    //      when in STATE_PLAYING, so on top of level_render()
+    // -> when holding cmd + moving my mouse up or down, the wall gets angled (-> depends if i grab an edge, or a corner, 
+    //      so mouse up is just value up and mouse down is value down). 
+    // -> when holdung the center point (also drawn) the whole wall can be dragged up down left right, ... 
+    //      (additional: when cmd is hold now to roatate: the wall gets angled on the y or x axis, left to turn the wall on y axis left, 
+    //      right to turn wall on y axis right, up to turn on x axis up and down to turn on x axis down)
+    // -> right now i dont want: level saving, level creatio / wall creation / sector creation
+    // -> right now i just want the editor that i gave you here.
     ensure_wall_vao();
 
     f32 rot_y[16], rot_x[16], rot_z[16];

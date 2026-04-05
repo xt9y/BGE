@@ -92,31 +92,10 @@ void RENDER()
     
     if (state.id == STATE_EDITOR)
     {
-        f32 min_x = 1000.0f, max_x = -1000.0f, min_z = 1000.0f, max_z = -1000.0f;
-
-        for (i32 s = 0; s < state.editor->level->sector_count; s++)
-        {
-            for (i32 i = 0; i < state.editor->level->sectors[s].quad_count; i++)
-            {
-                f32 h = state.editor->level->sectors[s].quads[i].size.x * 0.5f;
-                if (state.editor->level->sectors[s].quads[i].pos.x - h < min_x) min_x = state.editor->level->sectors[s].quads[i].pos.x - h;
-                if (state.editor->level->sectors[s].quads[i].pos.x + h > max_x) max_x = state.editor->level->sectors[s].quads[i].pos.x + h;
-                if (state.editor->level->sectors[s].quads[i].pos.z - h < min_z) min_z = state.editor->level->sectors[s].quads[i].pos.z - h;
-                if (state.editor->level->sectors[s].quads[i].pos.z + h > max_z) max_z = state.editor->level->sectors[s].quads[i].pos.z + h;
-            }
-        }
-
-        f32 pad = 5.0f; min_x -= pad; max_x += pad; min_z -= pad; max_z += pad;
-
-        f32 cx = (min_x + max_x) * 0.5f;
-        f32 cz = (min_z + max_z) * 0.5f;
-        f32 dx = (max_x - min_x) * 0.5f;
-        f32 dz = (max_z - min_z) * 0.5f;
-
         f32 model[16], view[16], proj[16];
         mat4_identity(model);
-        mat4_lookat(view, (vec3s){cx, (dx > dz ? dx : dz / tanf(DEG2RAD(45.0f))), cz}, (vec3s){cx, 0.0f, cz}, (vec3s){0.0f, 0.0f, -1.0f});
-        mat4_perspective(proj, DEG2RAD(90.0f), (f32)state.fb->w / (f32)state.fb->h, 0.1f, 500.0f);
+        mat4_lookat(view, state.cam->pos, vec3_add(state.cam->pos, state.cam->front), state.cam->up);
+        mat4_perspective(proj, DEG2RAD(45.0f), (f32)state.fb->w / (f32)state.fb->h, 0.1f, 100.0f);
 
         glUniformMatrix4fv(glGetUniformLocation(state.data->program, "model"), 1, GL_FALSE, model);
         glUniformMatrix4fv(glGetUniformLocation(state.data->program, "view"), 1, GL_FALSE, view);

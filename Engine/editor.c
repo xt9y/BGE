@@ -73,17 +73,9 @@ static void render_wall_wireframe(const level_quad_t* quad, const vec4s color)
 
 static void render_sector(const level_sector_data_t *sector)
 {
+    const vec4s wall_color = {1.0f, 1.0f, 1.0f, 1.0f};
     for (i32 i = 0; i < sector->quad_count; i++)
-    {
-        const vec4s wall_color = {
-            1.0f,
-            1.0f,
-            1.0f,
-            1.0f
-        };
-
         render_wall_wireframe(&sector->quads[i], wall_color);
-    }
 }
 
 void editor_render(const level_data_t *level)
@@ -91,115 +83,75 @@ void editor_render(const level_data_t *level)
     for (i32 i = 0; i < level->sector_count; i++) render_sector(&level->sectors[i]);
 }
 
-typedef struct {
-    bool hit;
-    i32 sector_id;
-    i32 wall_id;
-    f32 distance;
-    vec3s hit_position;
-    const level_quad_t* quad;
-    const level_sector_data_t* sector;
-} look_at_info_t;
-
 static bool ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, const level_quad_t* quad, f32* out_t, vec3s* out_hit)
 {
-    f32 rot_y[16], rot_x[16], rot_z[16];
+    f32 rot_y[16], rot_x[16], rot_z[16], model[16], temp[16];
     mat4_rotate_y(rot_y, -DEG2RAD(quad->rot.y));
     mat4_rotate_x(rot_x, -DEG2RAD(quad->rot.x));
     mat4_rotate_z(rot_z, -DEG2RAD(quad->rot.z));
-
-    f32 temp[16], model[16];
     mat4_multiply(temp, rot_y, rot_x);
     mat4_multiply(model, temp, rot_z);
 
-    vec3s wall_pos = {quad->pos.x, quad->pos.y + quad->size.y * 0.5f, quad->pos.z};
-    f32 half_x = 0.5f * quad->size.x;
-    f32 half_y = 0.5f * quad->size.y;
+    vec3s wall_pos = {
+        quad->pos.x, quad->pos.y + quad->size.y * 0.5f, quad->pos.z
+    };
 
     vec3s normal = {
-        0.0f, 0.0f, 1.0f
+        model[0] * 0.0f + model[4] * 0.0f + model[8] * 1.0f,
+        model[1] * 0.0f + model[5] * 0.0f + model[9] * 1.0f,
+        model[2] * 0.0f + model[6] * 0.0f + model[10] * 1.0f
     };
 
-    vec3s rotated_normal = {
-        model[0] * normal.x + model[4] * normal.y + model[8] * normal.z,
-        model[1] * normal.x + model[5] * normal.y + model[9] * normal.z,
-        model[2] * normal.x + model[6] * normal.y + model[10] * normal.z
-    };
+    f32 denom = vec3_dot(normal, ray_dir);
+    if (fabsf(denom) < 0.0001f) return false;
 
-    f32 denom = vec3_dot(rotated_normal, ray_dir);
-    if (fabsf(denom) < 0.0001f) return false; 
-
-    f32 t = vec3_dot(vec3_sub(wall_pos, ray_origin), rotated_normal) / denom;
+    f32 t = vec3_dot(vec3_sub(wall_pos, ray_origin), normal) / denom;
     if (t < 0.0f) return false;
 
     vec3s hit = vec3_add(ray_origin, vec3_scale(ray_dir, t));
-
     vec3s local_hit = vec3_sub(hit, wall_pos);
-    
-    f32 tolerance = 0.01f;
-    if (fabsf(local_hit.x) <= half_x + tolerance && 
-        fabsf(local_hit.y) <= half_y + tolerance) 
-    {
+    f32 half_x = 0.5f * quad->size.x, half_y = 0.5f * quad->size.y;
+
+    if (fabsf(local_hit.x) <= half_x + 0.01f && fabsf(local_hit.y) <= half_y + 0.01f) {
         *out_t = t;
         *out_hit = hit;
         return true;
     }
-
     return false;
 }
 
-static look_at_info_t get_look_at_info(const level_data_t* level, const camera_t* cam, f32 max_distance)
+editor_look_at_info_t editor_get_look_at_info(const level_data_t* level, const camera_t* cam, f32 max_distance)
 {
-    look_at_info_t info = {0};
-    info.hit = false;
+    editor_look_at_info_t info = {0};
     info.distance = max_distance;
-
-    vec3s ray_origin = cam->pos;
-    vec3s ray_dir = vec3_normalize(cam->front);
-
     f32 closest_t = max_distance;
-    vec3s closest_hit;
 
     for (i32 s = 0; s < level->sector_count; s++) 
     {
-        const level_sector_data_t* sector = &level->sectors[s];
-        
-        for (i32 w = 0; w < sector->quad_count; w++) 
+        for (i32 w = 0; w < level->sectors[s].quad_count; w++) 
         {
-            const level_quad_t* quad = &sector->quads[w];
-            f32 t;
-            vec3s hit;
-
-            if (ray_intersects_quad(ray_origin, ray_dir, quad, &t, &hit)) 
-            {
-                if (t < closest_t) {
-                    closest_t = t;
-                    closest_hit = hit;
-                    info.hit = true;
-                    info.sector_id = sector->id;
-                    info.wall_id = w;
-                    info.distance = t;
-                    info.hit_position = hit;
-                    info.quad = quad;
-                    info.sector = sector;
-                }
+            f32 t; vec3s hit;
+            if (ray_intersects_quad(cam->pos, vec3_normalize(cam->front), &level->sectors[s].quads[w], &t, &hit) && t < closest_t) {
+                closest_t = t;
+                info.hit = true;
+                info.sector_id = level->sectors[s].id;
+                info.wall_id = w;
+                info.distance = t;
+                info.hit_position = hit;
+                info.quad = &level->sectors[s].quads[w];
+                info.sector = &level->sectors[s];
             }
         }
     }
-
     return info;
 }
 
 void editor_render_look_at_info(const level_data_t* level, const camera_t* cam)
 {
-    look_at_info_t info = get_look_at_info(level, cam, 50.0f);
+    editor_look_at_info_t info = editor_get_look_at_info(level, cam, 50.0f);
+    f32 x = (f32)state.fb->w - 520.0f, y = 10.0f, line_height = 20.0f;
 
-    f32 x = (f32)state.fb->w - 520.0f;
-    f32 y = 10.0f;
-    f32 line_height = 20.0f;
-
-    if (info.hit) 
-    {
+    if (info.hit) {
         text_draw((vec2s){x, y}, "LOOKING AT:"); y += line_height;
         text_draw((vec2s){x, y}, "  Sector ID: %d", info.sector_id); y += line_height;
         text_draw((vec2s){x, y}, "  Wall ID: %d", info.wall_id); y += line_height;
@@ -212,8 +164,6 @@ void editor_render_look_at_info(const level_data_t* level, const camera_t* cam)
         text_draw((vec2s){x, y}, "  Tex: %d", info.quad->tex_idx); y += line_height;
         text_draw((vec2s){x, y}, "  Light: %.2f %.2f %.2f", info.sector->light.x, info.sector->light.y, info.sector->light.z); y += line_height;
         text_draw((vec2s){x, y}, "  Color: %.2f %.2f %.2f", info.quad->color.x, info.quad->color.y, info.quad->color.z);
-    } 
-
-    else text_draw((vec2s){x, y}, "LOOKING AT: Nothing");
+    } else text_draw((vec2s){x, y}, "LOOKING AT: Nothing");
 }
 

@@ -15,7 +15,11 @@ add_subdirectory(Vendor/glfw)
 add_subdirectory(Engine)
 
 add_executable(openglc main.c)
-target_link_libraries(openglc PRIVATE engine m)
+target_link_libraries(openglc PRIVATE engine)
+
+if(UNIX)
+    target_link_libraries(openglc PRIVATE m)
+endif()
 
 if(WIN32)
     target_include_directories(openglc PRIVATE ${CMAKE_SOURCE_DIR}/Vendor/glad/include)

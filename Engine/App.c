@@ -52,6 +52,14 @@ void GL_START(void)
     ASSERT(state.win);
 
     glfwMakeContextCurrent(state.win);
+
+#ifdef _WIN32
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        printf("Failed to initialize GLAD\n");
+        exit(1);
+    }
+#endif
+
     glfwSwapInterval(0);
     glfwSetFramebufferSizeCallback(state.win, framebuffer_size_callback);
     glfwSetCursorPosCallback(state.win, mouse_callback);

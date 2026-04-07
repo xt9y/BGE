@@ -10,5 +10,10 @@ add_library(engine STATIC
     App.c cam.c gfx.c text.c level.c editor.c util/math.c
 )
 
+if(WIN32)
+    target_sources(engine PRIVATE ../Vendor/glad/src/glad.c)
+    target_include_directories(engine PRIVATE ../Vendor/glad/include)
+endif()
+
 target_include_directories(engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ..)
 target_link_libraries(engine PUBLIC glfw)

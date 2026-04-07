@@ -12,7 +12,7 @@ add_library(engine STATIC
 
 if(WIN32)
     target_sources(engine PRIVATE ../Vendor/glad/src/glad.c)
-    target_include_directories(engine PRIVATE ../Vendor/glad/include)
+    target_include_directories(engine PUBLIC ../Vendor/glad/include)
 endif()
 
 target_include_directories(engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ..)

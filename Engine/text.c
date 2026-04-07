@@ -189,6 +189,7 @@ static void text_init_glyphs(void)
     glyphs['8'] = (glyph_uv_t){8, 3};
     glyphs['9'] = (glyph_uv_t){9, 3};
     glyphs[' '] = (glyph_uv_t){0, 2};
+    glyphs['-'] = (glyph_uv_t){13, 2};
     glyphs['.'] = (glyph_uv_t){14, 2};
     glyphs['A'] = (glyph_uv_t){1, 4};
     glyphs['B'] = (glyph_uv_t){2, 4};

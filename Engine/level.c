@@ -89,6 +89,8 @@ static void render_sector(const level_sector_data_t *sector)
 {
     for (i32 i = 0; i < sector->quad_count; i++)
     {
+        if (sector->quads[i].is_invisible) continue;
+
         const vec4s wall_color = {
             sector->quads[i].color.x * sector->light.x,
             sector->quads[i].color.y * sector->light.y,

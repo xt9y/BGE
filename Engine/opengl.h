@@ -4,8 +4,9 @@
     #include <OpenGL/gl3.h>
     #include <OpenGL/glext.h>
 #elif defined(_WIN32)
-    #define GLFW_INCLUDE_NONE
-    #define GLFW_INCLUDE_NO_GLU
+    #ifdef GLFW_INCLUDE_NONE
+    #undef GLFW_INCLUDE_NONE
+    #endif
     #include <GLFW/glfw3.h>
 #else
     #define GL_GLEXT_PROTOTYPES 1

@@ -100,7 +100,7 @@ void RENDER()
     text_flush(state.fb->w, state.fb->h);
 }
 
-void INPUT()
+void ENGINE_INPUT()
 {
     glfwSetInputMode(state.win, GLFW_CURSOR, state.cursor_locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     

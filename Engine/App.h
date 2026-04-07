@@ -13,7 +13,7 @@
 
 // Main macro
 // and the engine handles the rest
-void INPUT();
+void ENGINE_INPUT();
 void RENDER();
 void RUN();
 #define ENGINE_ENTRY_POINT \

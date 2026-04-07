@@ -4,7 +4,8 @@
     #include <OpenGL/gl3.h>
     #include <OpenGL/glext.h>
 #elif defined(_WIN32)
-    #define GL_GLEXT_PROTOTYPES 1
+    #define WIN32_LEAN_AND_MEAN
+    #include <windows.h>
     #include <GL/gl.h>
 #else
     #define GL_GLEXT_PROTOTYPES 1

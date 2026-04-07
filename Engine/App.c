@@ -85,7 +85,7 @@ int GL_FRAME(void)
     state.dt = now - g_last_time;
     g_last_time = now;
 
-    INPUT();
+    ENGINE_INPUT();
     RENDER();
 
     glfwSwapBuffers(state.win);

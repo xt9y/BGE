@@ -1,5 +1,8 @@
 #pragma once
+
+#if !defined(_WIN32)
 #define GLFW_INCLUDE_NONE
+#endif
 #include <GLFW/glfw3.h>
 
 #include <stdbool.h>

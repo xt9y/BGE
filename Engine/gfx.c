@@ -1,4 +1,5 @@
 #include "gfx.h"
+#include "opengl.h"
 #include <stdio.h>
 
 u32 compile_shader(const u32 type, const char* src)

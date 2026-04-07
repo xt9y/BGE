@@ -1,5 +1,6 @@
 #include "text.h"
 #include "state.h"
+#include "opengl.h"
 #include "util/math.h"
 #include <stdarg.h>
 #include <stdio.h>

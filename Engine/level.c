@@ -1,10 +1,8 @@
 #include "level.h"
 #include "state.h"
 #include "gfx.h"
+#include "opengl.h"
 #include "util/types.h"
-
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
 
 #include <string.h>
 #include <math.h>

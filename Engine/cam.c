@@ -1,7 +1,6 @@
 #include "cam.h"
 #include "util/math.h"
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
+#include "opengl.h"
 #include <math.h>
 
 void update_camera_vectors(camera_t* cam)

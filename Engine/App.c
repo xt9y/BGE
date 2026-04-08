@@ -1,5 +1,6 @@
 #include "App.h"
 #include "util.h"
+#include "editor.h"
 
 #include "cam.h"
 #include "gfx.h"
@@ -107,11 +108,13 @@ void GL_END(void)
     if (state.cam) free(state.cam);
     if (state.data) free(state.data);
     if (state.fb) free(state.fb);
+    if (state.editor) editor_free_quads(state.editor);
     if (state.editor) free(state.editor);
     state.text = 0;
     state.cam = 0;
     state.data = 0;
     state.fb = 0;
+    state.editor = 0;
 }
 
 double GL_GETFPS(void)

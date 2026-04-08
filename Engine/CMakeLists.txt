@@ -12,6 +12,6 @@ add_library(engine STATIC
 
 target_sources(engine PRIVATE ../Vendor/glad/src/glad.c)
 target_include_directories(engine PUBLIC ../Vendor/glad/include)
-
-target_include_directories(engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ..)
+target_include_directories(engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 target_link_libraries(engine PUBLIC glfw)

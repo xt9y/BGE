@@ -13,6 +13,17 @@
  * > press b to switch between all levels
  * > press e to enter editor mode
  * > walk look around w a s d + mouse
+ *
+ * i press enter to edit / lock in this specific wall, now i am in scale mode, and can
+  select in a round robin type a way using the arrow keys either an edge, or a corner,
+  and then press enter to lock that it, (we start with the top edge and then go right
+  around, so top edge, right top corner, rigth edge, bottom right corner, ...), now we
+  can move this point using the arrow keysn left for left, and so on, while holding
+  shift, the left and right arrow key move the wall on the z axis. now i can press esc to
+  lock out of the corner or edge i selected and get put back in the wall-> corner / edge
+  selection mode, now i can edit / lock in another corner / edge of the still selected
+  wall. if i press esc i also lock out of the wall i selected and i can select another
+  wall using the steps above.
  */
 
 void RUN()
@@ -52,12 +63,26 @@ void RUN()
 
     {   // Editor
         state.editor->level = &state.levels[0];
+        state.editor->mode = EDITOR_FREE;
+        state.editor->selected_sector = -1;
+        state.editor->selected_wall = -1;
+        state.editor->selected_point = POINT_TOP;
+        state.editor->move_speed = 0.1f;
+        state.editor->edit_quads = NULL;
+        state.editor->edit_quad_count = 0;
+        memset(state.editor->_prev_keys, 0, sizeof(state.editor->_prev_keys));
+        editor_init_quads(state.editor, state.editor->level);
     }
 
     while (GL_FRAME()) 
     {
         state.editor->level = &state.levels[state.level_id];
-        // Do whatever
+        static level_data_t *last_level = NULL;
+        if (last_level != state.editor->level) {
+            editor_free_quads(state.editor);
+            editor_init_quads(state.editor, state.editor->level);
+            last_level = state.editor->level;
+        }
     }
 
 #define END() do { GL_END(); } while (0)
@@ -88,8 +113,8 @@ void RENDER()
     text_begin();
     level_render(state.editor->level);
     if (state.id == STATE_EDITOR) {
-        editor_render_look_at_info(state.editor->level, state.cam);
-        editor_render(state.editor->level); 
+        editor_render_wireframe(state.editor->level, state.editor);
+        editor_render_look_at_info(state.editor->level, state.cam, state.editor);
     }
 
     text_draw((vec2s){10.0f, 10.0f}, ":;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz. ");
@@ -160,13 +185,17 @@ void ENGINE_INPUT()
 
     if (state.cursor_locked && state.id == STATE_EDITOR)
     {
-        const f32 speed = 4.5f * state.dt;
-        const vec3s right = vec3_normalize(vec3_cross(state.cam->front, state.cam->up));
+        if (state.editor->mode != EDITOR_EDITING_POINT) {
+            const f32 speed = 4.5f * state.dt;
+            const vec3s right = vec3_normalize(vec3_cross(state.cam->front, state.cam->up));
 
-        if (glfwGetKey(state.win, GLFW_KEY_W) == GLFW_PRESS) state.cam->pos = vec3_add(state.cam->pos, vec3_scale(state.cam->front, speed));
-        if (glfwGetKey(state.win, GLFW_KEY_S) == GLFW_PRESS) state.cam->pos = vec3_sub(state.cam->pos, vec3_scale(state.cam->front, speed));
-        if (glfwGetKey(state.win, GLFW_KEY_A) == GLFW_PRESS) state.cam->pos = vec3_sub(state.cam->pos, vec3_scale(right, speed));
-        if (glfwGetKey(state.win, GLFW_KEY_D) == GLFW_PRESS) state.cam->pos = vec3_add(state.cam->pos, vec3_scale(right, speed));
+            if (glfwGetKey(state.win, GLFW_KEY_W) == GLFW_PRESS) state.cam->pos = vec3_add(state.cam->pos, vec3_scale(state.cam->front, speed));
+            if (glfwGetKey(state.win, GLFW_KEY_S) == GLFW_PRESS) state.cam->pos = vec3_sub(state.cam->pos, vec3_scale(state.cam->front, speed));
+            if (glfwGetKey(state.win, GLFW_KEY_A) == GLFW_PRESS) state.cam->pos = vec3_sub(state.cam->pos, vec3_scale(right, speed));
+            if (glfwGetKey(state.win, GLFW_KEY_D) == GLFW_PRESS) state.cam->pos = vec3_add(state.cam->pos, vec3_scale(right, speed));
+        }
+
+        editor_handle_input(state.editor, state.cam);
     }
 }
 

@@ -1,7 +1,7 @@
 #include "level.h"
 #include "state.h"
 #include "gfx.h"
-#include "opengl.h"
+#include <glad/glad.h>
 #include "util/types.h"
 
 #include <string.h>

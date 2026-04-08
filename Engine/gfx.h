@@ -1,6 +1,6 @@
 #ifndef GFX_H
 #define GFX_H
-#include "opengl.h"
+#include <glad/glad.h>
 #include "util/types.h"
 
 u32 compile_shader(u32 type, const char* src);

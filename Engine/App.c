@@ -53,12 +53,7 @@ void GL_START(void)
 
     glfwMakeContextCurrent(state.win);
 
-#ifdef _WIN32
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        printf("Failed to initialize GLAD\n");
-        exit(1);
-    }
-#endif
+    ASSERT(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress));
 
     glfwSwapInterval(0);
     glfwSetFramebufferSizeCallback(state.win, framebuffer_size_callback);

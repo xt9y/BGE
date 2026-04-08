@@ -1,6 +1,6 @@
 #include "cam.h"
 #include "util/math.h"
-#include "opengl.h"
+#include <glad/glad.h>
 #include <math.h>
 
 void update_camera_vectors(camera_t* cam)

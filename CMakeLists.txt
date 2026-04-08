@@ -21,10 +21,6 @@ if(UNIX)
     target_link_libraries(openglc PRIVATE m)
 endif()
 
-if(WIN32)
-    target_include_directories(openglc PRIVATE ${CMAKE_SOURCE_DIR}/Vendor/glad/include)
-endif()
-
 if(NOT WIN32)
 add_custom_command(TARGET openglc POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/compile_commands.json ${CMAKE_SOURCE_DIR}/compile_commands.json

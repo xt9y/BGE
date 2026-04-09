@@ -47,8 +47,7 @@ void RUN()
         state.levels[state.level_count++] = load_1();
         state.levels[state.level_count++] = load_2();
         state.levels[state.level_count++] = load_3();
-        state.levels[state.level_count++] = load_4();
-    }
+        state.levels[state.level_count++] = load_4();    }
 
     {   // Editor
         state.editor->level = &state.levels[0];
@@ -87,9 +86,9 @@ void RENDER()
 
     text_begin();
     level_render(state.editor->level);
-    if (state.id == STATE_EDITOR) {
+    /* if (state.id == STATE_EDITOR) */ {
         editor_render_look_at_info(state.editor->level, state.cam);
-        editor_render(state.editor->level);
+        // editor_render(state.editor->level);
     }
 
     text_draw((vec2s){10.0f, 10.0f}, ":;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz. ");

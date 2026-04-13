@@ -22,7 +22,7 @@ typedef struct
 {
     i32 id;
     vec3s light;
-    const level_quad_t* quads;
+    level_quad_t* quads;
     i32 quad_count;
 } level_sector_data_t;
 
@@ -30,8 +30,11 @@ typedef struct
 {
     const char* name;
     const char* path;
-    const level_sector_data_t* sectors;
+    level_sector_data_t* sectors;
     i32 sector_count;
+    vec3s cam_pos;
+    f32 cam_yaw;
+    f32 cam_pitch;
 } level_data_t;
 
 void level_render(const level_data_t *level);

@@ -45,7 +45,7 @@ static void texture_set_params(const texture_t* tex)
         tex->filter == TEX_FILTER_LINEAR || tex->filter == TEX_FILTER_LINEAR_MIPMAP ? GL_LINEAR : GL_NEAREST);
 }
 
-static texture_t* texture_alloc_slot(void)
+static texture_t* texture_alloc_slot()
 {
     if (g_registry.count >= MAX_TEXTURES) {
         printf("Texture registry full!\n");

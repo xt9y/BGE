@@ -29,7 +29,7 @@ static void framebuffer_size_callback(GLFWwindow* w, const int width, const int 
     glViewport(0, 0, width, height);
 }
 
-void GL_START(void)
+void GL_START()
 {
     state = (state_t){0};
     state.cursor_locked = true;
@@ -82,7 +82,7 @@ void GL_START(void)
     g_last_time = (f32)glfwGetTime();
 }
 
-int GL_FRAME(void)
+int GL_FRAME()
 {
     const f32 now = (f32)glfwGetTime();
     state.dt = now - g_last_time;
@@ -97,7 +97,7 @@ int GL_FRAME(void)
     return !glfwWindowShouldClose(state.win) && state.id != STATE_EXIT;
 }
 
-void GL_END(void)
+void GL_END()
 {
     if (state.text) texture_registry_cleanup(state.text);
     text_shutdown();
@@ -114,7 +114,7 @@ void GL_END(void)
     state.fb = 0;
 }
 
-double GL_GETFPS(void)
+double GL_GETFPS()
 {
     g_fps_accum += (double)state.dt;
     g_fps_frames += 1;

@@ -30,9 +30,10 @@ typedef struct {
 
 void editor_render(void);
 void editor_render_look_at_info(void);
+void editor_render_legend(void);
 editor_look_at_info_t editor_get_look_at_info(const level_data_t *level, const camera_t *cam, f32 max_distance);
 void editor_update(void);
-void editor_save(const level_data_t* level);
+void editor_save(level_data_t* level);
 
 #endif
 

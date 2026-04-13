@@ -32,6 +32,9 @@ typedef struct
     const char* path;
     level_sector_data_t* sectors;
     i32 sector_count;
+    vec3s cam_pos;
+    f32 cam_yaw;
+    f32 cam_pitch;
 } level_data_t;
 
 void level_render(const level_data_t *level);

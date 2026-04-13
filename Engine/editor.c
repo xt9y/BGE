@@ -34,8 +34,6 @@ static void editor_add_quad(level_sector_data_t* sector, const level_quad_t* tem
 static void editor_delete_quad(level_sector_data_t* sector, i32 idx) {
     if (!sector || idx < 0 || idx >= sector->quad_count) return;
     if (sector->quad_count == 1) {
-        // Can't delete the last quad in a sector for now or just handle it
-        // We'll just leave it empty
         sector->quad_count = 0;
         return;
     }
@@ -97,7 +95,6 @@ static void render_wall_quad_outline(const level_quad_t* quad, const vec4s color
     glLineWidth(8.0f);
     glDrawElements(GL_LINES, 8, GL_UNSIGNED_INT, 0);
 
-    // Second even larger outline to make it "wayyyy" bigger
     f32 offset = 0.08f;
     f32 vertices2[] = {
          half_x + offset,  half_y + offset, 0.0f,   color.x, color.y, color.z,
@@ -105,6 +102,7 @@ static void render_wall_quad_outline(const level_quad_t* quad, const vec4s color
         -half_x - offset, -half_y - offset, 0.0f,   color.x, color.y, color.z,
         -half_x - offset,  half_y + offset, 0.0f,   color.x, color.y, color.z,
     };
+
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices2), vertices2);
     glDrawElements(GL_LINES, 8, GL_UNSIGNED_INT, 0);
 
@@ -200,20 +198,9 @@ static editor_look_at_info_t editor_get_look_at_info_with_ray(const level_data_t
     return info;
 }
 
-static vec3s get_ray_from_mouse(void) {
-    // Selection is now based on where the camera is looking, as requested.
-    // This avoids issues with mouse tracking/DPI scaling.
-    return vec3_normalize(state.cam->front);
-}
-
 void editor_update()
 {
-    if (glfwGetKey(state.win, GLFW_KEY_S) == GLFW_PRESS) {
-        editor_save(state.editor->level);
-        printf("Level saved!\n");
-    }
-
-    vec3s ray_dir = get_ray_from_mouse();
+    vec3s ray_dir = vec3_normalize(state.cam->front);
     editor_look_at_info_t info = editor_get_look_at_info_with_ray(state.editor->level, state.cam->pos, ray_dir, 100.0f);
 
     static bool mouse_was_pressed = false;
@@ -238,6 +225,7 @@ void editor_update()
 
     if (!mouse_is_pressed) state.editor->is_dragging = false;
 
+
     if (state.editor->is_dragging && state.editor->selected_quad) {
         vec3s cam_move = vec3_sub(state.cam->pos, state.editor->drag_cam_start_pos);
         vec3s plane_pos = vec3_add(state.editor->drag_start_hit, cam_move);
@@ -251,57 +239,32 @@ void editor_update()
         f32 dx = vec3_dot(rel_diff, right);
         f32 dy = vec3_dot(rel_diff, up_vec);
 
-        if (glfwGetKey(state.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
-            state.editor->selected_quad->rot.y = state.editor->drag_quad_start_rot.y + dx * 10.0f;
-            state.editor->selected_quad->rot.x = state.editor->drag_quad_start_rot.x + dy * 10.0f;
-        } else if (glfwGetKey(state.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
+        if (glfwGetKey(state.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
             state.editor->selected_quad->size.x = fmaxf(0.1f, state.editor->drag_quad_start_size.x + dx);
             state.editor->selected_quad->size.y = fmaxf(0.1f, state.editor->drag_quad_start_size.y + dy);
-        } else {
-            state.editor->selected_quad->pos = vec3_add(state.editor->drag_quad_start_pos, diff);
-        }
+        } else state.editor->selected_quad->pos = vec3_add(state.editor->drag_quad_start_pos, diff);
     }
 
     bool shift_held = glfwGetKey(state.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
 
-    static bool equal_pressed = false;
-    if (glfwGetKey(state.win, GLFW_KEY_EQUAL) == GLFW_PRESS) {
-        if (!equal_pressed && state.editor->selected_quad) {
-            if (shift_held) {
-                // Plus: Cycle up
-                state.editor->selected_quad->tex_idx++;
-                if (state.text->count > 0 && state.editor->selected_quad->tex_idx >= state.text->count) {
-                    state.editor->selected_quad->tex_idx = 0;
-                }
-            } else {
-                // Equal: Set to -1
-                state.editor->selected_quad->tex_idx = -1;
-            }
-            equal_pressed = true;
-        }
-    } else equal_pressed = false;
+    static f32 tex_timer = 0;
+    if (state.editor->selected_quad) {
+        bool next_tex = glfwGetKey(state.win, GLFW_KEY_0) == GLFW_PRESS && !shift_held;
+        bool prev_tex = glfwGetKey(state.win, GLFW_KEY_0) == GLFW_PRESS && shift_held;
 
-    static bool kp_plus_pressed = false;
-    if (glfwGetKey(state.win, GLFW_KEY_KP_ADD) == GLFW_PRESS) {
-        if (!kp_plus_pressed && state.editor->selected_quad) {
-            state.editor->selected_quad->tex_idx++;
-            if (state.text->count > 0 && state.editor->selected_quad->tex_idx >= state.text->count) {
-                state.editor->selected_quad->tex_idx = 0;
+        if (next_tex || prev_tex) {
+            if (tex_timer <= 0) {
+                if (next_tex) state.editor->selected_quad->tex_idx++;
+                else state.editor->selected_quad->tex_idx--;
+                
+                if (state.editor->selected_quad->tex_idx >= state.text->count) state.editor->selected_quad->tex_idx = -1;
+                else if (state.editor->selected_quad->tex_idx < -1) state.editor->selected_quad->tex_idx = state.text->count - 1;
+                
+                tex_timer = 0.15f;
             }
-            kp_plus_pressed = true;
-        }
-    } else kp_plus_pressed = false;
-
-    static bool minus_pressed = false;
-    if (glfwGetKey(state.win, GLFW_KEY_MINUS) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS) {
-        if (!minus_pressed && state.editor->selected_quad) {
-            state.editor->selected_quad->tex_idx--;
-            if (state.text->count > 0 && state.editor->selected_quad->tex_idx < 0) {
-                state.editor->selected_quad->tex_idx = state.text->count - 1;
-            }
-            minus_pressed = true;
-        }
-    } else minus_pressed = false;
+            tex_timer -= state.dt;
+        } else tex_timer = 0;
+    }
 
     mouse_was_pressed = mouse_is_pressed;
 
@@ -323,46 +286,34 @@ void editor_update()
         }
     } else x_pressed = false;
 
-    // Color editing 1, 2, 3
-    if (state.editor->selected_quad) {
-        bool shift = glfwGetKey(state.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
-        f32 step = shift ? -0.05f : 0.05f;
-        
-        static bool c1_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_1) == GLFW_PRESS) {
-            if (!c1_pressed) { state.editor->selected_quad->color.x = fmaxf(0, fminf(1, state.editor->selected_quad->color.x + step)); c1_pressed = true; }
-        } else c1_pressed = false;
+    // Discrete/Continuous editing with fixed steps
+    static f32 adj_timers[9] = {0};
+    static const int adj_keys[] = { GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6, GLFW_KEY_7, GLFW_KEY_8, GLFW_KEY_9 };
+    for (int i = 0; i < 9; i++) {
+        if (glfwGetKey(state.win, adj_keys[i]) == GLFW_PRESS) {
+            if (adj_timers[i] <= 0) {
+                f32 step;
+                if (i < 6) step = 0.01f;
+                else step = 1.0f;
+                if (shift_held) step = -step;
 
-        static bool c2_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_2) == GLFW_PRESS) {
-            if (!c2_pressed) { state.editor->selected_quad->color.y = fmaxf(0, fminf(1, state.editor->selected_quad->color.y + step)); c2_pressed = true; }
-        } else c2_pressed = false;
-
-        static bool c3_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_3) == GLFW_PRESS) {
-            if (!c3_pressed) { state.editor->selected_quad->color.z = fmaxf(0, fminf(1, state.editor->selected_quad->color.z + step)); c3_pressed = true; }
-        } else c3_pressed = false;
-    }
-
-    // Light editing 4, 5, 6
-    if (state.editor->selected_sector) {
-        bool shift = glfwGetKey(state.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
-        f32 step = shift ? -0.05f : 0.05f;
-
-        static bool l1_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_4) == GLFW_PRESS) {
-            if (!l1_pressed) { state.editor->selected_sector->light.x = fmaxf(0, fminf(1, state.editor->selected_sector->light.x + step)); l1_pressed = true; }
-        } else l1_pressed = false;
-
-        static bool l2_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_5) == GLFW_PRESS) {
-            if (!l2_pressed) { state.editor->selected_sector->light.y = fmaxf(0, fminf(1, state.editor->selected_sector->light.y + step)); l2_pressed = true; }
-        } else l2_pressed = false;
-
-        static bool l3_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_6) == GLFW_PRESS) {
-            if (!l3_pressed) { state.editor->selected_sector->light.z = fmaxf(0, fminf(1, state.editor->selected_sector->light.z + step)); l3_pressed = true; }
-        } else l3_pressed = false;
+                if (i < 3 && state.editor->selected_quad) {
+                    if (i == 0) state.editor->selected_quad->color.x = fmaxf(0, fminf(1, state.editor->selected_quad->color.x + step));
+                    if (i == 1) state.editor->selected_quad->color.y = fmaxf(0, fminf(1, state.editor->selected_quad->color.y + step));
+                    if (i == 2) state.editor->selected_quad->color.z = fmaxf(0, fminf(1, state.editor->selected_quad->color.z + step));
+                } else if (i < 6 && state.editor->selected_sector) {
+                    if (i == 3) state.editor->selected_sector->light.x = fmaxf(0, fminf(1, state.editor->selected_sector->light.x + step));
+                    if (i == 4) state.editor->selected_sector->light.y = fmaxf(0, fminf(1, state.editor->selected_sector->light.y + step));
+                    if (i == 5) state.editor->selected_sector->light.z = fmaxf(0, fminf(1, state.editor->selected_sector->light.z + step));
+                } else if (state.editor->selected_quad) {
+                    if (i == 6) state.editor->selected_quad->rot.x += step;
+                    if (i == 7) state.editor->selected_quad->rot.y += step;
+                    if (i == 8) state.editor->selected_quad->rot.z += step;
+                }
+                adj_timers[i] = 0.02f;
+            }
+            adj_timers[i] -= state.dt;
+        } else adj_timers[i] = 0;
     }
 
     static bool r_pressed = false;
@@ -377,18 +328,14 @@ void editor_update()
             r_pressed = true;
         }
     } else r_pressed = false;
-
-    static bool s_pressed = false;
-    if (glfwGetKey(state.win, GLFW_KEY_S) == GLFW_PRESS) {
-        if (!s_pressed) {
-            editor_save(state.editor->level);
-            s_pressed = true;
-        }
-    } else s_pressed = false;
 }
 
-void editor_save(const level_data_t* level)
+void editor_save(level_data_t* level)
 {
+    level->cam_pos = state.cam->pos;
+    level->cam_yaw = state.cam->yaw;
+    level->cam_pitch = state.cam->pitch;
+
     char full_path[256];
     sprintf(full_path, "Engine/res/%s", level->path);
     FILE* f = fopen(full_path, "w");
@@ -407,7 +354,7 @@ void editor_save(const level_data_t* level)
         fprintf(f, "static level_quad_t level%d_sector%d_quads[] = {\n", level_num, s);
         for (int q = 0; q < sector->quad_count; q++) {
             level_quad_t* quad = &sector->quads[q];
-            fprintf(f, "    { .pos = {%.1ff, %.1ff, %.1ff}, .rot = {%.1ff, %.1ff, %.1ff}, .size = {%.1ff, %.1ff}, .tex_idx = %d, .is_solid = %s, .is_invisible = %s, .color = {%.1ff, %.1ff, %.1ff} },\n",
+            fprintf(f, "    { .pos = {%.3ff, %.3ff, %.3ff}, .rot = {%.3ff, %.3ff, %.3ff}, .size = {%.3ff, %.3ff}, .tex_idx = %d, .is_solid = %s, .is_invisible = %s, .color = {%.3ff, %.3ff, %.3ff} },\n",
                 quad->pos.x, quad->pos.y, quad->pos.z,
                 quad->rot.x, quad->rot.y, quad->rot.z,
                 quad->size.x, quad->size.y,
@@ -422,10 +369,8 @@ void editor_save(const level_data_t* level)
     fprintf(f, "static level_sector_data_t level%d_sectors[] = {\n", level_num);
     for (int s = 0; s < level->sector_count; s++) {
         level_sector_data_t* sector = &level->sectors[s];
-        fprintf(f, "    { .id = %d, .light = {%.1ff, %.1ff, %.1ff}, .quads = level%d_sector%d_quads, ",
-            sector->id, sector->light.x, sector->light.y, sector->light.z, level_num, s);
-        fprintf(f, ".quad_count = sizeof(level%d_sector%d_quads) / sizeof(level%d_sector%d_quads[0]) },\n",
-            level_num, s, level_num, s);
+        fprintf(f, "    { .id = %d, .light = {%.3ff, %.3ff, %.3ff}, .quads = level%d_sector%d_quads, ", sector->id, sector->light.x, sector->light.y, sector->light.z, level_num, s);
+        fprintf(f, ".quad_count = sizeof(level%d_sector%d_quads) / sizeof(level%d_sector%d_quads[0]) },\n", level_num, s, level_num, s);
     }
     fprintf(f, "};\n\n");
 
@@ -434,7 +379,10 @@ void editor_save(const level_data_t* level)
     fprintf(f, "        .name = \"%s\",\n", level->name);
     fprintf(f, "        .path = \"%s\",\n", level->path);
     fprintf(f, "        .sectors = level%d_sectors,\n", level_num);
-    fprintf(f, "        .sector_count = sizeof(level%d_sectors) / sizeof(level%d_sectors[0])\n", level_num, level_num);
+    fprintf(f, "        .sector_count = sizeof(level%d_sectors) / sizeof(level%d_sectors[0]),\n", level_num, level_num);
+    fprintf(f, "        .cam_pos = {%.3ff, %.3ff, %.3ff},\n", state.cam->pos.x, state.cam->pos.y, state.cam->pos.z);
+    fprintf(f, "        .cam_yaw = %.3ff,\n", state.cam->yaw);
+    fprintf(f, "        .cam_pitch = %.3ff\n", state.cam->pitch);
     fprintf(f, "    };\n}\n\n");
     fprintf(f, "#endif\n");
 
@@ -443,24 +391,15 @@ void editor_save(const level_data_t* level)
 
 void editor_render()
 {
-    vec3s ray_dir = get_ray_from_mouse();
+    vec3s ray_dir = vec3_normalize(state.cam->front);
     editor_look_at_info_t info = editor_get_look_at_info_with_ray(state.editor->level, state.cam->pos, ray_dir, 100.0f);
-
-    if (info.hit && info.quad)
-    {
-        const vec4s highlight_color = { 1.0f, 1.0f, 1.0f, 1.0f };
-        render_wall_quad_outline(info.quad, highlight_color);
-    }
-
-    if (state.editor->selected_quad) {
-        const vec4s select_color = { 1.0f, 1.0f, 0.0f, 1.0f };
-        render_wall_quad_outline(state.editor->selected_quad, select_color);
-    }
+    
+    if (info.hit) render_wall_quad_outline(info.quad, (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
 }
 
 void editor_render_look_at_info()
 {
-    vec3s ray_dir = get_ray_from_mouse();
+    vec3s ray_dir = vec3_normalize(state.cam->front);
     editor_look_at_info_t info = editor_get_look_at_info_with_ray(state.editor->level, state.cam->pos, ray_dir, 100.0f);
     
     level_quad_t* quad = info.hit ? info.quad : state.editor->selected_quad;
@@ -473,19 +412,24 @@ void editor_render_look_at_info()
         text_draw((vec2s){x, y}, info.hit ? "LOOKING AT:" : "SELECTED:"); y += line_height;
         text_draw((vec2s){x, y}, "  Sector ID: %d", sector->id); y += line_height;
         text_draw((vec2s){x, y}, "  Wall ID: %d", wall_id); y += line_height;
-        if (info.hit) { text_draw((vec2s){x, y}, "  Distance: %.2f", info.distance); y += line_height; }
-        text_draw((vec2s){x, y}, "  Pos: %.2f %.2f %.2f", quad->pos.x, quad->pos.y, quad->pos.z); y += line_height;
+        if (info.hit) { text_draw((vec2s){x, y}, "  Distance: %.3f", info.distance); y += line_height; }
+        text_draw((vec2s){x, y}, "  Pos: %.1f %.1f %.1f", quad->pos.x, quad->pos.y, quad->pos.z); y += line_height;
         text_draw((vec2s){x, y}, "  Rot: %.1f %.1f %.1f", quad->rot.x, quad->rot.y, quad->rot.z); y += line_height;
-        text_draw((vec2s){x, y}, "  Size: %.2f %.2f", quad->size.x, quad->size.y); y += line_height;
+        text_draw((vec2s){x, y}, "  Size: %.1f %.1f", quad->size.x, quad->size.y); y += line_height;
         text_draw((vec2s){x, y}, "  Solid: %s", quad->is_solid ? "YES" : "NO"); y += line_height;
         text_draw((vec2s){x, y}, "  Invisible: %s", quad->is_invisible ? "YES" : "NO"); y += line_height;
         text_draw((vec2s){x, y}, "  Tex: %d", quad->tex_idx); y += line_height;
-        text_draw((vec2s){x, y}, "  Light: %.2f %.2f %.2f", sector->light.x, sector->light.y, sector->light.z); y += line_height;
-        text_draw((vec2s){x, y}, "  Color: %.2f %.2f %.2f", quad->color.x, quad->color.y, quad->color.z);
+        text_draw((vec2s){x, y}, "  Light: %.1f %.1f %.1f", sector->light.x, sector->light.y, sector->light.z); y += line_height;
+        text_draw((vec2s){x, y}, "  Color: %.1f %.1f %.1f", quad->color.x, quad->color.y, quad->color.z);
     } else text_draw((vec2s){x, y}, "LOOKING AT: Nothing");
+
+    text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");
 }
 
-editor_look_at_info_t editor_get_look_at_info(const level_data_t* level, const camera_t* cam, f32 max_distance) {
-    return editor_get_look_at_info_with_ray(level, cam->pos, cam->front, max_distance);
+void editor_render_legend(void)
+{
+    f32 x = 10.0f, y = (f32)state.fb->h - 30.0f, line_height = 20.0f;
+    text_draw((vec2s){x, y}, "ESC:EXIT E:PLAY TAB:CURS CLICK:DRAG CTRL:RESIZE B:NEXT N:NEW X:DEL R:RESET"); y -= line_height;
+    text_draw((vec2s){x, y}, "1-3:CLR 4-6:LIT 7-9:ROT 0:TEX_ID");
 }
 

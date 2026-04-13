@@ -4,8 +4,6 @@
 
 #include "Engine/res/level1.h"
 #include "Engine/res/level2.h"
-#include "Engine/res/level3.h"
-#include "Engine/res/level4.h"
 
 /*
  * TL:DR
@@ -15,16 +13,14 @@
  * > walk look around w a s d + mouse
  */
 
-/* ok you see the way I make level loading and all of that using Engine/res/level(1/2/3/4).h,            
- * which are then exactly like this loaded into an levels array and then set as editor->level all          
- * inside main.c, my question is now how one would make an EXTERNAL EDITOR inside editor.c and             
- * editor.h, so i want it i change level inside the external EDITOR and then start the game and its        
- * updated the level, and the external level HAS to save the level in the current format that i save       
- * my levels in Engine/res/level1.h, 100% same style, no diffrences !!! if you have any questions          
- * about hotkeys or how the file should be structured again PLEASE ASK me and you have to KEEP the         
- * .h file strcuture of levels 100% the same dont change a thing about that, keep the level loading         
- * and level files 100% like they are right now     
- * */
+void apply_level_camera(level_data_t* level)
+{
+    state.cam->pos = level->cam_pos;
+    state.cam->yaw = level->cam_yaw;
+    state.cam->pitch = level->cam_pitch;
+    state.cam->firstMouse = true;
+    update_camera_vectors(state.cam);
+}
 
 void RUN()
 {
@@ -33,15 +29,11 @@ void RUN()
     {   // Camera
         state.fb->w = WIDTH, state.fb->h = HEIGHT;
         glfwGetFramebufferSize(state.win, &state.fb->w, &state.fb->h);
-        state.cam->pos = (vec3s){9.8f, 6.4f, 13.6f};
         state.cam->front = (vec3s){0.0f, 0.0f, -1.0f};
         state.cam->up = (vec3s){0.0f, 1.0f, 0.0f};
-        state.cam->yaw = 235.0f;
-        state.cam->pitch = -16.0f;
         state.cam->lastX = (f32)state.fb->w * 0.5f;
         state.cam->lastY = (f32)state.fb->h * 0.5f;
         state.cursor_locked = false;
-        update_camera_vectors(state.cam);
     }
 
     {   // Textures
@@ -56,9 +48,11 @@ void RUN()
     {   // Levels 
         state.level_count = 0;
         state.levels[state.level_count++] = load_1();
-        // state.levels[state.level_count++] = load_2();
-        // state.levels[state.level_count++] = load_3();
-        state.levels[state.level_count++] = load_4();    }
+        state.levels[state.level_count++] = load_2();
+        
+        state.level_id = 0;
+        apply_level_camera(&state.levels[state.level_id]);
+    }
 
     {   // Editor
         state.editor->level = &state.levels[0];
@@ -106,8 +100,7 @@ void RENDER()
     if (state.id == STATE_EDITOR) {
         editor_render_look_at_info();
         editor_render();
-        // Crosshair
-        text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");
+        editor_render_legend();
     }
 
     text_draw((vec2s){10.0f, 10.0f}, ":;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz. ");
@@ -125,61 +118,42 @@ void ENGINE_INPUT()
     {   // Free mouse
         static bool tab_pressed = false;
         if (glfwGetKey(state.win, GLFW_KEY_TAB) == GLFW_PRESS) {
-            if (!tab_pressed) 
-            {
+            if (!tab_pressed) {
                 state.cursor_locked = !state.cursor_locked;
                 if (state.cursor_locked) {
                     glfwSetCursorPos(state.win, state.fb->w * 0.5f, state.fb->h * 0.5f);
                     state.cam->firstMouse = true;
-                }
-                tab_pressed = true;
+                } tab_pressed = true;
             }
-        }
-        else tab_pressed = false;
+        } else tab_pressed = false;
     }
 
     {   // Toggle editor
         static bool e_pressed = false;
         if (glfwGetKey(state.win, GLFW_KEY_E) == GLFW_PRESS) {
-            if (!e_pressed)
-            {
+            if (!e_pressed) {
                 state.id = state.id == STATE_EDITOR ? STATE_PLAYING : STATE_EDITOR;
                 e_pressed = true;
             }
-        }
-        else e_pressed = false;
+        } else e_pressed = false;
     }
 
     {   // Next level
         static bool b_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_B) == GLFW_PRESS)
-        {
-            if (!b_pressed)
-            {
+        if (glfwGetKey(state.win, GLFW_KEY_B) == GLFW_PRESS) {
+            if (!b_pressed) {
                 editor_save(state.editor->level);
                 state.level_id = (state.level_id + 1) % state.level_count;
+                apply_level_camera(&state.levels[state.level_id]);
                 b_pressed = true;
             }
-        }
-        else b_pressed = false;
+        } else b_pressed = false;
     }
 
     if (glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id = STATE_EXIT;
 
-    if (state.cursor_locked && state.id == STATE_PLAYING)
     {
-        const f32 speed = 2.5f * state.dt;
-        const vec3s right = vec3_normalize(vec3_cross(state.cam->front, state.cam->up));
-
-        if (glfwGetKey(state.win, GLFW_KEY_W) == GLFW_PRESS) state.cam->pos = vec3_add(state.cam->pos, vec3_scale(state.cam->front, speed));
-        if (glfwGetKey(state.win, GLFW_KEY_S) == GLFW_PRESS) state.cam->pos = vec3_sub(state.cam->pos, vec3_scale(state.cam->front, speed));
-        if (glfwGetKey(state.win, GLFW_KEY_A) == GLFW_PRESS) state.cam->pos = vec3_sub(state.cam->pos, vec3_scale(right, speed));
-        if (glfwGetKey(state.win, GLFW_KEY_D) == GLFW_PRESS) state.cam->pos = vec3_add(state.cam->pos, vec3_scale(right, speed));
-    }
-
-    if (state.cursor_locked && state.id == STATE_EDITOR)
-    {
-        const f32 speed = 4.5f * state.dt;
+        const f32 speed = 6.5f * state.dt;
         const vec3s right = vec3_normalize(vec3_cross(state.cam->front, state.cam->up));
 
         if (glfwGetKey(state.win, GLFW_KEY_W) == GLFW_PRESS) state.cam->pos = vec3_add(state.cam->pos, vec3_scale(state.cam->front, speed));

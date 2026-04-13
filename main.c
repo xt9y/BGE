@@ -15,6 +15,17 @@
  * > walk look around w a s d + mouse
  */
 
+/* ok you see the way I make level loading and all of that using Engine/res/level(1/2/3/4).h,            
+ * which are then exactly like this loaded into an levels array and then set as editor->level all          
+ * inside main.c, my question is now how one would make an EXTERNAL EDITOR inside editor.c and             
+ * editor.h, so i want it i change level inside the external EDITOR and then start the game and its        
+ * updated the level, and the external level HAS to save the level in the current format that i save       
+ * my levels in Engine/res/level1.h, 100% same style, no diffrences !!! if you have any questions          
+ * about hotkeys or how the file should be structured again PLEASE ASK me and you have to KEEP the         
+ * .h file strcuture of levels 100% the same dont change a thing about that, keep the level loading         
+ * and level files 100% like they are right now     
+ * */
+
 void RUN()
 {
     GL_START();
@@ -45,8 +56,8 @@ void RUN()
     {   // Levels 
         state.level_count = 0;
         state.levels[state.level_count++] = load_1();
-        state.levels[state.level_count++] = load_2();
-        state.levels[state.level_count++] = load_3();
+        // state.levels[state.level_count++] = load_2();
+        // state.levels[state.level_count++] = load_3();
         state.levels[state.level_count++] = load_4();    }
 
     {   // Editor
@@ -56,8 +67,14 @@ void RUN()
     while (GL_FRAME()) 
     {
         state.editor->level = &state.levels[state.level_id];
-        // Do whatever
+        
+        if (state.id == STATE_EDITOR) 
+        {
+            editor_update();
+        }
     }
+
+    editor_save(state.editor->level);
 
 #define END() do { GL_END(); } while (0)
     END();
@@ -89,6 +106,8 @@ void RENDER()
     if (state.id == STATE_EDITOR) {
         editor_render_look_at_info();
         editor_render();
+        // Crosshair
+        text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");
     }
 
     text_draw((vec2s){10.0f, 10.0f}, ":;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz. ");
@@ -104,19 +123,19 @@ void ENGINE_INPUT()
     glfwSetInputMode(state.win, GLFW_CURSOR, state.cursor_locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     
     {   // Free mouse
-        static bool shift_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-            if (!shift_pressed) 
+        static bool tab_pressed = false;
+        if (glfwGetKey(state.win, GLFW_KEY_TAB) == GLFW_PRESS) {
+            if (!tab_pressed) 
             {
                 state.cursor_locked = !state.cursor_locked;
                 if (state.cursor_locked) {
                     glfwSetCursorPos(state.win, state.fb->w * 0.5f, state.fb->h * 0.5f);
                     state.cam->firstMouse = true;
                 }
-                shift_pressed = true;
+                tab_pressed = true;
             }
         }
-        else shift_pressed = false;
+        else tab_pressed = false;
     }
 
     {   // Toggle editor
@@ -137,6 +156,7 @@ void ENGINE_INPUT()
         {
             if (!b_pressed)
             {
+                editor_save(state.editor->level);
                 state.level_id = (state.level_id + 1) % state.level_count;
                 b_pressed = true;
             }

@@ -9,82 +9,79 @@
 #include <math.h>
 #include <stdio.h>
 
-// static void render_wall_quad(const level_quad_t* quad, const vec4s color)
-// {
-//     f32 rot_y[16], rot_x[16], rot_z[16];
-//     mat4_rotate_y(rot_y, -DEG2RAD(quad->rot.y));
-//     mat4_rotate_x(rot_x, -DEG2RAD(quad->rot.x));
-//     mat4_rotate_z(rot_z, -DEG2RAD(quad->rot.z));
-//
-//     f32 temp[16], model[16];
-//     mat4_multiply(temp, rot_y, rot_x);
-//     mat4_multiply(model, temp, rot_z);
-//
-//     model[12] = quad->pos.x;
-//     model[13] = quad->pos.y + quad->size.y * 0.5f;
-//     model[14] = quad->pos.z;
-//
-//     GLint model_loc = glGetUniformLocation(state.data->program, "model");
-//     glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
-//
-//     f32 half_x = 0.5f * quad->size.x;
-//     f32 half_y = 0.5f * quad->size.y;
-//
-//     f32 vertices[] = {
-//          half_x,  half_y, 0.0f,   color.x, color.y, color.z,
-//          half_x, -half_y, 0.0f,   color.x, color.y, color.z,
-//         -half_x, -half_y, 0.0f,   color.x, color.y, color.z,
-//         -half_x,  half_y, 0.0f,   color.x, color.y, color.z,
-//     };
-//
-//     u32 indices[] = {
-//         0, 1, 1, 2, 2, 3, 3, 0
-//     };
-//
-//     u32 vao, vbo, ebo;
-//     glGenVertexArrays(1, &vao);
-//     glGenBuffers(1, &vbo);
-//     glGenBuffers(1, &ebo);
-//
-//     glBindVertexArray(vao);
-//     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-//     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-//     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-//     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-//
-//     glEnableVertexAttribArray(0);
-//     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void*)0);
-//     glEnableVertexAttribArray(1);
-//     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void*)(3 * sizeof(f32)));
-//
-//     // glDisable(GL_DEPTH_TEST);
-//     glLineWidth(2.0f);
-//     glDrawElements(GL_LINES, 8, GL_UNSIGNED_INT, 0);
-//     glLineWidth(4.0f);
-//     glEnable(GL_DEPTH_TEST);
-//
-//     glBindVertexArray(0);
-//     glDeleteVertexArrays(1, &vao);
-//     glDeleteBuffers(1, &vbo);
-//     glDeleteBuffers(1, &ebo);
-// }
-//
-// static void render_sector(const level_sector_data_t *sector)
-// {
-//     for (i32 i = 0; i < sector->quad_count; i++) 
-//     {
-//         const vec4s wall_color = {
-//             1.0f, 1.0f, 1.0f, 1.0f
-//         };
-//
-//         render_wall_quad(&sector->quads[i], wall_color);
-//     }
-// }
-//
-// void editor_render(const level_data_t *level)
-// {
-//     for (i32 i = 0; i < level->sector_count; i++) render_sector(&level->sectors[i]);
-// }
+static void render_wall_quad(const level_quad_t* quad, const vec4s color)
+{
+    f32 rot_y[16], rot_x[16], rot_z[16];
+    mat4_rotate_y(rot_y, -DEG2RAD(quad->rot.y));
+    mat4_rotate_x(rot_x, -DEG2RAD(quad->rot.x));
+    mat4_rotate_z(rot_z, -DEG2RAD(quad->rot.z));
+
+    f32 temp[16], model[16];
+    mat4_multiply(temp, rot_y, rot_x);
+    mat4_multiply(model, temp, rot_z);
+
+    model[12] = quad->pos.x;
+    model[13] = quad->pos.y + quad->size.y * 0.5f;
+    model[14] = quad->pos.z;
+
+    GLint model_loc = glGetUniformLocation(state.data->program, "model");
+    glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
+
+    f32 half_x = 0.5f * quad->size.x;
+    f32 half_y = 0.5f * quad->size.y;
+
+    f32 vertices[] = {
+         half_x,  half_y, 0.0f,   color.x, color.y, color.z,
+         half_x, -half_y, 0.0f,   color.x, color.y, color.z,
+        -half_x, -half_y, 0.0f,   color.x, color.y, color.z,
+        -half_x,  half_y, 0.0f,   color.x, color.y, color.z,
+    };
+
+    u32 indices[] = {
+        0, 1, 1, 2, 2, 3, 3, 0
+    };
+
+    u32 vao, vbo, ebo;
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+    glGenBuffers(1, &ebo);
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void*)(3 * sizeof(f32)));
+
+    // glDisable(GL_DEPTH_TEST);
+    glLineWidth(2.0f);
+    glDrawElements(GL_LINES, 8, GL_UNSIGNED_INT, 0);
+    glLineWidth(4.0f);
+    glEnable(GL_DEPTH_TEST);
+
+    glBindVertexArray(0);
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(1, &vbo);
+    glDeleteBuffers(1, &ebo);
+}
+
+void editor_render()
+{
+    editor_look_at_info_t info = editor_get_look_at_info(state.editor->level, state.cam, 50.0f);
+
+    if (info.hit && info.quad)
+    {
+        const vec4s wall_color = {
+            1.0f, 1.0f, 1.0f, 1.0f
+        };
+
+        render_wall_quad(info.quad, wall_color);
+    }
+}
 
 static bool ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, const level_quad_t* quad, f32* out_t, vec3s* out_hit)
 {
@@ -149,9 +146,9 @@ editor_look_at_info_t editor_get_look_at_info(const level_data_t* level, const c
     return info;
 }
 
-void editor_render_look_at_info(const level_data_t* level, const camera_t* cam)
+void editor_render_look_at_info()
 {
-    editor_look_at_info_t info = editor_get_look_at_info(level, cam, 50.0f);
+    editor_look_at_info_t info = editor_get_look_at_info(state.editor->level, state.cam, 50.0f);
     f32 x = 10.0f/* (f32)state.fb->w - 520.0f */, y = 150.0f, line_height = 20.0f;
 
     if (info.hit) {

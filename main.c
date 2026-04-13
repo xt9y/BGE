@@ -86,9 +86,9 @@ void RENDER()
 
     text_begin();
     level_render(state.editor->level);
-    /* if (state.id == STATE_EDITOR) */ {
-        editor_render_look_at_info(state.editor->level, state.cam);
-        // editor_render(state.editor->level);
+    if (state.id == STATE_EDITOR) {
+        editor_render_look_at_info();
+        editor_render();
     }
 
     text_draw((vec2s){10.0f, 10.0f}, ":;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz. ");

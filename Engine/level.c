@@ -12,7 +12,7 @@ static u32 g_wall_vbo = 0;
 static u32 g_wall_ebo = 0;
 static bool g_wall_vao_initialized = false;
 
-static void ensure_wall_vao(void)
+static void ensure_wall_vao()
 {
     if (g_wall_vao_initialized) return;
 

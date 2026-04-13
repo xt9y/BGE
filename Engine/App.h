@@ -26,11 +26,10 @@ void RUN();
 #define WIDTH 1270 
 #define HEIGHT 850
 
-void GL_START(void);
-int  GL_FRAME(void);
-void GL_END(void);
-float GL_GETDELTATIME(void);
-double GL_GETFPS(void);
+void GL_START();
+int  GL_FRAME();
+void GL_END();
+double GL_GETFPS();
 
 #include "Engine/gfx.h"
 #include "Engine/state.h"

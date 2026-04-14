@@ -24,6 +24,7 @@ typedef struct
     vec3s light;
     level_quad_t* quads;
     i32 quad_count;
+    i32 quad_capacity;
 } level_sector_data_t;
 
 typedef struct

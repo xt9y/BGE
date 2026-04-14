@@ -166,6 +166,8 @@ void ENGINE_INPUT()
                 editor_save(state.editor->level);
                 state.level_id = (state.level_id + 1) % state.level_count;
                 apply_level_camera(&state.levels[state.level_id]);
+                state.editor->selected_quad = NULL;
+                state.editor->selected_sector = NULL;
                 b_pressed = true;
             }
         } else b_pressed = false;

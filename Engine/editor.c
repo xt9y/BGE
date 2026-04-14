@@ -8,18 +8,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static level_quad_t get_default_quad() 
+{
+    return (level_quad_t) { 
+        .pos = {roundf(state.cam->pos.x + state.cam->front.x * 3.0f), roundf(state.cam->pos.y + state.cam->front.y * 3.0f), roundf(state.cam->pos.z + state.cam->front.z * 3.0f)}, 
+        .rot = {0,0,0}, .size = {2,2}, .tex_idx = 0, .color = {1,1,1}, .is_solid = true, .is_invisible = false
+    };
+}
+
 static void editor_add_quad(level_sector_data_t* sector, const level_quad_t* template) 
 {
-    level_quad_t new_q; 
-
-    if (template) new_q = *template;
-    else {
-        vec3s raw_pos = vec3_add(state.cam->pos, vec3_scale(state.cam->front, 3.0f));
-        new_q = (level_quad_t) { 
-            .pos = (vec3s){roundf(raw_pos.x - 1.0f), roundf(raw_pos.y - 1.0f), roundf(raw_pos.z)}, 
-            .rot = {0,0,0}, .size = {2,2}, .tex_idx = 0, .color = {1,1,1}, .is_solid = true 
-        };
+    if (sector->quad_capacity <= sector->quad_count) {
+        i32 new_cap = (sector->quad_capacity == 0) ? sector->quad_count + 64 : sector->quad_capacity * 2;
+        level_quad_t* new_quads = malloc(sizeof(level_quad_t) * new_cap);
+        if (sector->quad_count > 0) memcpy(new_quads, sector->quads, sizeof(level_quad_t) * sector->quad_count);
+        if (sector->quad_capacity > 0) free(sector->quads);
+        sector->quads = new_quads;
+        sector->quad_capacity = new_cap;
     }
+
+    level_quad_t new_q = template ? *template : get_default_quad(); 
 
     sector->quads[sector->quad_count] = new_q;
     sector->quad_count++;
@@ -134,7 +142,9 @@ static bool ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, con
     mat4_multiply(model, temp, rot_z);
 
     vec3s wall_pos = {
-        quad->pos.x, quad->pos.y, quad->pos.z
+        quad->pos.x, 
+        quad->pos.y, 
+        quad->pos.z
     };
 
     vec3s normal = {
@@ -295,8 +305,6 @@ void editor_update()
         } else tex_timer = 0;
     }
 
-    mouse_was_pressed = mouse_is_pressed;
-
     static bool n_pressed = false;
     if (glfwGetKey(state.win, GLFW_KEY_N) == GLFW_PRESS) {
         if (!n_pressed) {
@@ -315,75 +323,53 @@ void editor_update()
         }
     } else x_pressed = false;
 
+    static bool r_pressed = false;
+    if (glfwGetKey(state.win, GLFW_KEY_R) == GLFW_PRESS) {
+        if (!r_pressed && state.editor->selected_quad) {
+            *state.editor->selected_quad = get_default_quad();
+            r_pressed = true;
+        }
+    } else r_pressed = false;
+
     static bool adj_pressed[9] = {0};
     static f32 adj_timer[9] = {0};
     static const int adj_keys[] = { GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6, GLFW_KEY_7, GLFW_KEY_8, GLFW_KEY_9 };
     for (int i = 0; i < 9; i++) {
         bool triggered = false;
         if (glfwGetKey(state.win, adj_keys[i]) == GLFW_PRESS) {
-            if (!adj_pressed[i]) {
-                triggered = true;
-                adj_pressed[i] = true;
-                adj_timer[i] = 0.3f; // initial delay
-            } else if (i >= 6) {
-                adj_timer[i] -= state.dt;
-                if (adj_timer[i] <= 0) {
-                    triggered = true;
-                    adj_timer[i] = 0.05f;
-                }
-            }
-        } else adj_pressed[i] = false;
+            if (!adj_pressed[i]) { triggered = true; adj_pressed[i] = true; adj_timer[i] = 0.3f; }
+            if (adj_pressed[i] && i >= 6) { adj_timer[i] -= state.dt; if (adj_timer[i] <= 0) { triggered = true; adj_timer[i] = 0.05f; } }
+        }
+        if (glfwGetKey(state.win, adj_keys[i]) == GLFW_RELEASE) adj_pressed[i] = false;
 
         if (triggered) {
-            f32 step = (i < 6) ? 0.1f : 1.0f;
-            if (i >= 6 && shift_held) step = -step;
             f32* val = NULL;
-            
-            if (i < 3 && state.editor->selected_quad) {
-                if (i == 0) val = &state.editor->selected_quad->color.x;
-                if (i == 1) val = &state.editor->selected_quad->color.y;
-                if (i == 2) val = &state.editor->selected_quad->color.z;
-            } 
 
-            if (i < 6 && state.editor->selected_sector) {
-                if (i == 3) val = &state.editor->selected_sector->light.x;
-                if (i == 4) val = &state.editor->selected_sector->light.y;
-                if (i == 5) val = &state.editor->selected_sector->light.z;
-            } 
-
-            if (i >= 6 && state.editor->selected_quad) {
-                if (i == 6) val = &state.editor->selected_quad->rot.x;
-                if (i == 7) val = &state.editor->selected_quad->rot.y;
-                if (i == 8) val = &state.editor->selected_quad->rot.z;
-            }
+            if (state.editor->selected_quad && i == 0) val = &state.editor->selected_quad->color.x;
+            if (state.editor->selected_quad && i == 1) val = &state.editor->selected_quad->color.y;
+            if (state.editor->selected_quad && i == 2) val = &state.editor->selected_quad->color.z;
+            if (state.editor->selected_sector && i == 3) val = &state.editor->selected_sector->light.x;
+            if (state.editor->selected_sector && i == 4) val = &state.editor->selected_sector->light.y;
+            if (state.editor->selected_sector && i == 5) val = &state.editor->selected_sector->light.z;
+            if (state.editor->selected_quad && i == 6) val = &state.editor->selected_quad->rot.x;
+            if (state.editor->selected_quad && i == 7) val = &state.editor->selected_quad->rot.y;
+            if (state.editor->selected_quad && i == 8) val = &state.editor->selected_quad->rot.z;
 
             if (val) {
+                f32 step = (i < 6) ? 0.1f : 1.0f;
+                if (i >= 6 && shift_held) step = -step;
                 *val += step;
-                if (i < 6) {
-                    if (*val > 1.05f) *val = 0.0f;
-                    if (*val < -0.05f) *val = 1.0f;
-                    *val = roundf(*val * 10.0f) / 10.0f;
-                } else {
-                    if (*val >= 360.0f) *val = 0.0f;
-                    if (*val < 0.0f) *val = 359.0f;
-                    *val = roundf(*val);
-                }
+                if (i < 6 && *val > 1.05f)  *val = 0.0f;
+                if (i < 6 && *val < -0.05f) *val = 1.0f;
+                if (i < 6) *val = roundf(*val * 10.0f) / 10.0f;
+                if (i >= 6 && *val >= 360.0f) *val = 0.0f;
+                if (i >= 6 && *val < 0.0f)    *val = 359.0f;
+                if (i >= 6) *val = roundf(*val);
             }
         }
-    }
-
-    static bool r_pressed = false;
-    if (glfwGetKey(state.win, GLFW_KEY_R) == GLFW_PRESS) {
-        if (!r_pressed && state.editor->selected_quad) {
-            state.editor->selected_quad->rot = (vec3s){0, 0, 0};
-            state.editor->selected_quad->size = (vec2s){2, 2};
-            state.editor->selected_quad->tex_idx = 0;
-            state.editor->selected_quad->color = (vec3s){1, 1, 1};
-            state.editor->selected_quad->is_solid = true;
-            state.editor->selected_quad->is_invisible = false;
-            r_pressed = true;
-        }
-    } else r_pressed = false;
+    } 
+    
+    mouse_was_pressed = mouse_is_pressed;
 }
 
 void editor_save(level_data_t* level)

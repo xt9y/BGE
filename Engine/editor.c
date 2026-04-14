@@ -289,7 +289,6 @@ void editor_update()
             if (tex_timer <= 0) {
                 state.editor->selected_quad->tex_idx++;
                 if (state.editor->selected_quad->tex_idx >= state.text->count) state.editor->selected_quad->tex_idx = -1;
-                
                 tex_timer = 0.15f;
             }
             tex_timer -= state.dt;

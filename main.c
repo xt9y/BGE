@@ -120,9 +120,9 @@ void RENDER()
     level_render(state.editor->level);
     if (state.id == STATE_EDITOR) editor_render();
 
-    // text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");
+    text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");
     text_draw((vec2s){10.0f, 10.0f}, "()*+-./ :;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz ");
-    text_draw((vec2s){10.0f, 30.0f}, "FPS %.1f", GL_GETFPS());
+    text_draw((vec2s){10.0f, 30.0f}, "FPS %.1f, ASPECT: %d / %d", GL_GETFPS(), state.fb->w, state.fb->h);
     text_draw((vec2s){10.0f, 50.0f}, "POS: %.1f %.1f %.1f ; YAW %.1f ; PITCH %.1f", state.cam->pos.x, state.cam->pos.y, state.cam->pos.z, state.cam->yaw, state.cam->pitch);
     text_draw((vec2s){10.0f, 70.0f}, "CURRENT_LVL: %d ; MAX_LVLS: %d", state.level_id + 1, state.level_count);
     text_draw((vec2s){10.0f, 90.0f}, "STATE: %s", state.toString[state.id]);

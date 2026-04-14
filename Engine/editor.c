@@ -70,22 +70,22 @@ static void render_wall_quad(const level_quad_t* quad, const vec4s color)
         z = 0.0f;
 
     f32 vertices[] = {
-        hx,      hy,      z,  color.x, color.y, color.z,  0,0,
-        hx,      hy - t,  z,  color.x, color.y, color.z,  0,0,
-        0,       hy - t,  z,  color.x, color.y, color.z,  0,0,
-        0,       hy,      z,  color.x, color.y, color.z,  0,0,
-        hx,      t,       z,  color.x, color.y, color.z,  0,0,
-        hx,      0,       z,  color.x, color.y, color.z,  0,0,
-        0,       0,       z,  color.x, color.y, color.z,  0,0,
-        0,       t,       z,  color.x, color.y, color.z,  0,0,
-        t,       hy,      z,  color.x, color.y, color.z,  0,0,
-        t,       0,       z,  color.x, color.y, color.z,  0,0,
-        0,       0,       z,  color.x, color.y, color.z,  0,0,
-        0,       hy,      z,  color.x, color.y, color.z,  0,0,
-        hx,      hy,      z,  color.x, color.y, color.z,  0,0,
-        hx,      0,       z,  color.x, color.y, color.z,  0,0,
-        hx - t,  0,       z,  color.x, color.y, color.z,  0,0,
-        hx - t,  hy,      z,  color.x, color.y, color.z,  0,0,
+        hx,     hy,     z,  color.x, color.y, color.z, 0, 0,
+        hx,     hy - t, z,  color.x, color.y, color.z, 0, 0,
+        0,      hy - t, z,  color.x, color.y, color.z, 0, 0,
+        0,      hy,     z,  color.x, color.y, color.z, 0, 0,
+        hx,     t,      z,  color.x, color.y, color.z, 0, 0,
+        hx,     0,      z,  color.x, color.y, color.z, 0, 0,
+        0,      0,      z,  color.x, color.y, color.z, 0, 0,
+        0,      t,      z,  color.x, color.y, color.z, 0, 0,
+        t,      hy,     z,  color.x, color.y, color.z, 0, 0,
+        t,      0,      z,  color.x, color.y, color.z, 0, 0,
+        0,      0,      z,  color.x, color.y, color.z, 0, 0,
+        0,      hy,     z,  color.x, color.y, color.z, 0, 0,
+        hx,     hy,     z,  color.x, color.y, color.z, 0, 0,
+        hx,     0,      z,  color.x, color.y, color.z, 0, 0,
+        hx - t, 0,      z,  color.x, color.y, color.z, 0, 0,
+        hx - t, hy,     z,  color.x, color.y, color.z, 0, 0,
     };
 
     u32 indices[] = {

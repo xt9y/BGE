@@ -28,11 +28,6 @@ void GL_START()
     state = (state_t){0};
     state.cursor_locked = true;
 
-    state.toString[STATE_MENU] = "STATE_MENU";
-    state.toString[STATE_PLAYING] = "STATE_PLAYING";
-    state.toString[STATE_EDITOR] = "STATE_EDITOR";
-    state.toString[STATE_EXIT] = "STATE_EXIT";
-
     ASSERT(glfwInit());
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

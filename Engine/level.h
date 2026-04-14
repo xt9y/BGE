@@ -17,6 +17,7 @@ typedef struct
     bool is_solid;
     bool is_invisible;
     vec3s color;
+    i32 sector_id;
 } level_quad_t;
 
 typedef struct

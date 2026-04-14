@@ -24,6 +24,8 @@
  *
  *  > press 0 to cycles through textures
  *
+ *  > press Q to cycle through sectors (Shift: reverse)
+ *
  *  > dragging drags the quad 
  *
  *  > dragging + ctrl resizes on dragging at pink edges
@@ -126,7 +128,14 @@ void RENDER()
     text_draw((vec2s){10.0f, 30.0f}, "FPS %.1f, WIN: %d x %d (FB: %d x %d)", GL_GETFPS(), ww, wh, state.fb->w, state.fb->h);
     text_draw((vec2s){10.0f, 50.0f}, "POS: %.1f %.1f %.1f ; YAW %.1f ; PITCH %.1f", state.cam->pos.x, state.cam->pos.y, state.cam->pos.z, state.cam->yaw, state.cam->pitch);
     text_draw((vec2s){10.0f, 70.0f}, "CURRENT_LVL: %d ; MAX_LVLS: %d", state.level_id + 1, state.level_count);
-    text_draw((vec2s){10.0f, 90.0f}, "STATE: %s", state.toString[state.id]);
+    if (state.id != STATE_EDITOR) {
+        const char* game_modes[] = { "MENU", "PLAYING", "EDITOR", "EXIT" };
+        text_draw((vec2s){10.0f, 90.0f}, "STATE: STATE_%s", game_modes[state.id]);
+    }
+    if (state.id == STATE_EDITOR) {
+        const char* editor_modes[] = { "IDLE", "DRAG", "RESIZE_TOP", "RESIZE_RIGHT", "PAINT" };
+        text_draw((vec2s){10.0f, 90.0f}, "EDITOR: EDITOR_%s", editor_modes[state.editor->id]);
+    }
     text_flush(state.fb->w, state.fb->h);
 }
 
@@ -163,6 +172,8 @@ void INPUT()
             state.cam->firstMouse = true;
             state.editor->selected_quad = NULL;
             state.editor->selected_sector = NULL;
+            state.editor->template_quad = get_default_quad(state.cam);
+            state.editor->template_mods = EDITOR_MOD_NONE;
             b_pressed = true;
         }
     } else b_pressed = false;

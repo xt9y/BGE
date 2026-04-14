@@ -29,7 +29,6 @@ typedef struct {
     bool cursor_locked;
     GLFWwindow* win;
     state_e id;
-    const char* toString[4];
     f32 dt;
     framebuffer_t* fb;
     data_t* data;

@@ -5,36 +5,49 @@
 #include "cam.h"
 
 typedef enum {
-    EDGE_NONE = 0,
-    EDGE_TOP,
-    EDGE_BOTTOM,
-    EDGE_LEFT,
-    EDGE_RIGHT
-} editor_edge_t;
+    EDITOR_IDLE = 0,
+    EDITOR_DRAG,
+    EDITOR_RESIZE_TOP,
+    EDITOR_RESIZE_RIGHT,
+    EDITOR_PAINT
+} editor_e;
+
+typedef enum {
+    EDITOR_MOD_NONE      = 0,
+    EDITOR_MOD_SECTOR    = 1 << 0,
+    EDITOR_MOD_TEXTURE   = 1 << 1,
+    EDITOR_MOD_COLOR     = 1 << 2,
+    EDITOR_MOD_ROTATION  = 1 << 3,
+    EDITOR_MOD_SOLID     = 1 << 4,
+    EDITOR_MOD_INVISIBLE = 1 << 5,
+    EDITOR_MOD_ALL       = 0xFF
+} editor_mod_e;
 
 typedef struct {
     level_data_t *level;
     level_quad_t *selected_quad;
     level_sector_data_t *selected_sector;
     i32 selected_wall_idx;
-    bool is_dragging;
-    editor_edge_t drag_edge;
-    editor_edge_t hover_edge;
+    
+    editor_e id;
+    editor_e hover_id;
+    
     vec3s drag_start_hit;
     vec3s drag_quad_start_pos;
     vec3s drag_quad_start_rot;
     vec2s drag_quad_start_size;
     vec3s drag_plane_normal;
     vec3s drag_cam_start_pos;
+    
+    level_quad_t template_quad;
+    u32 template_mods;
 } editor_t;
 
 typedef struct {
     bool hit;
-    i32 sector_id;
-    i32 wall_id;
+    i32 sector_id, wall_id;
+    vec3s hit_position, local_hit;
     f32 distance;
-    vec3s hit_position;
-    vec3s local_hit;
     level_quad_t* quad;
     level_sector_data_t* sector;
 } editor_look_at_info_t;
@@ -42,6 +55,14 @@ typedef struct {
 void editor_render();
 void editor_update();
 void editor_save(level_data_t* level);
+
+static level_quad_t get_default_quad(camera_t *cam) 
+{
+    return (level_quad_t) { 
+        .pos = {roundf(cam->pos.x + cam->front.x * 3.0f), roundf(cam->pos.y + cam->front.y * 3.0f), roundf(cam->pos.z + cam->front.z * 3.0f)}, 
+        .rot = {0, 0, 0}, .size = {2, 2}, .tex_idx = 0, .color = {1, 1, 1}, .is_solid = true, .is_invisible = false, .sector_id = 0
+    };
+}
 
 #endif
 

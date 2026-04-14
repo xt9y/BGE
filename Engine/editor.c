@@ -150,15 +150,19 @@ static editor_look_at_info_t editor_get_look_at_info_with_ray(const level_data_t
     return info;
 }
 
-static void editor_move_quad_to_sector(i32 old_sector_idx, i32 new_sector_idx, i32 quad_idx)
+static level_sector_data_t* get_sector_by_id(i32 id) {
+    for (i32 i = 0; i < state.editor->level->sector_count; i++) {
+        if (state.editor->level->sectors[i].id == id) return &state.editor->level->sectors[i];
+    }
+    return NULL;
+}
+
+static void editor_move_quad_to_sector(level_sector_data_t* old_sector, level_sector_data_t* new_sector, i32 quad_idx)
 {
-    if (old_sector_idx == new_sector_idx) return;
-    if (new_sector_idx < 0 || new_sector_idx >= state.editor->level->sector_count) return;
-    
-    state.editor->level->sectors[old_sector_idx].quads[quad_idx].sector_id = new_sector_idx;
-    
-    editor_delete_quad(&state.editor->level->sectors[old_sector_idx], quad_idx);
-    editor_add_quad(&state.editor->level->sectors[new_sector_idx], &state.editor->level->sectors[old_sector_idx].quads[quad_idx]);
+    if (!old_sector || !new_sector || old_sector == new_sector) return;
+    level_quad_t q = old_sector->quads[quad_idx];
+    editor_delete_quad(old_sector, quad_idx);
+    editor_add_quad(new_sector, &q);
 }
 
 void editor_update()
@@ -192,7 +196,12 @@ void editor_update()
                 if (state.editor->template_mods & EDITOR_MOD_TEXTURE) info.quad->tex_idx = state.editor->template_quad.tex_idx;
                 if (state.editor->template_mods & EDITOR_MOD_SOLID) info.quad->is_solid = state.editor->template_quad.is_solid;
                 if (state.editor->template_mods & EDITOR_MOD_INVISIBLE) info.quad->is_invisible = state.editor->template_quad.is_invisible;
-                if (state.editor->template_mods & EDITOR_MOD_SECTOR) if (info.quad->sector_id != state.editor->template_quad.sector_id) editor_move_quad_to_sector(info.quad->sector_id, state.editor->template_quad.sector_id, info.wall_id);
+                if (state.editor->template_mods & EDITOR_MOD_SECTOR) {
+                    if (info.quad->sector_id != state.editor->template_quad.sector_id) {
+                        level_sector_data_t* target_sector = get_sector_by_id(state.editor->template_quad.sector_id);
+                        if (target_sector) editor_move_quad_to_sector(info.sector, target_sector, info.wall_id);
+                    }
+                }
                 state.editor->selected_quad = NULL;
             } else {
                 state.editor->selected_quad = NULL;
@@ -415,11 +424,23 @@ void editor_update()
     static bool q_pressed = false;
     if (glfwGetKey(state.win, GLFW_KEY_Q) == GLFW_PRESS) {
         if (!q_pressed) {
-            i32 target_sector_id = state.editor->template_quad.sector_id;
-            if (shift_held) target_sector_id = (target_sector_id - 1 + state.editor->level->sector_count) % state.editor->level->sector_count;
-            else target_sector_id = (target_sector_id + 1) % state.editor->level->sector_count;
+            i32 current_idx = 0;
+            for (i32 i = 0; i < state.editor->level->sector_count; i++) {
+                if (state.editor->level->sectors[i].id == state.editor->template_quad.sector_id) {
+                    current_idx = i;
+                    break;
+                }
+            }
 
-            if (state.editor->selected_quad) editor_move_quad_to_sector(state.editor->selected_sector->id, target_sector_id, state.editor->selected_wall_idx);
+            i32 target_idx = shift_held ? 
+                (current_idx - 1 + state.editor->level->sector_count) % state.editor->level->sector_count : 
+                (current_idx + 1) % state.editor->level->sector_count;
+
+            i32 target_sector_id = state.editor->level->sectors[target_idx].id;
+
+            if (state.editor->selected_quad) {
+                editor_move_quad_to_sector(state.editor->selected_sector, &state.editor->level->sectors[target_idx], state.editor->selected_wall_idx);
+            }
             
             state.editor->template_quad.sector_id = target_sector_id;
             state.editor->template_mods |= EDITOR_MOD_SECTOR;
@@ -616,7 +637,7 @@ void editor_render_selected_info()
     if (!is_template) { text_draw((vec2s){x, y}, "%c Solid: %s", mod_sld, q->is_solid ? "YES" : "NO"); y += line_height; }
     if (!is_template) { text_draw((vec2s){x, y}, "%c Invisible: %s", mod_inv, q->is_invisible ? "YES" : "NO"); y += line_height; }
     text_draw((vec2s){x, y}, "%c Tex: %d", mod_t, q->tex_idx); y += line_height;
-    if (!is_template) { text_draw((vec2s){x, y}, "  Light: %.1f %.1f %.1f", s->light.x, s->light.y, s->light.z); y += line_height; }
+    if (!is_template && s) { text_draw((vec2s){x, y}, "  Light: %.1f %.1f %.1f", s->light.x, s->light.y, s->light.z); y += line_height; }
     text_draw((vec2s){x, y}, "%c Color: %.1f %.1f %.1f", mod_c, q->color.x, q->color.y, q->color.z);
 }
 

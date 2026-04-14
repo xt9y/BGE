@@ -66,6 +66,7 @@ static level_quad_t level1_sector0_quads[] = {
     { .pos = {21, -10, 3}, .rot = {0, 0, 0}, .size = {1, 12}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {0.6f, 0.7f, 1.0f}, .sector_id = 0 },
     { .pos = {-1, -10, 3}, .rot = {0, 0, 0}, .size = {2, 10}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {0.6f, 0.7f, 1.0f}, .sector_id = 0 },
     { .pos = {21, -10, 1}, .rot = {0, 0, 0}, .size = {12, 12}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 0 },
+    { .pos = {22, 1, 19}, .rot = {0, 90, 0}, .size = {12, 1}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {0.6f, 0.7f, 1.0f}, .sector_id = 0 },
 };
 
 static level_quad_t level1_sector1_quads[] = {
@@ -76,16 +77,15 @@ static level_quad_t level1_sector1_quads[] = {
     { .pos = {21, -8, -5}, .rot = {0, 90, 0}, .size = {6, 8}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1 },
     { .pos = {0, 0, 1}, .rot = {90, 0, 0}, .size = {21, 12}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1 },
     { .pos = {22, -11, 19}, .rot = {0, 0, 0}, .size = {12, 13}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1 },
-    { .pos = {25, 1, 19}, .rot = {0, 90, 90}, .size = {12, 8}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {0.4f, 0.4f, 0.4f}, .sector_id = 1 },
-    { .pos = {25, 1, 19}, .rot = {0, 90, 0}, .size = {12, 1}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {0.4f, 0.4f, 0.4f}, .sector_id = 1 },
-    { .pos = {22, 2, 19}, .rot = {0, 90, 90}, .size = {12, 8}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {0.4f, 0.4f, 0.4f}, .sector_id = 1 },
+    { .pos = {22, 2, 19}, .rot = {0, 90, 90}, .size = {12, 11}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {0.4f, 0.4f, 0.4f}, .sector_id = 1 },
     { .pos = {25, -7, 19}, .rot = {0, 90, 90}, .size = {12, 8}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {0.4f, 0.4f, 0.4f}, .sector_id = 1 },
     { .pos = {20, -10, 19}, .rot = {0, 90, 59}, .size = {12, 6}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {0.4f, 0.4f, 0.4f}, .sector_id = 1 },
     { .pos = {22, -10, 31}, .rot = {0, 0, 0}, .size = {12, 12}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1 },
-    { .pos = {27, 6, -33}, .rot = {330, 0, 0}, .size = {6, 6}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1 },
-    { .pos = {34, 6, -33}, .rot = {330, 0, 0}, .size = {6, 6}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1 },
-    { .pos = {41, 6, -33}, .rot = {330, 0, 0}, .size = {6, 6}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1 },
     { .pos = {22, 1, 19}, .rot = {0, 90, 0}, .size = {12, 1}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {0.6f, 0.7f, 1.0f}, .sector_id = 1 },
+    { .pos = {22, 1, 19}, .rot = {0, 90, 0}, .size = {12, 1}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {0.6f, 0.7f, 1.0f}, .sector_id = 1 },
+    { .pos = {34, 6, -33}, .rot = {330, 0, 0}, .size = {6, 6}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1 },
+    { .pos = {27, 6, -33}, .rot = {330, 0, 0}, .size = {6, 6}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1 },
+    { .pos = {20, 6, -33}, .rot = {330, 0, 0}, .size = {6, 6}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1 },
 };
 
 static level_sector_data_t level1_sectors[] = {
@@ -100,7 +100,7 @@ static inline level_data_t load_1(void)
         .path = "level1.h",
         .sectors = level1_sectors,
         .sector_count = sizeof(level1_sectors) / sizeof(level1_sectors[0]),
-        .cam = { .pos = {3.374f, -0.080f, 21.991f}, .yaw = -6428.753f, .pitch = -13.121f }
+        .cam = { .pos = {2.873f, -5.500f, 12.917f}, .yaw = -6793.479f, .pitch = -0.721f }
     };
 }
 

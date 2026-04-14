@@ -8,44 +8,38 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static void editor_add_quad(level_sector_data_t* sector, const level_quad_t* template) {
-    level_quad_t* new_quads = malloc(sizeof(level_quad_t) * (sector->quad_count + 1));
-    if (sector->quad_count > 0) {
-        memcpy(new_quads, sector->quads, sizeof(level_quad_t) * sector->quad_count);
-    }
-    level_quad_t new_q;
-    if (template) {
-        new_q = *template;
-        new_q.pos.y += 0.5f; // Offset duplication
-    } else {
-        new_q = (level_quad_t){ 
-            .pos = vec3_add(state.cam->pos, vec3_scale(state.cam->front, 3.0f)), 
+static void editor_add_quad(level_sector_data_t* sector, const level_quad_t* template) 
+{
+    level_quad_t new_q; 
+
+    if (template) new_q = *template;
+    else {
+        vec3s raw_pos = vec3_add(state.cam->pos, vec3_scale(state.cam->front, 3.0f));
+        new_q = (level_quad_t) { 
+            .pos = (vec3s){roundf(raw_pos.x), roundf(raw_pos.y), roundf(raw_pos.z)}, 
             .rot = {0,0,0}, .size = {2,2}, .tex_idx = 0, .color = {1,1,1}, .is_solid = true 
         };
     }
-    new_quads[sector->quad_count] = new_q;
-    sector->quads = new_quads;
+
+    sector->quads[sector->quad_count] = new_q;
     sector->quad_count++;
     state.editor->selected_quad = &sector->quads[sector->quad_count - 1];
     state.editor->selected_sector = sector;
     state.editor->selected_wall_idx = sector->quad_count - 1;
 }
 
-static void editor_delete_quad(level_sector_data_t* sector, i32 idx) {
+static void editor_delete_quad(level_sector_data_t* sector, i32 idx) 
+{
     if (!sector || idx < 0 || idx >= sector->quad_count) return;
-    if (sector->quad_count == 1) {
-        sector->quad_count = 0;
-        return;
-    }
-    level_quad_t* new_quads = malloc(sizeof(level_quad_t) * (sector->quad_count - 1));
-    if (idx > 0) memcpy(new_quads, sector->quads, sizeof(level_quad_t) * idx);
-    if (idx < sector->quad_count - 1) memcpy(new_quads + idx, sector->quads + idx + 1, sizeof(level_quad_t) * (sector->quad_count - idx - 1));
-    sector->quads = new_quads;
+
+    for (i32 i = idx; i < sector->quad_count - 1; i++) sector->quads[i] = sector->quads[i + 1];    
     sector->quad_count--;
 }
 
-static void render_wall_quad_outline(const level_quad_t* quad, const vec4s color)
+static void render_wall_quad(const level_quad_t* quad, const vec4s color)
 {
+    if (!quad) return;
+
     f32 rot_y[16], rot_x[16], rot_z[16];
     mat4_rotate_y(rot_y, -DEG2RAD(quad->rot.y));
     mat4_rotate_x(rot_x, -DEG2RAD(quad->rot.x));
@@ -62,18 +56,35 @@ static void render_wall_quad_outline(const level_quad_t* quad, const vec4s color
     GLint model_loc = glGetUniformLocation(state.data->program, "model");
     glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
 
-    f32 half_x = 0.5f * quad->size.x + 0.02f;
-    f32 half_y = 0.5f * quad->size.y + 0.02f;
+    f32 hx = 0.5f * quad->size.x,
+        hy = 0.5f * quad->size.y,
+        t = 0.05f, // Thickness 
+        z = 0.0f;
 
     f32 vertices[] = {
-         half_x,  half_y, 0.0f,   color.x, color.y, color.z,
-         half_x, -half_y, 0.0f,   color.x, color.y, color.z,
-        -half_x, -half_y, 0.0f,   color.x, color.y, color.z,
-        -half_x,  half_y, 0.0f,   color.x, color.y, color.z,
+        hx,      hy,      z,  color.x, color.y, color.z,  0,0,
+        hx,      hy - t,  z,  color.x, color.y, color.z,  0,0,
+       -hx,      hy - t,  z,  color.x, color.y, color.z,  0,0,
+       -hx,      hy,      z,  color.x, color.y, color.z,  0,0,
+        hx,     -hy + t,  z,  color.x, color.y, color.z,  0,0,
+        hx,     -hy,      z,  color.x, color.y, color.z,  0,0,
+       -hx,     -hy,      z,  color.x, color.y, color.z,  0,0,
+       -hx,     -hy + t,  z,  color.x, color.y, color.z,  0,0,
+       -hx + t,  hy,      z,  color.x, color.y, color.z,  0,0,
+       -hx + t, -hy,      z,  color.x, color.y, color.z,  0,0,
+       -hx,     -hy,      z,  color.x, color.y, color.z,  0,0,
+       -hx,      hy,      z,  color.x, color.y, color.z,  0,0,
+        hx,      hy,      z,  color.x, color.y, color.z,  0,0,
+        hx,     -hy,      z,  color.x, color.y, color.z,  0,0,
+        hx - t, -hy,      z,  color.x, color.y, color.z,  0,0,
+        hx - t,  hy,      z,  color.x, color.y, color.z,  0,0,
     };
 
     u32 indices[] = {
-        0, 1, 1, 2, 2, 3, 3, 0
+        0, 1, 3, 1, 2, 3, 
+        4, 5, 7, 5, 6, 7,
+        8, 9, 11, 9, 10, 11,
+        12, 13, 15, 13, 14, 15
     };
 
     u32 vao, vbo, ebo;
@@ -88,25 +99,18 @@ static void render_wall_quad_outline(const level_quad_t* quad, const vec4s color
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STREAM_DRAW);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)0);
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void*)(3 * sizeof(f32)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(3 * sizeof(f32)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(6 * sizeof(f32)));
 
-    glLineWidth(8.0f);
-    glDrawElements(GL_LINES, 8, GL_UNSIGNED_INT, 0);
+    texture_bind(texture_get_by_name("solid_color"), 0);
+    texture_bind(texture_get_by_name("solid_color"), 1);
 
-    f32 offset = 0.08f;
-    f32 vertices2[] = {
-         half_x + offset,  half_y + offset, 0.0f,   color.x, color.y, color.z,
-         half_x + offset, -half_y - offset, 0.0f,   color.x, color.y, color.z,
-        -half_x - offset, -half_y - offset, 0.0f,   color.x, color.y, color.z,
-        -half_x - offset,  half_y + offset, 0.0f,   color.x, color.y, color.z,
-    };
-
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices2), vertices2);
-    glDrawElements(GL_LINES, 8, GL_UNSIGNED_INT, 0);
-
-    glLineWidth(1.0f);
+    glDisable(GL_DEPTH_TEST);
+    glDrawElements(GL_TRIANGLES, 24, GL_UNSIGNED_INT, 0);
+    glEnable(GL_DEPTH_TEST);
 
     glBindVertexArray(0);
     glDeleteVertexArrays(1, &vao);
@@ -114,14 +118,13 @@ static void render_wall_quad_outline(const level_quad_t* quad, const vec4s color
     glDeleteBuffers(1, &ebo);
 }
 
-static vec3s intersect_ray_plane(vec3s origin, vec3s dir, vec3s plane_pos, vec3s plane_normal) {
-    f32 denom = vec3_dot(plane_normal, dir);
-    if (fabsf(denom) < 0.0001f) return plane_pos;
-    f32 t = vec3_dot(vec3_sub(plane_pos, origin), plane_normal) / denom;
-    return vec3_add(origin, vec3_scale(dir, t));
+static vec3s intersect_ray_plane(vec3s origin, vec3s dir, vec3s plane_pos, vec3s plane_normal) 
+{
+    if (fabsf(vec3_dot(plane_normal, dir)) < 0.0001f) return plane_pos;
+    return vec3_add(origin, vec3_scale(dir, vec3_dot(vec3_sub(plane_pos, origin), plane_normal) / vec3_dot(plane_normal, dir)));
 }
 
-static bool ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, const level_quad_t* quad, f32* out_t, vec3s* out_hit)
+static bool ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, const level_quad_t* quad, f32* out_t, vec3s* out_hit, vec3s* out_local_hit)
 {
     f32 rot_y[16], rot_x[16], rot_z[16], model[16], temp[16];
     mat4_rotate_y(rot_y, -DEG2RAD(quad->rot.y));
@@ -140,14 +143,13 @@ static bool ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, con
         model[2] * 0.0f + model[6] * 0.0f + model[10] * 1.0f
     };
 
-    f32 denom = vec3_dot(normal, ray_dir);
-    if (fabsf(denom) < 0.0001f) return false;
+    if (fabsf(vec3_dot(normal, ray_dir)) < 0.0001f) return false;
 
-    f32 t = vec3_dot(vec3_sub(wall_pos, ray_origin), normal) / denom;
+    f32 t = vec3_dot(vec3_sub(wall_pos, ray_origin), normal) / vec3_dot(normal, ray_dir);
     if (t < 0.0f) return false;
 
-    vec3s hit = vec3_add(ray_origin, vec3_scale(ray_dir, t));
-    vec3s local_hit = vec3_sub(hit, wall_pos);
+    vec3s hit = vec3_add(ray_origin, vec3_scale(ray_dir, t)),
+          local_hit = vec3_sub(hit, wall_pos);
 
     f32 inv_rot_z[16], inv_rot_x[16], inv_rot_y[16], inv_model[16], temp2[16];
     mat4_rotate_z(inv_rot_z, DEG2RAD(quad->rot.z));
@@ -162,11 +164,13 @@ static bool ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, con
         inv_model[2] * local_hit.x + inv_model[6] * local_hit.y + inv_model[10] * local_hit.z
     };
 
-    f32 half_x = 0.5f * quad->size.x, half_y = 0.5f * quad->size.y;
+    f32 half_x = 0.5f * quad->size.x, 
+        half_y = 0.5f * quad->size.y;
 
     if (fabsf(unrotated_hit.x) <= half_x + 0.01f && fabsf(unrotated_hit.y) <= half_y + 0.01f) {
         *out_t = t;
         *out_hit = hit;
+        *out_local_hit = unrotated_hit;
         return true;
     }
     return false;
@@ -178,18 +182,17 @@ static editor_look_at_info_t editor_get_look_at_info_with_ray(const level_data_t
     info.distance = max_distance;
     f32 closest_t = max_distance;
 
-    for (i32 s = 0; s < level->sector_count; s++)
-    {
-        for (i32 w = 0; w < level->sectors[s].quad_count; w++)
-        {
-            f32 t; vec3s hit;
-            if (ray_intersects_quad(ray_origin, ray_dir, &level->sectors[s].quads[w], &t, &hit) && t < closest_t) {
+    for (i32 s = 0; s < level->sector_count; s++) {
+        for (i32 w = 0; w < level->sectors[s].quad_count; w++) {
+            f32 t; vec3s hit, lhit;
+            if (ray_intersects_quad(ray_origin, ray_dir, &level->sectors[s].quads[w], &t, &hit, &lhit) && t < closest_t) {
                 closest_t = t;
                 info.hit = true;
                 info.sector_id = level->sectors[s].id;
                 info.wall_id = w;
                 info.distance = t;
                 info.hit_position = hit;
+                info.local_hit = lhit;
                 info.quad = &level->sectors[s].quads[w];
                 info.sector = &level->sectors[s];
             }
@@ -200,8 +203,7 @@ static editor_look_at_info_t editor_get_look_at_info_with_ray(const level_data_t
 
 void editor_update()
 {
-    vec3s ray_dir = vec3_normalize(state.cam->front);
-    editor_look_at_info_t info = editor_get_look_at_info_with_ray(state.editor->level, state.cam->pos, ray_dir, 100.0f);
+    editor_look_at_info_t info = editor_get_look_at_info_with_ray(state.editor->level, state.cam->pos, vec3_normalize(state.cam->front), 100.0f);
 
     static bool mouse_was_pressed = false;
     bool mouse_is_pressed = glfwGetMouseButton(state.win, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
@@ -218,31 +220,71 @@ void editor_update()
             state.editor->drag_quad_start_pos = info.quad->pos;
             state.editor->drag_quad_start_rot = info.quad->rot;
             state.editor->drag_quad_start_size = info.quad->size;
+
+            f32 hx = info.quad->size.x * 0.5f;
+            f32 hy = info.quad->size.y * 0.5f;
+            f32 dy_t = hy - info.local_hit.y;
+            f32 dx_r = hx - info.local_hit.x;
+            
+            f32 tol = 5.0f;
+            if (dy_t < dx_r && dy_t < tol) state.editor->drag_edge = EDGE_TOP;
+            else if (dx_r < tol) state.editor->drag_edge = EDGE_RIGHT;
+            else state.editor->drag_edge = EDGE_NONE;
         } else {
             state.editor->selected_quad = NULL;
         }
     }
 
-    if (!mouse_is_pressed) state.editor->is_dragging = false;
+    if (!mouse_is_pressed) {
+        state.editor->is_dragging = false;
+        state.editor->hover_edge = EDGE_NONE;
+
+        if (state.editor->selected_quad && (glfwGetKey(state.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)) {
+            if (info.hit && info.quad == state.editor->selected_quad) {
+                f32 hx = info.quad->size.x * 0.5f,
+                    hy = info.quad->size.y * 0.5f,
+                    dy_t = hy - info.local_hit.y,
+                    dx_r = hx - info.local_hit.x,
+                    tol = 5.0f;
+
+                if (dy_t < dx_r && dy_t < tol) state.editor->hover_edge = EDGE_TOP;
+                else if (dx_r < tol) state.editor->hover_edge = EDGE_RIGHT;
+            }
+        }
+    }
 
 
     if (state.editor->is_dragging && state.editor->selected_quad) {
-        vec3s cam_move = vec3_sub(state.cam->pos, state.editor->drag_cam_start_pos);
-        vec3s plane_pos = vec3_add(state.editor->drag_start_hit, cam_move);
-        vec3s current_hit = intersect_ray_plane(state.cam->pos, ray_dir, plane_pos, state.editor->drag_plane_normal);
+        vec3s plane_pos = vec3_add(state.editor->drag_start_hit, vec3_sub(state.cam->pos, state.editor->drag_cam_start_pos));
+        vec3s current_hit = intersect_ray_plane(state.cam->pos, vec3_normalize(state.cam->front), plane_pos, state.editor->drag_plane_normal);
         
-        vec3s diff = vec3_sub(current_hit, state.editor->drag_start_hit);
-        vec3s rel_diff = vec3_sub(current_hit, plane_pos);
-
         vec3s right = vec3_normalize(vec3_cross(state.cam->front, (vec3s){0, 1, 0}));
         vec3s up_vec = vec3_normalize(vec3_cross(right, state.cam->front));
-        f32 dx = vec3_dot(rel_diff, right);
-        f32 dy = vec3_dot(rel_diff, up_vec);
 
         if (glfwGetKey(state.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
-            state.editor->selected_quad->size.x = fmaxf(0.1f, state.editor->drag_quad_start_size.x + dx);
-            state.editor->selected_quad->size.y = fmaxf(0.1f, state.editor->drag_quad_start_size.y + dy);
-        } else state.editor->selected_quad->pos = vec3_add(state.editor->drag_quad_start_pos, diff);
+            vec3s movement = vec3_add(vec3_scale(right, vec3_dot(vec3_sub(current_hit, plane_pos), right)), vec3_scale(up_vec, vec3_dot(vec3_sub(current_hit, plane_pos), up_vec)));
+
+            f32 r_y[16], r_x[16], r_z[16], m[16], t[16];
+            mat4_rotate_y(r_y, -DEG2RAD(state.editor->drag_quad_start_rot.y));
+            mat4_rotate_x(r_x, -DEG2RAD(state.editor->drag_quad_start_rot.x));
+            mat4_rotate_z(r_z, -DEG2RAD(state.editor->drag_quad_start_rot.z));
+            mat4_multiply(t, r_y, r_x);
+            mat4_multiply(m, t, r_z);
+            vec3s local_right = { m[0], m[1], m[2] },
+                  local_up = { m[4], m[5], m[6] };
+
+            f32 d_size_x = 0, d_size_y = 0;
+
+            if (state.editor->drag_edge == EDGE_TOP) d_size_y = vec3_dot(movement, local_up);
+            else if (state.editor->drag_edge == EDGE_RIGHT) d_size_x = vec3_dot(movement, local_right) * 2.0f;
+
+            state.editor->selected_quad->size.x = roundf(fmaxf(1.0f, state.editor->drag_quad_start_size.x + d_size_x));
+            state.editor->selected_quad->size.y = roundf(fmaxf(1.0f, state.editor->drag_quad_start_size.y + d_size_y));
+            state.editor->selected_quad->pos = state.editor->drag_quad_start_pos;
+        } else {
+            vec3s new_pos = vec3_add(state.editor->drag_quad_start_pos, vec3_sub(current_hit, state.editor->drag_start_hit));
+            state.editor->selected_quad->pos = (vec3s){roundf(new_pos.x), roundf(new_pos.y), roundf(new_pos.z)};
+        }
     }
 
     bool shift_held = glfwGetKey(state.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
@@ -293,22 +335,22 @@ void editor_update()
         if (glfwGetKey(state.win, adj_keys[i]) == GLFW_PRESS) {
             if (adj_timers[i] <= 0) {
                 f32 step;
-                if (i < 6) step = 0.01f;
+                if (i < 6) step = 0.1f;
                 else step = 1.0f;
                 if (shift_held) step = -step;
 
                 if (i < 3 && state.editor->selected_quad) {
-                    if (i == 0) state.editor->selected_quad->color.x = fmaxf(0, fminf(1, state.editor->selected_quad->color.x + step));
-                    if (i == 1) state.editor->selected_quad->color.y = fmaxf(0, fminf(1, state.editor->selected_quad->color.y + step));
-                    if (i == 2) state.editor->selected_quad->color.z = fmaxf(0, fminf(1, state.editor->selected_quad->color.z + step));
+                    if (i == 0) state.editor->selected_quad->color.x = roundf(fmaxf(0, fminf(1, state.editor->selected_quad->color.x + step)) * 10.0f) / 10.0f;
+                    if (i == 1) state.editor->selected_quad->color.y = roundf(fmaxf(0, fminf(1, state.editor->selected_quad->color.y + step)) * 10.0f) / 10.0f;
+                    if (i == 2) state.editor->selected_quad->color.z = roundf(fmaxf(0, fminf(1, state.editor->selected_quad->color.z + step)) * 10.0f) / 10.0f;
                 } else if (i < 6 && state.editor->selected_sector) {
-                    if (i == 3) state.editor->selected_sector->light.x = fmaxf(0, fminf(1, state.editor->selected_sector->light.x + step));
-                    if (i == 4) state.editor->selected_sector->light.y = fmaxf(0, fminf(1, state.editor->selected_sector->light.y + step));
-                    if (i == 5) state.editor->selected_sector->light.z = fmaxf(0, fminf(1, state.editor->selected_sector->light.z + step));
+                    if (i == 3) state.editor->selected_sector->light.x = roundf(fmaxf(0, fminf(1, state.editor->selected_sector->light.x + step)) * 10.0f) / 10.0f;
+                    if (i == 4) state.editor->selected_sector->light.y = roundf(fmaxf(0, fminf(1, state.editor->selected_sector->light.y + step)) * 10.0f) / 10.0f;
+                    if (i == 5) state.editor->selected_sector->light.z = roundf(fmaxf(0, fminf(1, state.editor->selected_sector->light.z + step)) * 10.0f) / 10.0f;
                 } else if (state.editor->selected_quad) {
-                    if (i == 6) state.editor->selected_quad->rot.x += step;
-                    if (i == 7) state.editor->selected_quad->rot.y += step;
-                    if (i == 8) state.editor->selected_quad->rot.z += step;
+                    if (i == 6) state.editor->selected_quad->rot.x = roundf(state.editor->selected_quad->rot.x + step);
+                    if (i == 7) state.editor->selected_quad->rot.y = roundf(state.editor->selected_quad->rot.y + step);
+                    if (i == 8) state.editor->selected_quad->rot.z = roundf(state.editor->selected_quad->rot.z + step);
                 }
                 adj_timers[i] = 0.02f;
             }
@@ -354,10 +396,10 @@ void editor_save(level_data_t* level)
         fprintf(f, "static level_quad_t level%d_sector%d_quads[] = {\n", level_num, s);
         for (int q = 0; q < sector->quad_count; q++) {
             level_quad_t* quad = &sector->quads[q];
-            fprintf(f, "    { .pos = {%.3ff, %.3ff, %.3ff}, .rot = {%.3ff, %.3ff, %.3ff}, .size = {%.3ff, %.3ff}, .tex_idx = %d, .is_solid = %s, .is_invisible = %s, .color = {%.3ff, %.3ff, %.3ff} },\n",
-                quad->pos.x, quad->pos.y, quad->pos.z,
-                quad->rot.x, quad->rot.y, quad->rot.z,
-                quad->size.x, quad->size.y,
+            fprintf(f, "    { .pos = {%.0f, %.0f, %.0f}, .rot = {%.0f, %.0f, %.0f}, .size = {%.0f, %.0f}, .tex_idx = %d, .is_solid = %s, .is_invisible = %s, .color = {%.1ff, %.1ff, %.1ff} },\n",
+                roundf(quad->pos.x), roundf(quad->pos.y), roundf(quad->pos.z),
+                roundf(quad->rot.x), roundf(quad->rot.y), roundf(quad->rot.z),
+                roundf(quad->size.x), roundf(quad->size.y),
                 quad->tex_idx,
                 quad->is_solid ? "true" : "false",
                 quad->is_invisible ? "true" : "false",
@@ -369,7 +411,7 @@ void editor_save(level_data_t* level)
     fprintf(f, "static level_sector_data_t level%d_sectors[] = {\n", level_num);
     for (int s = 0; s < level->sector_count; s++) {
         level_sector_data_t* sector = &level->sectors[s];
-        fprintf(f, "    { .id = %d, .light = {%.3ff, %.3ff, %.3ff}, .quads = level%d_sector%d_quads, ", sector->id, sector->light.x, sector->light.y, sector->light.z, level_num, s);
+        fprintf(f, "    { .id = %d, .light = {%.1ff, %.1ff, %.1ff}, .quads = level%d_sector%d_quads, ", sector->id, sector->light.x, sector->light.y, sector->light.z, level_num, s);
         fprintf(f, ".quad_count = sizeof(level%d_sector%d_quads) / sizeof(level%d_sector%d_quads[0]) },\n", level_num, s, level_num, s);
     }
     fprintf(f, "};\n\n");
@@ -389,39 +431,115 @@ void editor_save(level_data_t* level)
     fclose(f);
 }
 
-void editor_render()
+static void render_resize_markers(const level_quad_t* quad, editor_edge_t edge, vec3s color)
 {
-    vec3s ray_dir = vec3_normalize(state.cam->front);
-    editor_look_at_info_t info = editor_get_look_at_info_with_ray(state.editor->level, state.cam->pos, ray_dir, 100.0f);
+    if (!quad || edge == EDGE_NONE) return;
+
+    f32 hx = quad->size.x * 0.5f;
+    f32 hy = quad->size.y * 0.5f;
     
-    if (info.hit) render_wall_quad_outline(info.quad, (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
+    f32 r_y[16], r_x[16], r_z[16], model[16], t_mat[16];
+    mat4_rotate_y(r_y, -DEG2RAD(quad->rot.y));
+    mat4_rotate_x(r_x, -DEG2RAD(quad->rot.x));
+    mat4_rotate_z(r_z, -DEG2RAD(quad->rot.z));
+    mat4_multiply(t_mat, r_y, r_x);
+    mat4_multiply(model, t_mat, r_z);
+
+    model[12] = quad->pos.x;
+    model[13] = quad->pos.y + quad->size.y * 0.5f;
+    model[14] = quad->pos.z;
+
+    GLint model_loc = glGetUniformLocation(state.data->program, "model");
+    glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
+
+    f32 t = 0.05f; // Thickness
+    f32 z = 0.0f;
+    f32 v[32]; // 4 vertices * (3 pos + 3 color + 2 uv)
+
+    if (edge == EDGE_TOP) {
+        f32 data[] = {
+             hx,     hy,     z,  color.x, color.y, color.z,  0,0,
+             hx,     hy - t, z,  color.x, color.y, color.z,  0,0,
+            -hx,     hy - t, z,  color.x, color.y, color.z,  0,0,
+            -hx,     hy,     z,  color.x, color.y, color.z,  0,0,
+        };
+        memcpy(v, data, sizeof(data));
+    } else if (edge == EDGE_RIGHT) {
+        f32 data[] = {
+             hx,     hy,     z,  color.x, color.y, color.z,  0,0,
+             hx,    -hy,     z,  color.x, color.y, color.z,  0,0,
+             hx - t,-hy,     z,  color.x, color.y, color.z,  0,0,
+             hx - t, hy,     z,  color.x, color.y, color.z,  0,0,
+        };
+        memcpy(v, data, sizeof(data));
+    } else return;
+
+    u32 indices[] = { 
+        0, 1, 3, 1, 2, 3 
+    };
+
+    u32 vao, vbo, ebo;
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+    glGenBuffers(1, &ebo);
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(v), v, GL_STREAM_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STREAM_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(3 * sizeof(f32)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(6 * sizeof(f32)));
+
+    texture_bind(texture_get_by_name("solid_color"), 0);
+    texture_bind(texture_get_by_name("solid_color"), 1);
+
+    glDisable(GL_DEPTH_TEST);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glEnable(GL_DEPTH_TEST);
+
+    glBindVertexArray(0);
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(1, &vbo);
+    glDeleteBuffers(1, &ebo);
 }
 
-void editor_render_look_at_info()
+void editor_render()
 {
-    vec3s ray_dir = vec3_normalize(state.cam->front);
-    editor_look_at_info_t info = editor_get_look_at_info_with_ray(state.editor->level, state.cam->pos, ray_dir, 100.0f);
-    
-    level_quad_t* quad = info.hit ? info.quad : state.editor->selected_quad;
-    level_sector_data_t* sector = info.hit ? info.sector : state.editor->selected_sector;
-    i32 wall_id = info.hit ? info.wall_id : state.editor->selected_wall_idx;
+    if (state.editor->selected_quad) render_wall_quad(state.editor->selected_quad, (vec4s){1.0f, 1.0f, 0.0f, 1.0f});
 
+    if (glfwGetKey(state.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
+        if (state.editor->selected_quad) {
+            vec3s pink = {1.0f, 0.0f, 1.0f};
+            vec3s light_pink = {1.0f, 0.6f, 1.0f};
+            editor_edge_t active_edge = state.editor->is_dragging ? state.editor->drag_edge : state.editor->hover_edge;
+            render_resize_markers(state.editor->selected_quad, EDGE_TOP, active_edge == EDGE_TOP ? light_pink : pink);
+            render_resize_markers(state.editor->selected_quad, EDGE_RIGHT, active_edge == EDGE_RIGHT ? light_pink : pink);
+        }
+    }
+}
+
+void editor_render_selected_info()
+{
     f32 x = 10.0f, y = 150.0f, line_height = 20.0f;
 
-    if (quad && sector) {
-        text_draw((vec2s){x, y}, info.hit ? "LOOKING AT:" : "SELECTED:"); y += line_height;
-        text_draw((vec2s){x, y}, "  Sector ID: %d", sector->id); y += line_height;
-        text_draw((vec2s){x, y}, "  Wall ID: %d", wall_id); y += line_height;
-        if (info.hit) { text_draw((vec2s){x, y}, "  Distance: %.3f", info.distance); y += line_height; }
-        text_draw((vec2s){x, y}, "  Pos: %.1f %.1f %.1f", quad->pos.x, quad->pos.y, quad->pos.z); y += line_height;
-        text_draw((vec2s){x, y}, "  Rot: %.1f %.1f %.1f", quad->rot.x, quad->rot.y, quad->rot.z); y += line_height;
-        text_draw((vec2s){x, y}, "  Size: %.1f %.1f", quad->size.x, quad->size.y); y += line_height;
-        text_draw((vec2s){x, y}, "  Solid: %s", quad->is_solid ? "YES" : "NO"); y += line_height;
-        text_draw((vec2s){x, y}, "  Invisible: %s", quad->is_invisible ? "YES" : "NO"); y += line_height;
-        text_draw((vec2s){x, y}, "  Tex: %d", quad->tex_idx); y += line_height;
-        text_draw((vec2s){x, y}, "  Light: %.1f %.1f %.1f", sector->light.x, sector->light.y, sector->light.z); y += line_height;
-        text_draw((vec2s){x, y}, "  Color: %.1f %.1f %.1f", quad->color.x, quad->color.y, quad->color.z);
-    } else text_draw((vec2s){x, y}, "LOOKING AT: Nothing");
+    if (state.editor->selected_quad && state.editor->selected_sector) {
+        text_draw((vec2s){x, y}, "SELECTED:"); y += line_height;
+        text_draw((vec2s){x, y}, "  Sector ID: %d", state.editor->selected_sector->id); y += line_height;
+        text_draw((vec2s){x, y}, "  Wall ID: %d", state.editor->selected_wall_idx); y += line_height;
+        text_draw((vec2s){x, y}, "  Pos: %.0f %.0f %.0f", state.editor->selected_quad->pos.x, state.editor->selected_quad->pos.y, state.editor->selected_quad->pos.z); y += line_height;
+        text_draw((vec2s){x, y}, "  Rot: %.0f %.0f %.0f", state.editor->selected_quad->rot.x, state.editor->selected_quad->rot.y, state.editor->selected_quad->rot.z); y += line_height;
+        text_draw((vec2s){x, y}, "  Size: %.0f %.0f", state.editor->selected_quad->size.x, state.editor->selected_quad->size.y); y += line_height;
+        text_draw((vec2s){x, y}, "  Solid: %s", state.editor->selected_quad->is_solid ? "YES" : "NO"); y += line_height;
+        text_draw((vec2s){x, y}, "  Invisible: %s", state.editor->selected_quad->is_invisible ? "YES" : "NO"); y += line_height;
+        text_draw((vec2s){x, y}, "  Tex: %d", state.editor->selected_quad->tex_idx); y += line_height;
+        text_draw((vec2s){x, y}, "  Light: %.1f %.1f %.1f", state.editor->selected_sector->light.x, state.editor->selected_sector->light.y, state.editor->selected_sector->light.z); y += line_height;
+        text_draw((vec2s){x, y}, "  Color: %.1f %.1f %.1f", state.editor->selected_quad->color.x, state.editor->selected_quad->color.y, state.editor->selected_quad->color.z);
+    } else text_draw((vec2s){x, y}, "SELECTED: Nothing");
 
     text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");
 }

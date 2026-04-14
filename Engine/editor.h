@@ -4,12 +4,22 @@
 #include "level.h"
 #include "cam.h"
 
+typedef enum {
+    EDGE_NONE = 0,
+    EDGE_TOP,
+    EDGE_BOTTOM,
+    EDGE_LEFT,
+    EDGE_RIGHT
+} editor_edge_t;
+
 typedef struct {
     level_data_t *level;
     level_quad_t *selected_quad;
     level_sector_data_t *selected_sector;
     i32 selected_wall_idx;
     bool is_dragging;
+    editor_edge_t drag_edge;
+    editor_edge_t hover_edge;
     vec3s drag_start_hit;
     vec3s drag_quad_start_pos;
     vec3s drag_quad_start_rot;
@@ -24,14 +34,14 @@ typedef struct {
     i32 wall_id;
     f32 distance;
     vec3s hit_position;
+    vec3s local_hit;
     level_quad_t* quad;
     level_sector_data_t* sector;
 } editor_look_at_info_t;
 
 void editor_render(void);
-void editor_render_look_at_info(void);
+void editor_render_selected_info(void);
 void editor_render_legend(void);
-editor_look_at_info_t editor_get_look_at_info(const level_data_t *level, const camera_t *cam, f32 max_distance);
 void editor_update(void);
 void editor_save(level_data_t* level);
 

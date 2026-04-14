@@ -42,7 +42,7 @@ void RUN()
         state.text->textures[state.text->count++] = *texture_create("Engine/res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
         state.text->textures[state.text->count++] = *texture_create("Engine/res/awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
         state.text->textures[state.text->count++] = *texture_create_solid(255, 255, 255);
-        text_init(NULL);
+        text_init();
     }
 
     {   // Levels 
@@ -55,23 +55,17 @@ void RUN()
     }
 
     {   // Editor
-        state.editor->level = &state.levels[0];
+        state.editor->level = &state.levels[state.level_id];
     }
 
     while (GL_FRAME()) 
     {
         state.editor->level = &state.levels[state.level_id];
-        
-        if (state.id == STATE_EDITOR) 
-        {
-            editor_update();
-        }
+        if (state.id == STATE_EDITOR) editor_update();
     }
 
     editor_save(state.editor->level);
-
-#define END() do { GL_END(); } while (0)
-    END();
+    GL_END();
 }
 
 void RENDER()
@@ -98,7 +92,7 @@ void RENDER()
     text_begin();
     level_render(state.editor->level);
     if (state.id == STATE_EDITOR) {
-        editor_render_look_at_info();
+        editor_render_selected_info();
         editor_render();
         editor_render_legend();
     }

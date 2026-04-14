@@ -259,9 +259,8 @@ static void text_ortho(f32* m, const f32 left, const f32 right, const f32 bottom
     m[13] = -(top + bottom) / tb;
 }
 
-void text_init(texture_t* font_tex)
+void text_init()
 {
-    (void)font_tex; // Font is now loaded internally
     text_init_glyphs();
 
     g_font_tex = texture_create("Engine/res/font.png", TEX_FILTER_NEAREST, TEX_WRAP_CLAMP_TO_EDGE);

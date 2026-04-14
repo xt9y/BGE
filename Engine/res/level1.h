@@ -4,17 +4,26 @@
 #include "level.h"
 
 static level_quad_t level1_sector0_quads[] = {
-    { .pos = {4.600f, -0.800f, -5.600f}, .rot = {0.000f, 0.000f, 0.000f}, .size = {16.400f, 10.600f}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.000f, 1.000f, 1.000f} },
+    { .pos = {6, -2, -5}, .rot = {0, 0, 0}, .size = {12, 8}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
+    { .pos = {6, -8, 1}, .rot = {90, 0, 0}, .size = {12, 12}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
+    { .pos = {-12, -2, 25}, .rot = {0, 90, 0}, .size = {36, 8}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
+    { .pos = {24, -2, 25}, .rot = {0, 90, 0}, .size = {36, 8}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
+    { .pos = {6, 0, 1}, .rot = {90, 0, 0}, .size = {12, 12}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
+    { .pos = {6, -2, 43}, .rot = {0, 0, 0}, .size = {36, 8}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
+    { .pos = {-6, -2, 7}, .rot = {0, 0, 0}, .size = {12, 8}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
+    { .pos = {0, -2, 1}, .rot = {0, 90, 0}, .size = {12, 8}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
+    { .pos = {12, -2, 1}, .rot = {0, 90, 0}, .size = {12, 8}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
+    { .pos = {6, -12, 25}, .rot = {90, 0, 0}, .size = {36, 36}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
+    { .pos = {6, -20, 25}, .rot = {90, 0, 0}, .size = {36, 36}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
+    { .pos = {18, -2, 7}, .rot = {0, 0, 0}, .size = {12, 8}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
 };
 
 static level_quad_t level1_sector1_quads[] = {
-    { .pos = {5.100f, -9.800f, 3.000f}, .rot = {90.000f, 0.000f, 0.000f}, .size = {17.500f, 18.700f}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.000f, 1.000f, 1.000f} },
-    { .pos = {-3.200f, -0.600f, 1.900f}, .rot = {0.000f, -90.000f, 0.000f}, .size = {16.000f, 13.400f}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {0.500f, 0.000f, 1.000f} },
 };
 
 static level_sector_data_t level1_sectors[] = {
-    { .id = 0, .light = {0.700f, 0.000f, 1.000f}, .quads = level1_sector0_quads, .quad_count = sizeof(level1_sector0_quads) / sizeof(level1_sector0_quads[0]) },
-    { .id = 1, .light = {1.000f, 1.000f, 1.000f}, .quads = level1_sector1_quads, .quad_count = sizeof(level1_sector1_quads) / sizeof(level1_sector1_quads[0]) },
+    { .id = 0, .light = {0.5f, 0.5f, 0.5f}, .quads = level1_sector0_quads, .quad_count = sizeof(level1_sector0_quads) / sizeof(level1_sector0_quads[0]) },
+    { .id = 1, .light = {1.0f, 1.0f, 1.0f}, .quads = level1_sector1_quads, .quad_count = sizeof(level1_sector1_quads) / sizeof(level1_sector1_quads[0]) },
 };
 
 static inline level_data_t load_1(void)
@@ -24,9 +33,9 @@ static inline level_data_t load_1(void)
         .path = "level1.h",
         .sectors = level1_sectors,
         .sector_count = sizeof(level1_sectors) / sizeof(level1_sectors[0]),
-        .cam_pos = {19.716f, 9.726f, 19.338f},
-        .cam_yaw = 237.300f,
-        .cam_pitch = -16.200f
+        .cam_pos = {5.082f, 2.561f, -1.545f},
+        .cam_yaw = -636.921f,
+        .cam_pitch = -13.185f
     };
 }
 

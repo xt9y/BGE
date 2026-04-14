@@ -66,7 +66,7 @@ void texture_registry_cleanup(texture_registry_t* reg);
 
 const texture_t* texture_get_fallback(void);
 
-void text_init(texture_t* font_tex);
+void text_init();
 void text_shutdown(void);
 void text_begin(void);
 void text_draw(vec2s pos, const char* fmt, ...);

@@ -12,7 +12,7 @@ static u32 g_wall_vbo = 0;
 static u32 g_wall_ebo = 0;
 static bool g_wall_vao_initialized = false;
 
-static void ensure_wall_vao()
+static void ensure_vao()
 {
     if (g_wall_vao_initialized) return;
 
@@ -35,9 +35,9 @@ static void ensure_wall_vao()
     g_wall_vao_initialized = true;
 }
 
-static void render_wall_quad(const level_quad_t* quad, const vec4s color)
+static void render_quad(const level_quad_t* quad, const vec4s color)
 {
-    ensure_wall_vao();
+    ensure_vao();
 
     f32 rot_y[16], rot_x[16], rot_z[16];
     mat4_rotate_y(rot_y, -DEG2RAD(quad->rot.y));
@@ -94,7 +94,7 @@ static void render_sector(const level_sector_data_t *sector)
             1.0f
         };
 
-        render_wall_quad(&sector->quads[i], wall_color);
+        render_quad(&sector->quads[i], wall_color);
     }
 }
 

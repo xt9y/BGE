@@ -14,5 +14,5 @@ run:
 
 add:
 	git status
-	git add *.c *.h Engine/*.c Engine/*.h Engine/res/*.h
+	git add Makefile *.c *.h Engine/*.c Engine/*.h Engine/res/*.h Engine/res/*.png
 	git status

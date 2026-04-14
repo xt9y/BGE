@@ -44,7 +44,7 @@ static void editor_delete_quad(level_sector_data_t* sector, i32 idx)
     sector->quad_count--;
 }
 
-static void render_wall_quad(const level_quad_t* quad, const vec4s color)
+static void render_quad(const level_quad_t* quad, const vec4s color)
 {
     if (!quad) return;
 
@@ -471,7 +471,7 @@ void editor_render_legend();
 
 void editor_render()
 {
-    if (state.editor->selected_quad) render_wall_quad(state.editor->selected_quad, (vec4s){1.0f, 1.0f, 0.0f, 1.0f});
+    if (state.editor->selected_quad) render_quad(state.editor->selected_quad, (vec4s){1.0f, 1.0f, 0.0f, 1.0f});
 
     if (glfwGetKey(state.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
         if (state.editor->selected_quad) {

@@ -325,12 +325,12 @@ void editor_update()
             if (!adj_pressed[i]) {
                 triggered = true;
                 adj_pressed[i] = true;
-                adj_timer[i] = 0.3f; // Initial delay before repeat
-            } else if (i >= 6) { // Only repeat for 7, 8, 9 (Rotation)
+                adj_timer[i] = 0.3f; // initial delay
+            } else if (i >= 6) {
                 adj_timer[i] -= state.dt;
                 if (adj_timer[i] <= 0) {
                     triggered = true;
-                    adj_timer[i] = 0.05f; // Repeat rate
+                    adj_timer[i] = 0.05f;
                 }
             }
         } else adj_pressed[i] = false;
@@ -342,27 +342,31 @@ void editor_update()
             
             if (i < 3 && state.editor->selected_quad) {
                 if (i == 0) val = &state.editor->selected_quad->color.x;
-                else if (i == 1) val = &state.editor->selected_quad->color.y;
-                else if (i == 2) val = &state.editor->selected_quad->color.z;
-            } else if (i < 6 && state.editor->selected_sector) {
+                if (i == 1) val = &state.editor->selected_quad->color.y;
+                if (i == 2) val = &state.editor->selected_quad->color.z;
+            } 
+
+            if (i < 6 && state.editor->selected_sector) {
                 if (i == 3) val = &state.editor->selected_sector->light.x;
-                else if (i == 4) val = &state.editor->selected_sector->light.y;
-                else if (i == 5) val = &state.editor->selected_sector->light.z;
-            } else if (i >= 6 && state.editor->selected_quad) {
+                if (i == 4) val = &state.editor->selected_sector->light.y;
+                if (i == 5) val = &state.editor->selected_sector->light.z;
+            } 
+
+            if (i >= 6 && state.editor->selected_quad) {
                 if (i == 6) val = &state.editor->selected_quad->rot.x;
-                else if (i == 7) val = &state.editor->selected_quad->rot.y;
-                else if (i == 8) val = &state.editor->selected_quad->rot.z;
+                if (i == 7) val = &state.editor->selected_quad->rot.y;
+                if (i == 8) val = &state.editor->selected_quad->rot.z;
             }
 
             if (val) {
                 *val += step;
                 if (i < 6) {
                     if (*val > 1.05f) *val = 0.0f;
-                    else if (*val < -0.05f) *val = 1.0f;
+                    if (*val < -0.05f) *val = 1.0f;
                     *val = roundf(*val * 10.0f) / 10.0f;
                 } else {
                     if (*val >= 360.0f) *val = 0.0f;
-                    else if (*val < 0.0f) *val = 359.0f;
+                    if (*val < 0.0f) *val = 359.0f;
                     *val = roundf(*val);
                 }
             }

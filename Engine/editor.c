@@ -58,7 +58,7 @@ static void render_wall_quad(const level_quad_t* quad, const vec4s color)
 
     f32 hx = quad->size.x,
         hy = quad->size.y,
-        t = 0.05f, // Thickness 
+        t = 0.05f, // thickness 
         z = 0.0f;
 
     f32 vertices[] = {
@@ -322,7 +322,6 @@ void editor_update()
         }
     } else x_pressed = false;
 
-    // Discrete/Continuous editing with fixed steps
     static f32 adj_timers[9] = {0};
     static const int adj_keys[] = { GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6, GLFW_KEY_7, GLFW_KEY_8, GLFW_KEY_9 };
     for (int i = 0; i < 9; i++) {
@@ -446,7 +445,7 @@ static void render_resize_markers(const level_quad_t* quad, editor_edge_t edge, 
     GLint model_loc = glGetUniformLocation(state.data->program, "model");
     glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
 
-    f32 t = 0.05f; // Thickness
+    f32 t = 0.05f; // thickness
     f32 z = 0.0f;
     f32 v[32]; // 4 vertices * (3 pos + 3 color + 2 uv)
 

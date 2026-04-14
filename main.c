@@ -8,9 +8,39 @@
 /*
  * TL:DR
  * > start with 'make'
+ *
  * > press b to switch between all levels
- * > press e to enter editor mode
- * > walk look around w a s d + mouse
+ *
+ * > press tab to toggle between mouse locking
+ *
+ * > press e to switch betwen editor mode ... :
+ *  > at the bottom of the screen is a small legend which button does what 
+ *
+ *  > press 1 2 3 to increase r g b color value ... 
+ *  > press shift + 1 2 3 to decrease r g b color value
+ *
+ *  > press 4 5 6 to increase r g b sector light ...
+ *  > press shift + 4 5 6 to decrease r g b sector light
+ *
+ *  > press 7 8 9 to increase x y z rotational values ...
+ *  > press shift + 7 8 9 to decrease x y z rotational values 
+ *
+ *  > press 0 to cycles through textures
+ *
+ *  > dragging drags the quad 
+ *
+ *  > dragging + ctrl resizes on dragging at pink edges
+ *
+ *  > press n to create a new default quad
+ *  > press n while a quad is selected duplicates that quad 
+ *
+ *  > press x to delete a quad
+ *
+ *  > press r to reset the attributes of a quad
+ *
+ * > and play mode:
+ *  > press w a s d to walk around
+ *  > use mouse to look around
  */
 
 void apply_level_camera(level_data_t* level)

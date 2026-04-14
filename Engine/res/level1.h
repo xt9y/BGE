@@ -5,7 +5,7 @@
 
 static level_quad_t level1_sector0_quads[] = {
     { .pos = {0, 0, 1}, .rot = {90, 0, 0}, .size = {21, 12}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
-    { .pos = {-0, 0, 1}, .rot = {0, 0, 0}, .size = {33, 2}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
+    { .pos = {0, 0, 1}, .rot = {0, 0, 0}, .size = {33, 2}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
     { .pos = {12, -8, -11}, .rot = {0, 33, 0}, .size = {12, 8}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
     { .pos = {21, -8, -11}, .rot = {0, 90, 0}, .size = {12, 8}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
     { .pos = {-3, 2, 23}, .rot = {90, 0, 0}, .size = {31, 22}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
@@ -13,7 +13,7 @@ static level_quad_t level1_sector0_quads[] = {
     { .pos = {-3, -10, 11}, .rot = {0, 90, 0}, .size = {12, 12}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
     { .pos = {21, -8, 1}, .rot = {0, 0, 0}, .size = {12, 8}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
     { .pos = {0, -10, 1}, .rot = {0, 0, 0}, .size = {33, 2}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
-    { .pos = {-0, -8, 1}, .rot = {90, 0, 0}, .size = {21, 12}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
+    { .pos = {0, -8, 1}, .rot = {90, 0, 0}, .size = {21, 12}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
     { .pos = {0, -8, -11}, .rot = {0, 0, 0}, .size = {12, 8}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
     { .pos = {0, -8, -11}, .rot = {0, 90, 0}, .size = {12, 8}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
     { .pos = {-5, -10, 24}, .rot = {90, 0, 0}, .size = {37, 23}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f} },
@@ -35,7 +35,7 @@ static inline level_data_t load_1(void)
         .sectors = level1_sectors,
         .sector_count = sizeof(level1_sectors) / sizeof(level1_sectors[0]),
         .cam_pos = {28.214f, -0.252f, 23.220f},
-        .cam_yaw = -853.918f,
+        .cam_yaw = -854.118f,
         .cam_pitch = -6.985f
     };
 }

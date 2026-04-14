@@ -16,7 +16,7 @@ static void editor_add_quad(level_sector_data_t* sector, const level_quad_t* tem
     else {
         vec3s raw_pos = vec3_add(state.cam->pos, vec3_scale(state.cam->front, 3.0f));
         new_q = (level_quad_t) { 
-            .pos = (vec3s){roundf(raw_pos.x), roundf(raw_pos.y), roundf(raw_pos.z)}, 
+            .pos = (vec3s){roundf(raw_pos.x - 1.0f), roundf(raw_pos.y - 1.0f), roundf(raw_pos.z)}, 
             .rot = {0,0,0}, .size = {2,2}, .tex_idx = 0, .color = {1,1,1}, .is_solid = true 
         };
     }
@@ -50,33 +50,33 @@ static void render_wall_quad(const level_quad_t* quad, const vec4s color)
     mat4_multiply(model, temp, rot_z);
 
     model[12] = quad->pos.x;
-    model[13] = quad->pos.y + quad->size.y * 0.5f;
+    model[13] = quad->pos.y;
     model[14] = quad->pos.z;
 
     GLint model_loc = glGetUniformLocation(state.data->program, "model");
     glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
 
-    f32 hx = 0.5f * quad->size.x,
-        hy = 0.5f * quad->size.y,
+    f32 hx = quad->size.x,
+        hy = quad->size.y,
         t = 0.05f, // Thickness 
         z = 0.0f;
 
     f32 vertices[] = {
         hx,      hy,      z,  color.x, color.y, color.z,  0,0,
         hx,      hy - t,  z,  color.x, color.y, color.z,  0,0,
-       -hx,      hy - t,  z,  color.x, color.y, color.z,  0,0,
-       -hx,      hy,      z,  color.x, color.y, color.z,  0,0,
-        hx,     -hy + t,  z,  color.x, color.y, color.z,  0,0,
-        hx,     -hy,      z,  color.x, color.y, color.z,  0,0,
-       -hx,     -hy,      z,  color.x, color.y, color.z,  0,0,
-       -hx,     -hy + t,  z,  color.x, color.y, color.z,  0,0,
-       -hx + t,  hy,      z,  color.x, color.y, color.z,  0,0,
-       -hx + t, -hy,      z,  color.x, color.y, color.z,  0,0,
-       -hx,     -hy,      z,  color.x, color.y, color.z,  0,0,
-       -hx,      hy,      z,  color.x, color.y, color.z,  0,0,
+        0,       hy - t,  z,  color.x, color.y, color.z,  0,0,
+        0,       hy,      z,  color.x, color.y, color.z,  0,0,
+        hx,      t,       z,  color.x, color.y, color.z,  0,0,
+        hx,      0,       z,  color.x, color.y, color.z,  0,0,
+        0,       0,       z,  color.x, color.y, color.z,  0,0,
+        0,       t,       z,  color.x, color.y, color.z,  0,0,
+        t,       hy,      z,  color.x, color.y, color.z,  0,0,
+        t,       0,       z,  color.x, color.y, color.z,  0,0,
+        0,       0,       z,  color.x, color.y, color.z,  0,0,
+        0,       hy,      z,  color.x, color.y, color.z,  0,0,
         hx,      hy,      z,  color.x, color.y, color.z,  0,0,
-        hx,     -hy,      z,  color.x, color.y, color.z,  0,0,
-        hx - t, -hy,      z,  color.x, color.y, color.z,  0,0,
+        hx,      0,       z,  color.x, color.y, color.z,  0,0,
+        hx - t,  0,       z,  color.x, color.y, color.z,  0,0,
         hx - t,  hy,      z,  color.x, color.y, color.z,  0,0,
     };
 
@@ -134,7 +134,7 @@ static bool ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, con
     mat4_multiply(model, temp, rot_z);
 
     vec3s wall_pos = {
-        quad->pos.x, quad->pos.y + quad->size.y * 0.5f, quad->pos.z
+        quad->pos.x, quad->pos.y, quad->pos.z
     };
 
     vec3s normal = {
@@ -164,10 +164,8 @@ static bool ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, con
         inv_model[2] * local_hit.x + inv_model[6] * local_hit.y + inv_model[10] * local_hit.z
     };
 
-    f32 half_x = 0.5f * quad->size.x, 
-        half_y = 0.5f * quad->size.y;
-
-    if (fabsf(unrotated_hit.x) <= half_x + 0.01f && fabsf(unrotated_hit.y) <= half_y + 0.01f) {
+    if (unrotated_hit.x >= -0.01f && unrotated_hit.x <= quad->size.x + 0.01f && 
+        unrotated_hit.y >= -0.01f && unrotated_hit.y <= quad->size.y + 0.01f) {
         *out_t = t;
         *out_hit = hit;
         *out_local_hit = unrotated_hit;
@@ -221,10 +219,8 @@ void editor_update()
             state.editor->drag_quad_start_rot = info.quad->rot;
             state.editor->drag_quad_start_size = info.quad->size;
 
-            f32 hx = info.quad->size.x * 0.5f;
-            f32 hy = info.quad->size.y * 0.5f;
-            f32 dy_t = hy - info.local_hit.y;
-            f32 dx_r = hx - info.local_hit.x;
+            f32 dy_t = info.quad->size.y - info.local_hit.y;
+            f32 dx_r = info.quad->size.x - info.local_hit.x;
             
             f32 tol = 5.0f;
             if (dy_t < dx_r && dy_t < tol) state.editor->drag_edge = EDGE_TOP;
@@ -241,10 +237,8 @@ void editor_update()
 
         if (state.editor->selected_quad && (glfwGetKey(state.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)) {
             if (info.hit && info.quad == state.editor->selected_quad) {
-                f32 hx = info.quad->size.x * 0.5f,
-                    hy = info.quad->size.y * 0.5f,
-                    dy_t = hy - info.local_hit.y,
-                    dx_r = hx - info.local_hit.x,
+                f32 dy_t = info.quad->size.y - info.local_hit.y,
+                    dx_r = info.quad->size.x - info.local_hit.x,
                     tol = 5.0f;
 
                 if (dy_t < dx_r && dy_t < tol) state.editor->hover_edge = EDGE_TOP;
@@ -276,7 +270,7 @@ void editor_update()
             f32 d_size_x = 0, d_size_y = 0;
 
             if (state.editor->drag_edge == EDGE_TOP) d_size_y = vec3_dot(movement, local_up);
-            else if (state.editor->drag_edge == EDGE_RIGHT) d_size_x = vec3_dot(movement, local_right) * 2.0f;
+            else if (state.editor->drag_edge == EDGE_RIGHT) d_size_x = vec3_dot(movement, local_right);
 
             state.editor->selected_quad->size.x = roundf(fmaxf(1.0f, state.editor->drag_quad_start_size.x + d_size_x));
             state.editor->selected_quad->size.y = roundf(fmaxf(1.0f, state.editor->drag_quad_start_size.y + d_size_y));
@@ -435,8 +429,8 @@ static void render_resize_markers(const level_quad_t* quad, editor_edge_t edge, 
 {
     if (!quad || edge == EDGE_NONE) return;
 
-    f32 hx = quad->size.x * 0.5f;
-    f32 hy = quad->size.y * 0.5f;
+    f32 hx = quad->size.x;
+    f32 hy = quad->size.y;
     
     f32 r_y[16], r_x[16], r_z[16], model[16], t_mat[16];
     mat4_rotate_y(r_y, -DEG2RAD(quad->rot.y));
@@ -446,7 +440,7 @@ static void render_resize_markers(const level_quad_t* quad, editor_edge_t edge, 
     mat4_multiply(model, t_mat, r_z);
 
     model[12] = quad->pos.x;
-    model[13] = quad->pos.y + quad->size.y * 0.5f;
+    model[13] = quad->pos.y;
     model[14] = quad->pos.z;
 
     GLint model_loc = glGetUniformLocation(state.data->program, "model");
@@ -460,15 +454,15 @@ static void render_resize_markers(const level_quad_t* quad, editor_edge_t edge, 
         f32 data[] = {
              hx,     hy,     z,  color.x, color.y, color.z,  0,0,
              hx,     hy - t, z,  color.x, color.y, color.z,  0,0,
-            -hx,     hy - t, z,  color.x, color.y, color.z,  0,0,
-            -hx,     hy,     z,  color.x, color.y, color.z,  0,0,
+             0,      hy - t, z,  color.x, color.y, color.z,  0,0,
+             0,      hy,     z,  color.x, color.y, color.z,  0,0,
         };
         memcpy(v, data, sizeof(data));
     } else if (edge == EDGE_RIGHT) {
         f32 data[] = {
              hx,     hy,     z,  color.x, color.y, color.z,  0,0,
-             hx,    -hy,     z,  color.x, color.y, color.z,  0,0,
-             hx - t,-hy,     z,  color.x, color.y, color.z,  0,0,
+             hx,     0,      z,  color.x, color.y, color.z,  0,0,
+             hx - t, 0,      z,  color.x, color.y, color.z,  0,0,
              hx - t, hy,     z,  color.x, color.y, color.z,  0,0,
         };
         memcpy(v, data, sizeof(data));

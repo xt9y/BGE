@@ -49,7 +49,7 @@ static void render_wall_quad(const level_quad_t* quad, const vec4s color)
     mat4_multiply(model, temp, rot_z);
 
     model[12] = quad->pos.x;
-    model[13] = quad->pos.y + quad->size.y * 0.5f;
+    model[13] = quad->pos.y;
     model[14] = quad->pos.z;
 
     GLint model_loc = glGetUniformLocation(state.data->program, "model");
@@ -58,15 +58,13 @@ static void render_wall_quad(const level_quad_t* quad, const vec4s color)
     if (quad->tex_idx >= 0 && quad->tex_idx < state.text->count) texture_bind(&state.text->textures[quad->tex_idx], 0);
     else texture_bind(texture_get_fallback(), 0);
 
-    f32 half_x = 0.5f * quad->size.x;
-    f32 half_y = 0.5f * quad->size.y;
     f32 u_repeat = quad->size.x * 0.5f, v_repeat = quad->size.y * 0.5f;
 
     f32 vertices[] = {
-         half_x,  half_y, 0.0f,   color.x, color.y, color.z,   u_repeat, v_repeat,
-         half_x, -half_y, 0.0f,   color.x, color.y, color.z,   u_repeat, 0.0f,
-        -half_x, -half_y, 0.0f,   color.x, color.y, color.z,   0.0f,     0.0f,
-        -half_x,  half_y, 0.0f,   color.x, color.y, color.z,   0.0f,     v_repeat,
+         quad->size.x,  quad->size.y, 0.0f,   color.x, color.y, color.z,   u_repeat, v_repeat,
+         quad->size.x,  0.0f,         0.0f,   color.x, color.y, color.z,   u_repeat, 0.0f,
+         0.0f,          0.0f,         0.0f,   color.x, color.y, color.z,   0.0f,     0.0f,
+         0.0f,          quad->size.y, 0.0f,   color.x, color.y, color.z,   0.0f,     v_repeat,
     };
 
     u32 indices[] = {

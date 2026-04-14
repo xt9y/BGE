@@ -13,7 +13,7 @@
 
 // Main macro
 // and the engine handles the rest
-void ENGINE_INPUT();
+void INPUT();
 void RENDER();
 void RUN();
 #define ENGINE_ENTRY_POINT \
@@ -24,7 +24,7 @@ void RUN();
 
 #define TITLE  "opengl _f"
 #define WIDTH 1270 
-#define HEIGHT 850
+#define HEIGHT 800
 
 void GL_START();
 int  GL_FRAME();

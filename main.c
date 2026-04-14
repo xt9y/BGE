@@ -35,33 +35,26 @@
  *
  *  > press r to reset the attributes of a quad
  *
+ *  > press i to toggle solid
+ *
+ *  > press shift + i to toggle invisibilty
+ *
  * > and play mode:
  *  > press w a s d to walk around
  *  > use mouse to look around
  */
 
-void apply_level_camera(level_data_t* level)
-{
-    state.cam->pos = level->cam_pos;
-    state.cam->yaw = level->cam_yaw;
-    state.cam->pitch = level->cam_pitch;
-    state.cam->firstMouse = true;
-    update_camera_vectors(state.cam);
+void apply_level_camera(camera_t *cam, level_data_t *level) {
+    cam->pos = level->cam.pos;
+    cam->yaw = level->cam.yaw;
+    cam->pitch = level->cam.pitch;
+    cam->firstMouse = true;
+    update_camera_vectors(cam);
 }
 
 void RUN()
 {
     GL_START();
-
-    {   // Camera
-        state.fb->w = WIDTH, state.fb->h = HEIGHT;
-        glfwGetFramebufferSize(state.win, &state.fb->w, &state.fb->h);
-        state.cam->front = (vec3s){0.0f, 0.0f, -1.0f};
-        state.cam->up = (vec3s){0.0f, 1.0f, 0.0f};
-        state.cam->lastX = (f32)state.fb->w * 0.5f;
-        state.cam->lastY = (f32)state.fb->h * 0.5f;
-        state.cursor_locked = false;
-    }
 
     {   // Textures
         texture_registry_init(state.text);
@@ -73,16 +66,22 @@ void RUN()
     }
 
     {   // Levels 
-        state.level_count = 0;
+        state.level_count, state.level_id = 0;
         state.levels[state.level_count++] = load_1();
         state.levels[state.level_count++] = load_2();
-        
-        state.level_id = 0;
-        apply_level_camera(&state.levels[state.level_id]);
     }
 
     {   // Editor
         state.editor->level = &state.levels[state.level_id];
+    }
+
+    {   // Camera
+        state.cam->front = (vec3s){0.0f, 0.0f, -1.0f};
+        state.cam->up = (vec3s){0.0f, 1.0f, 0.0f};
+        state.cam->lastX = (f32)state.fb->w * 0.5f;
+        state.cam->lastY = (f32)state.fb->h * 0.5f;
+        state.cursor_locked = false;
+        apply_level_camera(state.cam, &state.levels[state.level_id]);
     }
 
     while (GL_FRAME()) 
@@ -122,14 +121,16 @@ void RENDER()
 
     text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");
     text_draw((vec2s){10.0f, 10.0f}, "()*+-./ :;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz ");
-    text_draw((vec2s){10.0f, 30.0f}, "FPS %.1f, ASPECT: %d / %d", GL_GETFPS(), state.fb->w, state.fb->h);
+    int ww, wh;
+    glfwGetWindowSize(state.win, &ww, &wh);
+    text_draw((vec2s){10.0f, 30.0f}, "FPS %.1f, WIN: %d x %d (FB: %d x %d)", GL_GETFPS(), ww, wh, state.fb->w, state.fb->h);
     text_draw((vec2s){10.0f, 50.0f}, "POS: %.1f %.1f %.1f ; YAW %.1f ; PITCH %.1f", state.cam->pos.x, state.cam->pos.y, state.cam->pos.z, state.cam->yaw, state.cam->pitch);
     text_draw((vec2s){10.0f, 70.0f}, "CURRENT_LVL: %d ; MAX_LVLS: %d", state.level_id + 1, state.level_count);
     text_draw((vec2s){10.0f, 90.0f}, "STATE: %s", state.toString[state.id]);
     text_flush(state.fb->w, state.fb->h);
 }
 
-void ENGINE_INPUT()
+void INPUT()
 {
     glfwSetInputMode(state.win, GLFW_CURSOR, state.cursor_locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     if (glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id = STATE_EXIT;
@@ -158,7 +159,8 @@ void ENGINE_INPUT()
         if (!b_pressed) {
             editor_save(state.editor->level);
             state.level_id = (state.level_id + 1) % state.level_count;
-            apply_level_camera(&state.levels[state.level_id]);
+            apply_level_camera(state.cam, &state.levels[state.level_id]);
+            state.cam->firstMouse = true;
             state.editor->selected_quad = NULL;
             state.editor->selected_sector = NULL;
             b_pressed = true;

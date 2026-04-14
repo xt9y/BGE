@@ -332,9 +332,9 @@ void editor_update()
 
 void editor_save(level_data_t* level)
 {
-    level->cam_pos = state.cam->pos;
-    level->cam_yaw = state.cam->yaw;
-    level->cam_pitch = state.cam->pitch;
+    level->cam.pos = state.cam->pos;
+    level->cam.yaw = state.cam->yaw;
+    level->cam.pitch = state.cam->pitch;
 
     char full_path[256];
     sprintf(full_path, "Engine/res/%s", level->path);
@@ -380,9 +380,8 @@ void editor_save(level_data_t* level)
     fprintf(f, "        .path = \"%s\",\n", level->path);
     fprintf(f, "        .sectors = level%d_sectors,\n", level_num);
     fprintf(f, "        .sector_count = sizeof(level%d_sectors) / sizeof(level%d_sectors[0]),\n", level_num, level_num);
-    fprintf(f, "        .cam_pos = {%.3ff, %.3ff, %.3ff},\n", state.cam->pos.x, state.cam->pos.y, state.cam->pos.z);
-    fprintf(f, "        .cam_yaw = %.3ff,\n", state.cam->yaw);
-    fprintf(f, "        .cam_pitch = %.3ff\n", state.cam->pitch);
+    fprintf(f, "        .cam = { .pos = {%.3ff, %.3ff, %.3ff}, .yaw = %.3ff, .pitch = %.3ff }\n", 
+        state.cam->pos.x, state.cam->pos.y, state.cam->pos.z, state.cam->yaw, state.cam->pitch);
     fprintf(f, "    };\n}\n\n");
     fprintf(f, "#endif\n");
 

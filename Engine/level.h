@@ -3,6 +3,7 @@
 
 #include "util/types.h"
 #include "util/math.h"
+#include "cam.h"
 
 #define MAX_WALL_VERTICES 4096
 #define MAX_SECTORS_PER_LEVEL 64
@@ -33,9 +34,7 @@ typedef struct
     const char* path;
     level_sector_data_t* sectors;
     i32 sector_count;
-    vec3s cam_pos;
-    f32 cam_yaw;
-    f32 cam_pitch;
+    camera_t cam;
 } level_data_t;
 
 void level_render(const level_data_t *level);

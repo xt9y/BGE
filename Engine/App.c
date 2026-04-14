@@ -23,12 +23,6 @@ static void mouse_callback(GLFWwindow* w, const f64 xpos, const f64 ypos)
     camera_mouse_callback(state.cam, xpos, ypos);
 }
 
-static void framebuffer_size_callback(GLFWwindow* w, const int width, const int height)
-{
-    (void)w; if (width <= 0 || height <= 0) return;
-    glViewport(0, 0, width, height);
-}
-
 void GL_START()
 {
     state = (state_t){0};
@@ -56,27 +50,18 @@ void GL_START()
     ASSERT(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress));
 
     glfwSwapInterval(0);
-    glfwSetFramebufferSizeCallback(state.win, framebuffer_size_callback);
     glfwSetCursorPosCallback(state.win, mouse_callback);
     glfwSetInputMode(state.win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    int fbw = 0, fbh = 0;
-    glfwGetFramebufferSize(state.win, &fbw, &fbh);
-    glViewport(0, 0, fbw, fbh);
-
-    state.fb   = malloc(sizeof(*state.fb));   memset(state.fb,   0, sizeof(*state.fb));
-    state.data = malloc(sizeof(*state.data));
-    state.cam  = malloc(sizeof(*state.cam));  memset(state.cam,  0, sizeof(*state.cam));
-    state.text = malloc(sizeof(*state.text)); memset(state.text, 0, sizeof(*state.text));
-    state.editor = malloc(sizeof(*state.editor)); memset(state.editor, 0, sizeof(*state.editor));
+    state.fb        = malloc(sizeof(*state.fb));         memset(state.fb,       0, sizeof(*state.fb));
+    state.data      = malloc(sizeof(*state.data));       memset(state.data,     0, sizeof(*state.data));
+    state.cam       = malloc(sizeof(*state.cam));        memset(state.cam,      0, sizeof(*state.cam));
+    state.text      = malloc(sizeof(*state.text));       memset(state.text,     0, sizeof(*state.text));
+    state.editor    = malloc(sizeof(*state.editor));     memset(state.editor,   0, sizeof(*state.editor));
     ASSERT(state.fb && state.data && state.cam && state.text && state.editor);
 
     state.data->program = create_program(VS, FS);
-
-    glUseProgram(state.data->program);
-    glUniform1i(glGetUniformLocation(state.data->program, "texture1"), 0);
-    glUniform1i(glGetUniformLocation(state.data->program, "texture2"), 1);
-
+    
     glEnable(GL_DEPTH_TEST);
     state.id = STATE_PLAYING;
     g_last_time = (f32)glfwGetTime();
@@ -88,7 +73,7 @@ int GL_FRAME()
     state.dt = now - g_last_time;
     g_last_time = now;
 
-    ENGINE_INPUT();
+    INPUT();
     RENDER();
 
     glfwSwapBuffers(state.win);

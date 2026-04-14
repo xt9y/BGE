@@ -173,6 +173,14 @@ const texture_t* texture_get_fallback(void)
 static void text_init_glyphs(void)
 {
     memset(glyphs, 0, sizeof(glyphs));
+    glyphs[' '] = (glyph_uv_t){0, 2};
+    glyphs['('] = (glyph_uv_t){8, 2};
+    glyphs[')'] = (glyph_uv_t){9, 2};
+    glyphs['*'] = (glyph_uv_t){10, 2};
+    glyphs['+'] = (glyph_uv_t){11, 2};
+    glyphs['-'] = (glyph_uv_t){13, 2};
+    glyphs['.'] = (glyph_uv_t){14, 2};
+    glyphs['/'] = (glyph_uv_t){15, 2};
     glyphs[':'] = (glyph_uv_t){10, 3};
     glyphs[';'] = (glyph_uv_t){11, 3};
     glyphs['<'] = (glyph_uv_t){12, 3};
@@ -189,9 +197,6 @@ static void text_init_glyphs(void)
     glyphs['7'] = (glyph_uv_t){7, 3};
     glyphs['8'] = (glyph_uv_t){8, 3};
     glyphs['9'] = (glyph_uv_t){9, 3};
-    glyphs[' '] = (glyph_uv_t){0, 2};
-    glyphs['-'] = (glyph_uv_t){13, 2};
-    glyphs['.'] = (glyph_uv_t){14, 2};
     glyphs['A'] = (glyph_uv_t){1, 4};
     glyphs['B'] = (glyph_uv_t){2, 4};
     glyphs['C'] = (glyph_uv_t){3, 4};

@@ -102,3 +102,70 @@ void level_render(const level_data_t *level)
 {
     for (i32 i = 0; i < level->sector_count; i++) render_sector(&level->sectors[i]);
 }
+
+bool level_ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, const level_quad_t* quad, f32* out_t, vec3s* out_hit, vec3s* out_local_hit)
+{
+    f32 rot_y[16], rot_x[16], rot_z[16], model[16], temp[16];
+    mat4_rotate_y(rot_y, -DEG2RAD(quad->rot.y));
+    mat4_rotate_x(rot_x, -DEG2RAD(quad->rot.x));
+    mat4_rotate_z(rot_z, -DEG2RAD(quad->rot.z));
+    mat4_multiply(temp, rot_y, rot_x);
+    mat4_multiply(model, temp, rot_z);
+
+    vec3s wall_pos = {
+        quad->pos.x, 
+        quad->pos.y, 
+        quad->pos.z
+    };
+
+    vec3s normal = {
+        model[0] * 0.0f + model[4] * 0.0f + model[8] * 1.0f,
+        model[1] * 0.0f + model[5] * 0.0f + model[9] * 1.0f,
+        model[2] * 0.0f + model[6] * 0.0f + model[10] * 1.0f
+    };
+
+    if (fabsf(vec3_dot(normal, ray_dir)) < 0.0001f) return false;
+
+    f32 t = vec3_dot(vec3_sub(wall_pos, ray_origin), normal) / vec3_dot(normal, ray_dir);
+    if (t < 0.0f) return false;
+
+    vec3s hit = vec3_add(ray_origin, vec3_scale(ray_dir, t)),
+          local_hit = vec3_sub(hit, wall_pos);
+
+    f32 inv_rot_z[16], inv_rot_x[16], inv_rot_y[16], inv_model[16], temp2[16];
+    mat4_rotate_z(inv_rot_z, DEG2RAD(quad->rot.z));
+    mat4_rotate_x(inv_rot_x, DEG2RAD(quad->rot.x));
+    mat4_rotate_y(inv_rot_y, DEG2RAD(quad->rot.y));
+    mat4_multiply(temp2, inv_rot_z, inv_rot_x);
+    mat4_multiply(inv_model, temp2, inv_rot_y);
+
+    vec3s unrotated_hit = {
+        inv_model[0] * local_hit.x + inv_model[4] * local_hit.y + inv_model[8] * local_hit.z,
+        inv_model[1] * local_hit.x + inv_model[5] * local_hit.y + inv_model[9] * local_hit.z,
+        inv_model[2] * local_hit.x + inv_model[6] * local_hit.y + inv_model[10] * local_hit.z
+    };
+
+    if (unrotated_hit.x >= -0.01f && unrotated_hit.x <= quad->size.x + 0.01f && 
+        unrotated_hit.y >= -0.01f && unrotated_hit.y <= quad->size.y + 0.01f) {
+        if (out_t) *out_t = t;
+        if (out_hit) *out_hit = hit;
+        if (out_local_hit) *out_local_hit = unrotated_hit;
+        return true;
+    }
+    return false;
+}
+
+bool level_get_height(const level_data_t* level, vec3s pos, f32* h)
+{
+    f32 best_height = -1000000.0f;
+    bool found = false;
+    for (i32 s = 0; s < level->sector_count; s++)
+        for (i32 q = 0; q < level->sectors[s].quad_count; q++) {
+            if (!level->sectors[s].quads[q].is_solid) continue;
+            f32 t; vec3s hit;
+            if (level_ray_intersects_quad((vec3s){pos.x, 1000.0f, pos.z}, (vec3s){0, -1, 0}, &level->sectors[s].quads[q], &t, &hit, NULL))
+                if (hit.y < pos.y - 1.0f) if (hit.y > best_height) { best_height = hit.y; found = true; }
+        }
+    if (found && h) *h = best_height;
+    return found;
+}

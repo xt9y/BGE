@@ -101,8 +101,8 @@ void RENDER()
     glfwGetFramebufferSize(state.win, &state.fb->w, &state.fb->h);
     glViewport(0, 0, state.fb->w, state.fb->h);
 
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    // glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f); 
+    // glClearColor(0.0f, 0.0f, 0.0f, 1.0f); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(state.data->program);
@@ -118,13 +118,10 @@ void RENDER()
 
     text_begin();
     level_render(state.editor->level);
-    if (state.id == STATE_EDITOR) {
-        editor_render_selected_info();
-        editor_render();
-        editor_render_legend();
-    }
+    if (state.id == STATE_EDITOR) editor_render();
 
-    text_draw((vec2s){10.0f, 10.0f}, ":;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz. ");
+    // text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");
+    text_draw((vec2s){10.0f, 10.0f}, "()*+-./ :;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz ");
     text_draw((vec2s){10.0f, 30.0f}, "FPS %.1f", GL_GETFPS());
     text_draw((vec2s){10.0f, 50.0f}, "POS: %.1f %.1f %.1f ; YAW %.1f ; PITCH %.1f", state.cam->pos.x, state.cam->pos.y, state.cam->pos.z, state.cam->yaw, state.cam->pitch);
     text_draw((vec2s){10.0f, 70.0f}, "CURRENT_LVL: %d ; MAX_LVLS: %d", state.level_id + 1, state.level_count);
@@ -135,50 +132,62 @@ void RENDER()
 void ENGINE_INPUT()
 {
     glfwSetInputMode(state.win, GLFW_CURSOR, state.cursor_locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
-    
-    {   // Free mouse
-        static bool tab_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_TAB) == GLFW_PRESS) {
-            if (!tab_pressed) {
-                state.cursor_locked = !state.cursor_locked;
-                if (state.cursor_locked) {
-                    glfwSetCursorPos(state.win, state.fb->w * 0.5f, state.fb->h * 0.5f);
-                    state.cam->firstMouse = true;
-                } tab_pressed = true;
-            }
-        } else tab_pressed = false;
-    }
-
-    {   // Toggle editor
-        static bool e_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_E) == GLFW_PRESS) {
-            if (!e_pressed) {
-                state.id = state.id == STATE_EDITOR ? STATE_PLAYING : STATE_EDITOR;
-                e_pressed = true;
-            }
-        } else e_pressed = false;
-    }
-
-    {   // Next level
-        static bool b_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_B) == GLFW_PRESS) {
-            if (!b_pressed) {
-                editor_save(state.editor->level);
-                state.level_id = (state.level_id + 1) % state.level_count;
-                apply_level_camera(&state.levels[state.level_id]);
-                state.editor->selected_quad = NULL;
-                state.editor->selected_sector = NULL;
-                b_pressed = true;
-            }
-        } else b_pressed = false;
-    }
-
     if (glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id = STATE_EXIT;
+    
+    static bool tab_pressed = false;
+    if (glfwGetKey(state.win, GLFW_KEY_TAB) == GLFW_PRESS) {
+        if (!tab_pressed) {
+            state.cursor_locked = !state.cursor_locked;
+            if (state.cursor_locked) {
+                glfwSetCursorPos(state.win, state.fb->w * 0.5f, state.fb->h * 0.5f);
+                state.cam->firstMouse = true;
+            } tab_pressed = true;
+        }
+    } else tab_pressed = false;
 
-    {
-        const f32 speed = 6.5f * state.dt;
-        const vec3s right = vec3_normalize(vec3_cross(state.cam->front, state.cam->up));
+    static bool e_pressed = false;
+    if (glfwGetKey(state.win, GLFW_KEY_E) == GLFW_PRESS) {
+        if (!e_pressed) {
+            state.id = state.id == STATE_EDITOR ? STATE_PLAYING : STATE_EDITOR;
+            e_pressed = true;
+        }
+    } else e_pressed = false;
 
+    static bool b_pressed = false;
+    if (glfwGetKey(state.win, GLFW_KEY_B) == GLFW_PRESS) {
+        if (!b_pressed) {
+            editor_save(state.editor->level);
+            state.level_id = (state.level_id + 1) % state.level_count;
+            apply_level_camera(&state.levels[state.level_id]);
+            state.editor->selected_quad = NULL;
+            state.editor->selected_sector = NULL;
+            b_pressed = true;
+        }
+    } else b_pressed = false;
+
+    const f32 speed = 18.5f * state.dt;
+    const vec3s right = vec3_normalize(vec3_cross(state.cam->front, state.cam->up));
+
+    if (state.id == STATE_PLAYING) {
+        vec3s move = {0, 0, 0}, forward = {state.cam->front.x, 0, state.cam->front.z};
+        if (vec3_magnitude(forward) > 0.0001f) forward = vec3_normalize(forward);
+
+        if (glfwGetKey(state.win, GLFW_KEY_W) == GLFW_PRESS) move = vec3_add(move, forward);
+        if (glfwGetKey(state.win, GLFW_KEY_S) == GLFW_PRESS) move = vec3_sub(move, forward);
+        if (glfwGetKey(state.win, GLFW_KEY_A) == GLFW_PRESS) move = vec3_sub(move, right);
+        if (glfwGetKey(state.win, GLFW_KEY_D) == GLFW_PRESS) move = vec3_add(move, right);
+
+        if (vec3_magnitude(move) > 0.0001f) {
+            move = vec3_normalize(move);
+            state.cam->pos = vec3_add(state.cam->pos, vec3_scale(move, speed));
+        }
+
+        f32 h;
+        if (level_get_height(state.editor->level, state.cam->pos, &h)) state.cam->pos.y = h + 4.5f;
+        else state.id = STATE_EDITOR;
+    } 
+
+    if (state.id == STATE_EDITOR) {
         if (glfwGetKey(state.win, GLFW_KEY_W) == GLFW_PRESS) state.cam->pos = vec3_add(state.cam->pos, vec3_scale(state.cam->front, speed));
         if (glfwGetKey(state.win, GLFW_KEY_S) == GLFW_PRESS) state.cam->pos = vec3_sub(state.cam->pos, vec3_scale(state.cam->front, speed));
         if (glfwGetKey(state.win, GLFW_KEY_A) == GLFW_PRESS) state.cam->pos = vec3_sub(state.cam->pos, vec3_scale(right, speed));

@@ -39,10 +39,8 @@ typedef struct {
     level_sector_data_t* sector;
 } editor_look_at_info_t;
 
-void editor_render(void);
-void editor_render_selected_info(void);
-void editor_render_legend(void);
-void editor_update(void);
+void editor_render();
+void editor_update();
 void editor_save(level_data_t* level);
 
 #endif

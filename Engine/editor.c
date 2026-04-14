@@ -12,7 +12,7 @@ static level_quad_t get_default_quad()
 {
     return (level_quad_t) { 
         .pos = {roundf(state.cam->pos.x + state.cam->front.x * 3.0f), roundf(state.cam->pos.y + state.cam->front.y * 3.0f), roundf(state.cam->pos.z + state.cam->front.z * 3.0f)}, 
-        .rot = {0,0,0}, .size = {2,2}, .tex_idx = 0, .color = {1,1,1}, .is_solid = true, .is_invisible = false
+        .rot = {0, 0, 0}, .size = {2, 2}, .tex_idx = 0, .color = {1, 1, 1}, .is_solid = true, .is_invisible = false
     };
 }
 
@@ -132,58 +132,6 @@ static vec3s intersect_ray_plane(vec3s origin, vec3s dir, vec3s plane_pos, vec3s
     return vec3_add(origin, vec3_scale(dir, vec3_dot(vec3_sub(plane_pos, origin), plane_normal) / vec3_dot(plane_normal, dir)));
 }
 
-static bool ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, const level_quad_t* quad, f32* out_t, vec3s* out_hit, vec3s* out_local_hit)
-{
-    f32 rot_y[16], rot_x[16], rot_z[16], model[16], temp[16];
-    mat4_rotate_y(rot_y, -DEG2RAD(quad->rot.y));
-    mat4_rotate_x(rot_x, -DEG2RAD(quad->rot.x));
-    mat4_rotate_z(rot_z, -DEG2RAD(quad->rot.z));
-    mat4_multiply(temp, rot_y, rot_x);
-    mat4_multiply(model, temp, rot_z);
-
-    vec3s wall_pos = {
-        quad->pos.x, 
-        quad->pos.y, 
-        quad->pos.z
-    };
-
-    vec3s normal = {
-        model[0] * 0.0f + model[4] * 0.0f + model[8] * 1.0f,
-        model[1] * 0.0f + model[5] * 0.0f + model[9] * 1.0f,
-        model[2] * 0.0f + model[6] * 0.0f + model[10] * 1.0f
-    };
-
-    if (fabsf(vec3_dot(normal, ray_dir)) < 0.0001f) return false;
-
-    f32 t = vec3_dot(vec3_sub(wall_pos, ray_origin), normal) / vec3_dot(normal, ray_dir);
-    if (t < 0.0f) return false;
-
-    vec3s hit = vec3_add(ray_origin, vec3_scale(ray_dir, t)),
-          local_hit = vec3_sub(hit, wall_pos);
-
-    f32 inv_rot_z[16], inv_rot_x[16], inv_rot_y[16], inv_model[16], temp2[16];
-    mat4_rotate_z(inv_rot_z, DEG2RAD(quad->rot.z));
-    mat4_rotate_x(inv_rot_x, DEG2RAD(quad->rot.x));
-    mat4_rotate_y(inv_rot_y, DEG2RAD(quad->rot.y));
-    mat4_multiply(temp2, inv_rot_z, inv_rot_x);
-    mat4_multiply(inv_model, temp2, inv_rot_y);
-
-    vec3s unrotated_hit = {
-        inv_model[0] * local_hit.x + inv_model[4] * local_hit.y + inv_model[8] * local_hit.z,
-        inv_model[1] * local_hit.x + inv_model[5] * local_hit.y + inv_model[9] * local_hit.z,
-        inv_model[2] * local_hit.x + inv_model[6] * local_hit.y + inv_model[10] * local_hit.z
-    };
-
-    if (unrotated_hit.x >= -0.01f && unrotated_hit.x <= quad->size.x + 0.01f && 
-        unrotated_hit.y >= -0.01f && unrotated_hit.y <= quad->size.y + 0.01f) {
-        *out_t = t;
-        *out_hit = hit;
-        *out_local_hit = unrotated_hit;
-        return true;
-    }
-    return false;
-}
-
 static editor_look_at_info_t editor_get_look_at_info_with_ray(const level_data_t* level, vec3s ray_origin, vec3s ray_dir, f32 max_distance)
 {
     editor_look_at_info_t info = {0};
@@ -193,7 +141,7 @@ static editor_look_at_info_t editor_get_look_at_info_with_ray(const level_data_t
     for (i32 s = 0; s < level->sector_count; s++) {
         for (i32 w = 0; w < level->sectors[s].quad_count; w++) {
             f32 t; vec3s hit, lhit;
-            if (ray_intersects_quad(ray_origin, ray_dir, &level->sectors[s].quads[w], &t, &hit, &lhit) && t < closest_t) {
+            if (level_ray_intersects_quad(ray_origin, ray_dir, &level->sectors[s].quads[w], &t, &hit, &lhit) && t < closest_t) {
                 closest_t = t;
                 info.hit = true;
                 info.sector_id = level->sectors[s].id;
@@ -276,6 +224,7 @@ void editor_update()
             mat4_rotate_z(r_z, -DEG2RAD(state.editor->drag_quad_start_rot.z));
             mat4_multiply(t, r_y, r_x);
             mat4_multiply(m, t, r_z);
+
             vec3s local_right = { m[0], m[1], m[2] },
                   local_up = { m[4], m[5], m[6] };
 
@@ -330,6 +279,15 @@ void editor_update()
             r_pressed = true;
         }
     } else r_pressed = false;
+
+    static bool i_pressed = false;
+    if (glfwGetKey(state.win, GLFW_KEY_I) == GLFW_PRESS) {
+        if (!i_pressed && state.editor->selected_quad) {
+            if (shift_held) state.editor->selected_quad->is_invisible = !state.editor->selected_quad->is_invisible;
+            else state.editor->selected_quad->is_solid = !state.editor->selected_quad->is_solid;
+            i_pressed = true;
+        }
+    } else i_pressed = false;
 
     static bool adj_pressed[9] = {0};
     static f32 adj_timer[9] = {0};
@@ -508,19 +466,23 @@ static void render_resize_markers(const level_quad_t* quad, editor_edge_t edge, 
     glDeleteBuffers(1, &ebo);
 }
 
+void editor_render_selected_info();
+void editor_render_legend();
+
 void editor_render()
 {
     if (state.editor->selected_quad) render_wall_quad(state.editor->selected_quad, (vec4s){1.0f, 1.0f, 0.0f, 1.0f});
 
     if (glfwGetKey(state.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
         if (state.editor->selected_quad) {
-            vec3s pink = {1.0f, 0.0f, 1.0f};
-            vec3s light_pink = {1.0f, 0.6f, 1.0f};
             editor_edge_t active_edge = state.editor->is_dragging ? state.editor->drag_edge : state.editor->hover_edge;
-            render_resize_markers(state.editor->selected_quad, EDGE_TOP, active_edge == EDGE_TOP ? light_pink : pink);
-            render_resize_markers(state.editor->selected_quad, EDGE_RIGHT, active_edge == EDGE_RIGHT ? light_pink : pink);
+            render_resize_markers(state.editor->selected_quad, EDGE_TOP, active_edge == EDGE_TOP ? (vec3s){1.0f, 0.6f, 1.0f} : (vec3s){1.0f, 0.0f, 1.0f});
+            render_resize_markers(state.editor->selected_quad, EDGE_RIGHT, active_edge == EDGE_RIGHT ? (vec3s){1.0f, 0.6f, 1.0f} : (vec3s){1.0f, 0.0f, 1.0f});
         }
     }
+
+    editor_render_selected_info();
+    editor_render_legend();
 }
 
 void editor_render_selected_info()
@@ -540,14 +502,12 @@ void editor_render_selected_info()
         text_draw((vec2s){x, y}, "  Light: %.1f %.1f %.1f", state.editor->selected_sector->light.x, state.editor->selected_sector->light.y, state.editor->selected_sector->light.z); y += line_height;
         text_draw((vec2s){x, y}, "  Color: %.1f %.1f %.1f", state.editor->selected_quad->color.x, state.editor->selected_quad->color.y, state.editor->selected_quad->color.z);
     } else text_draw((vec2s){x, y}, "SELECTED: Nothing");
-
-    text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");
 }
 
 void editor_render_legend(void)
 {
     f32 x = 10.0f, y = (f32)state.fb->h - 30.0f, line_height = 20.0f;
-    text_draw((vec2s){x, y}, "ESC:EXIT E:PLAY TAB:CURS CLICK:DRAG CTRL:RESIZE B:NEXT N:NEW X:DEL R:RESET"); y -= line_height;
-    text_draw((vec2s){x, y}, "1-3:CLR 4-6:LIT 7-9:ROT(SHFT:REV) 0:TEX_ID");
+    text_draw((vec2s){x, y}, "ESC:EXIT E:PLAY TAB:CURS CLICK:DRAG CTRL:RESIZE B:NEXT N:NEW X:DEL R:RESET I:SLD SHFT+I:INV"); y -= line_height;
+    text_draw((vec2s){x, y}, "1-3:+CLR 4-6:+LIT 7-9:+ROT SHFT+7-9:-ROT 0:TEX_ID");
 }
 

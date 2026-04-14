@@ -247,6 +247,8 @@ void editor_update()
         }
     }
 
+    bool shift_held = glfwGetKey(state.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+
 
     if (state.editor->is_dragging && state.editor->selected_quad) {
         vec3s plane_pos = vec3_add(state.editor->drag_start_hit, vec3_sub(state.cam->pos, state.editor->drag_cam_start_pos));
@@ -281,20 +283,12 @@ void editor_update()
         }
     }
 
-    bool shift_held = glfwGetKey(state.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
-
     static f32 tex_timer = 0;
     if (state.editor->selected_quad) {
-        bool next_tex = glfwGetKey(state.win, GLFW_KEY_0) == GLFW_PRESS && !shift_held;
-        bool prev_tex = glfwGetKey(state.win, GLFW_KEY_0) == GLFW_PRESS && shift_held;
-
-        if (next_tex || prev_tex) {
+        if (glfwGetKey(state.win, GLFW_KEY_0) == GLFW_PRESS) {
             if (tex_timer <= 0) {
-                if (next_tex) state.editor->selected_quad->tex_idx++;
-                else state.editor->selected_quad->tex_idx--;
-                
+                state.editor->selected_quad->tex_idx++;
                 if (state.editor->selected_quad->tex_idx >= state.text->count) state.editor->selected_quad->tex_idx = -1;
-                else if (state.editor->selected_quad->tex_idx < -1) state.editor->selected_quad->tex_idx = state.text->count - 1;
                 
                 tex_timer = 0.15f;
             }
@@ -322,33 +316,57 @@ void editor_update()
         }
     } else x_pressed = false;
 
-    static f32 adj_timers[9] = {0};
+    static bool adj_pressed[9] = {0};
+    static f32 adj_timer[9] = {0};
     static const int adj_keys[] = { GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6, GLFW_KEY_7, GLFW_KEY_8, GLFW_KEY_9 };
     for (int i = 0; i < 9; i++) {
+        bool triggered = false;
         if (glfwGetKey(state.win, adj_keys[i]) == GLFW_PRESS) {
-            if (adj_timers[i] <= 0) {
-                f32 step;
-                if (i < 6) step = 0.1f;
-                else step = 1.0f;
-                if (shift_held) step = -step;
-
-                if (i < 3 && state.editor->selected_quad) {
-                    if (i == 0) state.editor->selected_quad->color.x = roundf(fmaxf(0, fminf(1, state.editor->selected_quad->color.x + step)) * 10.0f) / 10.0f;
-                    if (i == 1) state.editor->selected_quad->color.y = roundf(fmaxf(0, fminf(1, state.editor->selected_quad->color.y + step)) * 10.0f) / 10.0f;
-                    if (i == 2) state.editor->selected_quad->color.z = roundf(fmaxf(0, fminf(1, state.editor->selected_quad->color.z + step)) * 10.0f) / 10.0f;
-                } else if (i < 6 && state.editor->selected_sector) {
-                    if (i == 3) state.editor->selected_sector->light.x = roundf(fmaxf(0, fminf(1, state.editor->selected_sector->light.x + step)) * 10.0f) / 10.0f;
-                    if (i == 4) state.editor->selected_sector->light.y = roundf(fmaxf(0, fminf(1, state.editor->selected_sector->light.y + step)) * 10.0f) / 10.0f;
-                    if (i == 5) state.editor->selected_sector->light.z = roundf(fmaxf(0, fminf(1, state.editor->selected_sector->light.z + step)) * 10.0f) / 10.0f;
-                } else if (state.editor->selected_quad) {
-                    if (i == 6) state.editor->selected_quad->rot.x = roundf(state.editor->selected_quad->rot.x + step);
-                    if (i == 7) state.editor->selected_quad->rot.y = roundf(state.editor->selected_quad->rot.y + step);
-                    if (i == 8) state.editor->selected_quad->rot.z = roundf(state.editor->selected_quad->rot.z + step);
+            if (!adj_pressed[i]) {
+                triggered = true;
+                adj_pressed[i] = true;
+                adj_timer[i] = 0.3f; // Initial delay before repeat
+            } else if (i >= 6) { // Only repeat for 7, 8, 9 (Rotation)
+                adj_timer[i] -= state.dt;
+                if (adj_timer[i] <= 0) {
+                    triggered = true;
+                    adj_timer[i] = 0.05f; // Repeat rate
                 }
-                adj_timers[i] = 0.02f;
             }
-            adj_timers[i] -= state.dt;
-        } else adj_timers[i] = 0;
+        } else adj_pressed[i] = false;
+
+        if (triggered) {
+            f32 step = (i < 6) ? 0.1f : 1.0f;
+            if (i >= 6 && shift_held) step = -step;
+            f32* val = NULL;
+            
+            if (i < 3 && state.editor->selected_quad) {
+                if (i == 0) val = &state.editor->selected_quad->color.x;
+                else if (i == 1) val = &state.editor->selected_quad->color.y;
+                else if (i == 2) val = &state.editor->selected_quad->color.z;
+            } else if (i < 6 && state.editor->selected_sector) {
+                if (i == 3) val = &state.editor->selected_sector->light.x;
+                else if (i == 4) val = &state.editor->selected_sector->light.y;
+                else if (i == 5) val = &state.editor->selected_sector->light.z;
+            } else if (i >= 6 && state.editor->selected_quad) {
+                if (i == 6) val = &state.editor->selected_quad->rot.x;
+                else if (i == 7) val = &state.editor->selected_quad->rot.y;
+                else if (i == 8) val = &state.editor->selected_quad->rot.z;
+            }
+
+            if (val) {
+                *val += step;
+                if (i < 6) {
+                    if (*val > 1.05f) *val = 0.0f;
+                    else if (*val < -0.05f) *val = 1.0f;
+                    *val = roundf(*val * 10.0f) / 10.0f;
+                } else {
+                    if (*val >= 360.0f) *val = 0.0f;
+                    else if (*val < 0.0f) *val = 359.0f;
+                    *val = roundf(*val);
+                }
+            }
+        }
     }
 
     static bool r_pressed = false;
@@ -541,6 +559,6 @@ void editor_render_legend(void)
 {
     f32 x = 10.0f, y = (f32)state.fb->h - 30.0f, line_height = 20.0f;
     text_draw((vec2s){x, y}, "ESC:EXIT E:PLAY TAB:CURS CLICK:DRAG CTRL:RESIZE B:NEXT N:NEW X:DEL R:RESET"); y -= line_height;
-    text_draw((vec2s){x, y}, "1-3:CLR 4-6:LIT 7-9:ROT 0:TEX_ID");
+    text_draw((vec2s){x, y}, "1-3:CLR 4-6:LIT 7-9:ROT(SHFT:REV) 0:TEX_ID");
 }
 

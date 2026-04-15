@@ -8,34 +8,24 @@
 #define MAX_WALL_VERTICES 4096
 #define MAX_SECTORS_PER_LEVEL 64
 
-typedef struct
-{
-    vec3s pos;
-    vec3s rot;
+typedef struct {
+    vec3s pos, rot, color; 
     vec2s size;
-    i32 tex_idx;
-    bool is_solid;
-    bool is_invisible;
-    vec3s color;
-    i32 sector_id;
+    i32 tex_idx, sector_id, portal_id;
+    bool is_solid, is_invisible;
 } level_quad_t;
 
-typedef struct
-{
-    i32 id;
+typedef struct {
+    i32 id, quad_count, quad_capacity;
     vec3s light;
     level_quad_t* quads;
-    i32 quad_count;
-    i32 quad_capacity;
 } level_sector_data_t;
 
-typedef struct
-{
-    const char* name;
+typedef struct {
+    const char* name; 
     const char* path;
     level_sector_data_t* sectors;
-    i32 sector_count;
-    i32 sector_capacity;
+    i32 sector_count, sector_capacity;
     camera_t cam;
 } level_data_t;
 

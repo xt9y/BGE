@@ -32,12 +32,13 @@ typedef struct {
     editor_e id;
     editor_e hover_id;
     
-    vec3s drag_start_hit;
-    vec3s drag_quad_start_pos;
-    vec3s drag_quad_start_rot;
+    vec3s drag_start_hit,
+          drag_quad_start_pos,
+          drag_quad_start_rot,
+          drag_plane_normal,
+          drag_cam_start_pos;
+
     vec2s drag_quad_start_size;
-    vec3s drag_plane_normal;
-    vec3s drag_cam_start_pos;
     
     level_quad_t template_quad;
     u32 template_mods;

@@ -30,8 +30,7 @@ typedef struct {
     u32 id;
     i32 width, height, channels;
     tex_filter_t filter;
-    tex_wrap_t wrap_s;
-    tex_wrap_t wrap_t;
+    tex_wrap_t wrap_s, wrap_t;
     bool has_alpha;
     char name[64];
 } texture_t;
@@ -48,10 +47,8 @@ typedef struct {
     vec4s color;
 } vertex_t;
 
-typedef struct
-{
-    u8 x;
-    u8 y;
+typedef struct {
+    u8 x, y;
 } glyph_uv_t;
 
 extern glyph_uv_t glyphs[128];

@@ -41,12 +41,12 @@ typedef struct {
     vertex_t text_vertices[MAX_TEXT_VERTICES];
     u32 text_vertex_count;
 
-    int level_id;
-    int level_count;
+    i16 level_id;
+    i16 level_count;
     level_data_t levels[MAX_LEVELS];
 
     vertex_t wall_vertices[MAX_WALL_VERTICES];
-    uint32_t wall_vertex_count;
+    u32 wall_vertex_count;
 } state_t;
 
 extern state_t state;

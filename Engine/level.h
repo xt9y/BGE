@@ -35,6 +35,7 @@ typedef struct
     const char* path;
     level_sector_data_t* sectors;
     i32 sector_count;
+    i32 sector_capacity;
     camera_t cam;
 } level_data_t;
 

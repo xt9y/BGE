@@ -24,7 +24,7 @@
  *
  *  > press 0 to cycles through textures
  *
- *  > press Q to cycle through sectors (Shift: reverse)
+ *  > press q to cycle through sectors (Shift: reverse)
  *
  *  > dragging drags the quad 
  *

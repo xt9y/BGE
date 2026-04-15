@@ -8,6 +8,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static void editor_add_sector(level_data_t* level) {
+    i32 selected_sector_id = state.editor->selected_sector ? state.editor->selected_sector->id : -1;
+    
+    if (level->sector_capacity <= level->sector_count) {
+        i32 new_cap = (level->sector_capacity == 0) ? level->sector_count + 16 : level->sector_capacity * 2;
+        level_sector_data_t* new_sectors = malloc(sizeof(level_sector_data_t) * new_cap);
+        if (level->sector_count > 0) memcpy(new_sectors, level->sectors, sizeof(level_sector_data_t) * level->sector_count);
+        if (level->sector_capacity > 0) free(level->sectors);
+        level->sectors = new_sectors;
+        level->sector_capacity = new_cap;
+        
+        if (selected_sector_id != -1) {
+            for (i32 i = 0; i < level->sector_count; i++) {
+                if (level->sectors[i].id == selected_sector_id) {
+                    state.editor->selected_sector = &level->sectors[i];
+                    break;
+                }
+            }
+        }
+    }
+    
+    level_sector_data_t* s = &level->sectors[level->sector_count];
+    s->id = 0; 
+    for (i32 i = 0; i < level->sector_count; i++) {
+        if (level->sectors[i].id >= s->id) s->id = level->sectors[i].id + 1;
+    }
+
+    s->light = (vec3s){1.0f, 1.0f, 1.0f};
+    s->quads = NULL;
+    s->quad_count = 0;
+    s->quad_capacity = 0;
+    
+    level->sector_count++;
+}
+
 static void editor_add_quad(level_sector_data_t* sector, const level_quad_t* template) 
 {
     if (sector->quad_capacity <= sector->quad_count) {
@@ -32,7 +67,6 @@ static void editor_add_quad(level_sector_data_t* sector, const level_quad_t* tem
 static void editor_delete_quad(level_sector_data_t* sector, i32 idx) 
 {
     if (!sector || idx < 0 || idx >= sector->quad_count) return;
-
     for (i32 i = idx; i < sector->quad_count - 1; i++) sector->quads[i] = sector->quads[i + 1];    
     sector->quad_count--;
 }
@@ -425,24 +459,19 @@ void editor_update()
     if (glfwGetKey(state.win, GLFW_KEY_Q) == GLFW_PRESS) {
         if (!q_pressed) {
             i32 current_idx = 0;
-            for (i32 i = 0; i < state.editor->level->sector_count; i++) {
-                if (state.editor->level->sectors[i].id == state.editor->template_quad.sector_id) {
-                    current_idx = i;
-                    break;
-                }
+            for (i32 i = 0; i < state.editor->level->sector_count; i++)
+                if (state.editor->level->sectors[i].id == state.editor->template_quad.sector_id) { current_idx = i; break; }
+
+            i32 target_idx;
+            if (shift_held) target_idx = (current_idx - 1 + state.editor->level->sector_count) % state.editor->level->sector_count;
+            else {
+                if (current_idx == state.editor->level->sector_count - 1) editor_add_sector(state.editor->level);
+                target_idx = (current_idx + 1) % state.editor->level->sector_count;
             }
 
-            i32 target_idx = shift_held ? 
-                (current_idx - 1 + state.editor->level->sector_count) % state.editor->level->sector_count : 
-                (current_idx + 1) % state.editor->level->sector_count;
-
-            i32 target_sector_id = state.editor->level->sectors[target_idx].id;
-
-            if (state.editor->selected_quad) {
-                editor_move_quad_to_sector(state.editor->selected_sector, &state.editor->level->sectors[target_idx], state.editor->selected_wall_idx);
-            }
+            if (state.editor->selected_quad) editor_move_quad_to_sector(state.editor->selected_sector, &state.editor->level->sectors[target_idx], state.editor->selected_wall_idx);
             
-            state.editor->template_quad.sector_id = target_sector_id;
+            state.editor->template_quad.sector_id = state.editor->level->sectors[target_idx].id;
             state.editor->template_mods |= EDITOR_MOD_SECTOR;
             q_pressed = true;
         }
@@ -472,27 +501,30 @@ void editor_save(level_data_t* level)
 
     for (int s = 0; s < level->sector_count; s++) {
         level_sector_data_t* sector = &level->sectors[s];
-        fprintf(f, "static level_quad_t level%d_sector%d_quads[] = {\n", level_num, s);
-        for (int q = 0; q < sector->quad_count; q++) {
-            level_quad_t* quad = &sector->quads[q];
-            fprintf(f, "    { .pos = {%.0f, %.0f, %.0f}, .rot = {%.0f, %.0f, %.0f}, .size = {%.0f, %.0f}, .tex_idx = %d, .is_solid = %s, .is_invisible = %s, .color = {%.1ff, %.1ff, %.1ff}, .sector_id = %d },\n",
-                roundf(quad->pos.x), roundf(quad->pos.y), roundf(quad->pos.z),
-                roundf(quad->rot.x), roundf(quad->rot.y), roundf(quad->rot.z),
-                roundf(quad->size.x), roundf(quad->size.y),
-                quad->tex_idx,
-                quad->is_solid ? "true" : "false",
-                quad->is_invisible ? "true" : "false",
-                quad->color.x, quad->color.y, quad->color.z,
-                quad->sector_id);
+        if (sector->quad_count > 0) {
+            fprintf(f, "static level_quad_t level%d_sector%d_quads[] = {\n", level_num, s);
+            for (int q = 0; q < sector->quad_count; q++) {
+                level_quad_t* quad = &sector->quads[q];
+                fprintf(f, "    { .pos = {%.0f, %.0f, %.0f}, .rot = {%.0f, %.0f, %.0f}, .size = {%.0f, %.0f}, .tex_idx = %d, .is_solid = %s, .is_invisible = %s, .color = {%.1ff, %.1ff, %.1ff}, .sector_id = %d },\n",
+                    roundf(quad->pos.x), roundf(quad->pos.y), roundf(quad->pos.z),
+                    roundf(quad->rot.x), roundf(quad->rot.y), roundf(quad->rot.z),
+                    roundf(quad->size.x), roundf(quad->size.y),
+                    quad->tex_idx,
+                    quad->is_solid ? "true" : "false",
+                    quad->is_invisible ? "true" : "false",
+                    quad->color.x, quad->color.y, quad->color.z,
+                    quad->sector_id);
+            }
+            fprintf(f, "};\n\n");
         }
-        fprintf(f, "};\n\n");
     }
 
     fprintf(f, "static level_sector_data_t level%d_sectors[] = {\n", level_num);
     for (int s = 0; s < level->sector_count; s++) {
         level_sector_data_t* sector = &level->sectors[s];
-        fprintf(f, "    { .id = %d, .light = {%.1ff, %.1ff, %.1ff}, .quads = level%d_sector%d_quads, ", sector->id, sector->light.x, sector->light.y, sector->light.z, level_num, s);
-        fprintf(f, ".quad_count = sizeof(level%d_sector%d_quads) / sizeof(level%d_sector%d_quads[0]) },\n", level_num, s, level_num, s);
+        if (sector->quad_count == 0) continue;
+        fprintf(f, "    { .id = %d, .light = {%.1ff, %.1ff, %.1ff}, .quads = level%d_sector%d_quads, .quad_count = sizeof(level%d_sector%d_quads) / sizeof(level%d_sector%d_quads[0]) },\n", 
+            sector->id, sector->light.x, sector->light.y, sector->light.z, level_num, s, level_num, s, level_num, s);
     }
     fprintf(f, "};\n\n");
 

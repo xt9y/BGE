@@ -19,26 +19,20 @@ static void editor_add_sector(level_data_t* level) {
         level->sectors = new_sectors;
         level->sector_capacity = new_cap;
         
-        if (selected_sector_id != -1) {
-            for (i32 i = 0; i < level->sector_count; i++) {
-                if (level->sectors[i].id == selected_sector_id) {
-                    state.editor->selected_sector = &level->sectors[i];
-                    break;
-                }
-            }
-        }
+        if (selected_sector_id != -1)
+            for (i32 i = 0; i < level->sector_count; i++)
+                if (level->sectors[i].id == selected_sector_id) { state.editor->selected_sector = &level->sectors[i]; break; }
     }
     
-    level_sector_data_t* s = &level->sectors[level->sector_count];
-    s->id = 0; 
+    level->sectors[level->sector_count].id = 0; 
     for (i32 i = 0; i < level->sector_count; i++) {
-        if (level->sectors[i].id >= s->id) s->id = level->sectors[i].id + 1;
+        if (level->sectors[i].id >= level->sectors[level->sector_count].id) level->sectors[level->sector_count].id = level->sectors[i].id + 1;
     }
 
-    s->light = (vec3s){1.0f, 1.0f, 1.0f};
-    s->quads = NULL;
-    s->quad_count = 0;
-    s->quad_capacity = 0;
+    level->sectors[level->sector_count].light = (vec3s){1.0f, 1.0f, 1.0f};
+    level->sectors[level->sector_count].quads = NULL;
+    level->sectors[level->sector_count].quad_count = 0;
+    level->sectors[level->sector_count].quad_capacity = 0;
     
     level->sector_count++;
 }
@@ -46,7 +40,7 @@ static void editor_add_sector(level_data_t* level) {
 static void editor_add_quad(level_sector_data_t* sector, const level_quad_t* template) 
 {
     if (sector->quad_capacity <= sector->quad_count) {
-        i32 new_cap = (sector->quad_capacity == 0) ? sector->quad_count + 64 : sector->quad_capacity * 2;
+        i32 new_cap = (sector->quad_capacity == 0) ? sector->quad_count + 16 : sector->quad_capacity * 2;
         level_quad_t* new_quads = malloc(sizeof(level_quad_t) * new_cap);
         if (sector->quad_count > 0) memcpy(new_quads, sector->quads, sizeof(level_quad_t) * sector->quad_count);
         if (sector->quad_capacity > 0) free(sector->quads);

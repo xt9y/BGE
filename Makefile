@@ -12,6 +12,10 @@ build:
 run:
 	./cmake-build-debug/openglc
 
+clean:
+	rm -rf cmake-build-debug/
+	rm -rf compile_commands.json
+
 add:
 	git status
 	git add Makefile *.c *.h Engine/*.c Engine/*.h Engine/res/*.h Engine/res/*.png

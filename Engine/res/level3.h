@@ -41,7 +41,6 @@ static level_quad_t level3_sector1_quads[] = {
     { .pos = {15, -1, -8}, .rot = {0, 0, 0}, .size = {3, 10}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1, .portal_id = 0 },
     { .pos = {25, -1, -1}, .rot = {0, 0, 0}, .size = {3, 10}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1, .portal_id = 0 },
     { .pos = {28, -1, -8}, .rot = {0, 90, 0}, .size = {7, 10}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1, .portal_id = 0 },
-    { .pos = {29, 3, -21}, .rot = {0, 0, 0}, .size = {5, 2}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1, .portal_id = 0 },
     { .pos = {25, -1, -8}, .rot = {0, 0, 0}, .size = {3, 10}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1, .portal_id = 0 },
 };
 
@@ -57,7 +56,7 @@ static inline level_data_t load_3(void)
         .path = "level3.h",
         .sectors = level3_sectors,
         .sector_count = sizeof(level3_sectors) / sizeof(level3_sectors[0]),
-        .cam = { .pos = {30.079f, 6.589f, 9.573f}, .yaw = -1533.341f, .pitch = 4.100f }
+        .cam = { .pos = {30.980f, 3.500f, 11.049f}, .yaw = -1542.838f, .pitch = -1.300f }
     };
 }
 

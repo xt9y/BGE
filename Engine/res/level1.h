@@ -4,7 +4,7 @@
 #include "level.h"
 
 static level_quad_t level1_sector0_quads[] = {
-    { .pos = {-3, 4, 19}, .rot = {0, 90, 90}, .size = {12, 30}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {0.1f, 0.1f, 0.1f}, .sector_id = 0, .portal_id = 0 },
+    { .pos = {-3, 4, 19}, .rot = {0, 90, 90}, .size = {12, 23}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {0.1f, 0.1f, 0.1f}, .sector_id = 0, .portal_id = 0 },
     { .pos = {27, 2, 19}, .rot = {90, 327, 0}, .size = {8, 18}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 0, .portal_id = 0 },
     { .pos = {33, -10, 1}, .rot = {0, 90, 0}, .size = {30, 12}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {0.6f, 0.7f, 1.0f}, .sector_id = 0, .portal_id = 0 },
     { .pos = {-3, -10, 55}, .rot = {0, 0, 0}, .size = {25, 12}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {0.4f, 0.2f, 0.2f}, .sector_id = 0, .portal_id = 0 },
@@ -37,7 +37,6 @@ static level_quad_t level1_sector0_quads[] = {
     { .pos = {26, 0, 33}, .rot = {0, 90, 331}, .size = {8, 4}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {0.1f, 0.1f, 0.1f}, .sector_id = 0, .portal_id = 0 },
     { .pos = {-3, 2, 55}, .rot = {90, 0, 0}, .size = {30, 24}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 0, .portal_id = 0 },
     { .pos = {-3, 2, 19}, .rot = {90, 0, 0}, .size = {30, 18}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 0, .portal_id = 0 },
-    { .pos = {22, -10, 33}, .rot = {0, 0, 0}, .size = {12, 12}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 0, .portal_id = 0 },
     { .pos = {22, -10, 31}, .rot = {0, 90, 0}, .size = {2, 12}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 0, .portal_id = 0 },
     { .pos = {-3, -10, -1}, .rot = {270, 0, 0}, .size = {38, 56}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 0, .portal_id = 0 },
     { .pos = {22, -10, 41}, .rot = {0, 0, 0}, .size = {12, 12}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {0.8f, 0.6f, 0.6f}, .sector_id = 0, .portal_id = 0 },
@@ -62,6 +61,9 @@ static level_quad_t level1_sector0_quads[] = {
     { .pos = {-1, -10, 3}, .rot = {0, 0, 0}, .size = {2, 10}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {0.6f, 0.7f, 1.0f}, .sector_id = 0, .portal_id = 0 },
     { .pos = {21, -10, 1}, .rot = {0, 0, 0}, .size = {12, 12}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 0, .portal_id = 0 },
     { .pos = {22, 1, 19}, .rot = {0, 90, 0}, .size = {12, 1}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {0.6f, 0.7f, 1.0f}, .sector_id = 0, .portal_id = 0 },
+    { .pos = {-1, -9, 48}, .rot = {0, 270, 0}, .size = {6, 9}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 0, .portal_id = 1 },
+    { .pos = {9, -9, 44}, .rot = {0, 270, 0}, .size = {6, 9}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 0, .portal_id = 1 },
+    { .pos = {22, -10, 33}, .rot = {0, 0, 0}, .size = {12, 12}, .tex_idx = 0, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 0, .portal_id = 0 },
 };
 
 static level_quad_t level1_sector1_quads[] = {
@@ -78,8 +80,8 @@ static level_quad_t level1_sector1_quads[] = {
     { .pos = {22, -10, 31}, .rot = {0, 0, 0}, .size = {12, 12}, .tex_idx = 1, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1, .portal_id = 0 },
     { .pos = {22, 1, 19}, .rot = {0, 90, 0}, .size = {12, 1}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {0.6f, 0.7f, 1.0f}, .sector_id = 1, .portal_id = 0 },
     { .pos = {22, 1, 19}, .rot = {0, 90, 0}, .size = {12, 1}, .tex_idx = -1, .is_solid = true, .is_invisible = false, .color = {0.6f, 0.7f, 1.0f}, .sector_id = 1, .portal_id = 0 },
-    { .pos = {34, 6, -33}, .rot = {330, 0, 0}, .size = {6, 6}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1, .portal_id = 0 },
     { .pos = {27, 6, -33}, .rot = {330, 0, 0}, .size = {6, 6}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1, .portal_id = 0 },
+    { .pos = {34, 6, -33}, .rot = {330, 0, 0}, .size = {6, 6}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1, .portal_id = 0 },
     { .pos = {20, 6, -33}, .rot = {330, 0, 0}, .size = {6, 6}, .tex_idx = 3, .is_solid = true, .is_invisible = false, .color = {1.0f, 1.0f, 1.0f}, .sector_id = 1, .portal_id = 0 },
 };
 
@@ -104,7 +106,7 @@ static inline level_data_t load_1(void)
         .path = "level1.h",
         .sectors = level1_sectors,
         .sector_count = sizeof(level1_sectors) / sizeof(level1_sectors[0]),
-        .cam = { .pos = {15.530f, -3.066f, 12.320f}, .yaw = -6751.831f, .pitch = -7.376f }
+        .cam = { .pos = {9.817f, -5.500f, 12.486f}, .yaw = -7494.773f, .pitch = -1.376f }
     };
 }
 

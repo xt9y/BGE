@@ -101,24 +101,30 @@ static void render_sector(const level_sector_data_t *sector)
 
 static void render_portals(const level_data_t *level, int depth)
 {
-    for (i32 s = 0; s < level->sector_count; s++)
-    {
-        for (i32 q = 0; q < level->sectors[s].quad_count; q++)
-        {
-            if (level->sectors[s].quads[q].portal_id <= 0) continue;
-            
-            level_quad_t* source = &level->sectors[s].quads[q];
-            
-            for (i32 s2 = 0; s2 < level->sector_count; s2++)
-            {
-                for (i32 q2 = 0; q2 < level->sectors[s2].quad_count; q2++)
-                {
-                    if (s2 == s && q2 == q) continue;
-                    if (level->sectors[s2].quads[q2].portal_id != source->portal_id) continue;
-                    
-                    level_quad_t* dest = &level->sectors[s2].quads[q2];
-                    render_portal(source, dest, depth);
+    for (i32 s = 0; s < level->sector_count; s++) {
+        for (i32 q = 0; q < level->sectors[s].quad_count; q++) {
+            level_quad_t* quad = &level->sectors[s].quads[q];
+            if (quad->is_invisible) continue;
+            if (quad->portal_id > 0) {
+                // find matching portal
+                for (i32 s2 = 0; s2 < level->sector_count; s2++) {
+                    for (i32 q2 = 0; q2 < level->sectors[s2].quad_count; q2++) {
+                        if (s == s2 && q == q2) continue;
+                        if (level->sectors[s2].quads[q2].portal_id != quad->portal_id) continue;
+
+                        render_portal(quad, &level->sectors[s2].quads[q2], depth);
+                    }
                 }
+            }
+            else {
+                const vec4s wall_color = {
+                    quad->color.x * level->sectors[s].light.x,
+                    quad->color.y * level->sectors[s].light.y,
+                    quad->color.z * level->sectors[s].light.z,
+                    1.0f
+                };
+
+                render_quad(quad, wall_color);
             }
         }
     }

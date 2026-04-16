@@ -20,6 +20,8 @@ void mat4_rotate_y(f32* m, f32 angle);
 void mat4_rotate_z(f32* m, f32 angle);
 void mat4_multiply(f32* res, const f32* a, const f32* b);
 void mat4_lookat(f32* m, vec3s eye, vec3s center, vec3s up);
+void mat4_transpose(f32* m);
+bool mat4_inverse(const f32* m, f32* out);
 
 vec3s vec3_add(vec3s a, vec3s b);
 vec3s vec3_sub(vec3s a, vec3s b);

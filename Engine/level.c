@@ -1,6 +1,7 @@
 #include "level.h"
 #include "state.h"
 #include "gfx.h"
+#include "portal.h"
 #include <glad/glad.h>
 #include "util/types.h"
 
@@ -98,9 +99,36 @@ static void render_sector(const level_sector_data_t *sector)
     }
 }
 
+static void render_portals(const level_data_t *level)
+{
+    for (i32 s = 0; s < level->sector_count; s++)
+    {
+        for (i32 q = 0; q < level->sectors[s].quad_count; q++)
+        {
+            if (level->sectors[s].quads[q].portal_id < 0) continue;
+            
+            level_quad_t* source = &level->sectors[s].quads[q];
+            
+            for (i32 s2 = 0; s2 < level->sector_count; s2++)
+            {
+                for (i32 q2 = 0; q2 < level->sectors[s2].quad_count; q2++)
+                {
+                    if (s2 == s && q2 == q) continue;
+                    if (level->sectors[s2].quads[q2].portal_id != source->portal_id) continue;
+                    
+                    level_quad_t* dest = &level->sectors[s2].quads[q2];
+                    render_portal(source, dest);
+                    return;
+                }
+            }
+        }
+    }
+}
+
 void level_render(const level_data_t *level)
 {
     for (i32 i = 0; i < level->sector_count; i++) render_sector(&level->sectors[i]);
+    render_portals(level);
 }
 
 bool level_ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, const level_quad_t* quad, f32* out_t, vec3s* out_hit, vec3s* out_local_hit)

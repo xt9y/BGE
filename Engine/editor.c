@@ -241,8 +241,7 @@ void editor_update()
                         level_sector_data_t* target_sector = get_sector_by_id(state.editor->template_quad.sector_id);
                         if (target_sector) editor_move_quad_to_sector(info.sector, target_sector, info.wall_id);
                     }
-                }
-                state.editor->selected_quad = NULL;
+                } state.editor->selected_quad = NULL;
             } else {
                 state.editor->selected_quad = NULL;
                 state.editor->template_quad = get_default_quad(state.cam);
@@ -270,8 +269,7 @@ void editor_update()
                 if (dy_t < dx_r && dy_t < tol) state.editor->id = EDITOR_RESIZE_TOP;
                 else if (dx_r < tol) state.editor->id = EDITOR_RESIZE_RIGHT;
                 else state.editor->id = EDITOR_DRAG;
-            }   else state.editor->id = EDITOR_DRAG;
-
+            } else state.editor->id = EDITOR_DRAG;
         } else {
             state.editor->selected_quad = NULL;
             state.editor->template_quad = get_default_quad(state.cam);
@@ -325,13 +323,10 @@ void editor_update()
             mat4_multiply(t, r_y, r_x);
             mat4_multiply(m, t, r_z);
 
-            vec3s local_right = { m[0], m[1], m[2] },
-                  local_up = { m[4], m[5], m[6] };
+            vec3s local_right = { m[0], m[1], m[2] }, local_up = { m[4], m[5], m[6] };
 
-            if (state.editor->id == EDITOR_RESIZE_TOP) 
-                state.editor->selected_quad->size.y = roundf(fmaxf(1.0f, state.editor->drag_quad_start_size.y + vec3_dot(movement, local_up)));
-            else if (state.editor->id == EDITOR_RESIZE_RIGHT)
-                state.editor->selected_quad->size.x = roundf(fmaxf(1.0f, state.editor->drag_quad_start_size.x + vec3_dot(movement, local_right)));
+            if (state.editor->id == EDITOR_RESIZE_TOP) state.editor->selected_quad->size.y = roundf(fmaxf(1.0f, state.editor->drag_quad_start_size.y + vec3_dot(movement, local_up)));
+            if (state.editor->id == EDITOR_RESIZE_RIGHT) state.editor->selected_quad->size.x = roundf(fmaxf(1.0f, state.editor->drag_quad_start_size.x + vec3_dot(movement, local_right)));
             
             state.editor->selected_quad->pos = state.editor->drag_quad_start_pos;
         }
@@ -343,17 +338,12 @@ void editor_update()
             level_quad_t* q = state.editor->selected_quad ? state.editor->selected_quad : &state.editor->template_quad;
             q->tex_idx++;
             if (q->tex_idx >= state.text->count) q->tex_idx = -1;
-            
             if (state.editor->selected_quad) {
                 state.editor->template_quad = *state.editor->selected_quad;
                 state.editor->template_mods = EDITOR_MOD_ALL;
-            } else {
-                state.editor->template_mods |= EDITOR_MOD_TEXTURE;
-            }
-            
+            } else state.editor->template_mods |= EDITOR_MOD_TEXTURE;
             tex_timer = 0.15f;
-        }
-        tex_timer -= state.dt;
+        } tex_timer -= state.dt;
     } else tex_timer = 0;
 
     static bool n_pressed = false;
@@ -399,8 +389,7 @@ void editor_update()
                     state.editor->template_quad = *state.editor->selected_quad;
                     state.editor->template_mods = EDITOR_MOD_ALL;
                 } else state.editor->template_mods |= EDITOR_MOD_SOLID;
-            }
-            i_pressed = true;
+            } i_pressed = true;
         }
     } else i_pressed = false;
 

@@ -660,7 +660,7 @@ void editor_render_selected_info()
 void editor_render_legend(void)
 {
     f32 x = 10.0f, y = (f32)state.fb->h - 30.0f, line_height = 20.0f;
-    text_draw((vec2s){x, y}, "ESC:EXIT E:PLAY TAB:CURS CLICK:DRAG CTRL:RESIZE ENTER:DESEL B:NEXT N:NEW X:DEL R:RESET I:SLD SHFT+I:INV P:PRT SHFT+P:-PRT V:PAINT"); y -= line_height;
+    text_draw((vec2s){x, y}, "ESC:EXIT E:PLAY TAB:CURS CLICK:DRAG CTRL:RESIZE ENTER:DESEL B:NEXT_LVL N:NEW X:DEL R:RESET I:SLD SHFT+I:INV V:PAINT"); y -= line_height;
     text_draw((vec2s){x, y}, "1-3:+CLR 4-6:+LIT 7-9:+ROT SHFT+7-9:-ROT 0:TEX_ID Q:+SEC SHFT+Q:-SEC");
 }
 

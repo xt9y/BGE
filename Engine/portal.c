@@ -10,7 +10,7 @@ static u32 g_portal_vbo = 0;
 static u32 g_portal_ebo = 0;
 static bool g_portal_vao_initialized = false;
 
-static void ensure_portal_vao()
+static void ensure_vao()
 {
     if (g_portal_vao_initialized) return;
 
@@ -44,6 +44,14 @@ static void get_quad_model_matrix(const level_quad_t* quad, f32* out_model)
     out_model[12] = quad->pos.x;
     out_model[13] = quad->pos.y;
     out_model[14] = quad->pos.z;
+}
+
+static void get_quad_center_model_matrix(const level_quad_t* quad, f32* out_model)
+{
+    get_quad_model_matrix(quad, out_model);
+    f32 center_offset[16];
+    mat4_translate(center_offset, quad->size.x * 0.5f, quad->size.y * 0.5f, 0.0f);
+    mat4_multiply(out_model, center_offset, out_model);
 }
 
 static vec3s get_quad_normal(const f32* model)
@@ -122,9 +130,9 @@ static void apply_oblique_clipping(const level_quad_t* dest_quad, const f32* vie
     proj_mat[11] = c.w - row3_w;
 }
 
-static void render_quad_geometry(const level_quad_t* quad, const vec4s color)
+static void render_quad(const level_quad_t* quad, const vec4s color)
 {
-    ensure_portal_vao();
+    ensure_vao();
 
     f32 model[16];
     get_quad_model_matrix(quad, model);
@@ -158,45 +166,33 @@ static void render_quad_geometry(const level_quad_t* quad, const vec4s color)
     glBindVertexArray(0);
 }
 
-void render_portal(level_quad_t* source, level_quad_t* dest)
+void render_portal(level_quad_t* source, level_quad_t* dest, int depth)
 {
     f32 view[16], proj[16];
     camera_t* cam = state.cam;
     
-    vec3s cam_front = cam->front;
-    vec3s cam_up = cam->up;
-    vec3s look_at = {cam->pos.x + cam_front.x, cam->pos.y + cam_front.y, cam->pos.z + cam_front.z};
-    mat4_lookat(view, cam->pos, look_at, cam_up);
+    mat4_lookat(view, cam->pos, vec3_add(cam->pos, cam->front), cam->up);
     
     int win_w, win_h;
     glfwGetFramebufferSize(state.win, &win_w, &win_h);
     f32 aspect = (f32)win_w / (f32)win_h;
     mat4_perspective(proj, DEG2RAD(45.0f), aspect, 0.1f, 1000.0f);
     
-    f32 source_model[16], dest_model[16];
-    get_quad_model_matrix(source, source_model);
-    get_quad_model_matrix(dest, dest_model);
+    f32 m_source_center[16], m_dest_center[16], inv_dest_center[16];
+    get_quad_center_model_matrix(source, m_source_center);
+    get_quad_center_model_matrix(dest, m_dest_center);
     
-    f32 inv_source[16], inv_dest[16];
-    if (!mat4_inverse(source_model, inv_source)) return;
-    if (!mat4_inverse(dest_model, inv_dest)) return;
+    if (!mat4_inverse(m_dest_center, inv_dest_center)) return;
     
-    f32 flip_y[16];
-    mat4_identity(flip_y);
-    flip_y[5] = -1.0f;
+    f32 r180y[16];
+    mat4_identity(r180y);
+    r180y[0] = -1.0f;
+    r180y[10] = -1.0f;
     
-    f32 portal_transform[16], temp[16];
-    mat4_multiply(temp, inv_source, view);
-    mat4_multiply(portal_transform, inv_dest, temp);
-    mat4_multiply(portal_transform, flip_y, portal_transform);
-    
-    vec3s source_center;
-    get_quad_center(source, &source_center);
-    
-    f32 translation[16];
-    mat4_translate(translation, source_center.x, source_center.y, source_center.z);
-    f32 final_view[16];
-    mat4_multiply(final_view, portal_transform, translation);
+    f32 t1[16], t2[16], final_view[16];
+    mat4_multiply(t1, m_source_center, view);
+    mat4_multiply(t2, r180y, t1);
+    mat4_multiply(final_view, inv_dest_center, t2);
     
     f32 portal_proj[16];
     memcpy(portal_proj, proj, 16 * sizeof(f32));
@@ -205,42 +201,69 @@ void render_portal(level_quad_t* source, level_quad_t* dest)
     GLint view_loc = glGetUniformLocation(state.data->program, "view");
     GLint proj_loc = glGetUniformLocation(state.data->program, "projection");
     
+    f32 saved_view[16], saved_proj[16];
+    glGetUniformfv(state.data->program, view_loc, saved_view);
+    glGetUniformfv(state.data->program, proj_loc, saved_proj);
+
+    // 1. Mark portal area in stencil buffer
+    bool was_stencil_enabled = glIsEnabled(GL_STENCIL_TEST);
+    if (!was_stencil_enabled) {
+        glStencilMask(0xFF);
+        glClear(GL_STENCIL_BUFFER_BIT);
+    }
+
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDepthMask(GL_FALSE);
     glDisable(GL_DEPTH_TEST);
     
     glEnable(GL_STENCIL_TEST);
-    glStencilFunc(GL_NEVER, 1, 0xFF);
-    glStencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
     glStencilMask(0xFF);
     
-    glClear(GL_STENCIL_BUFFER_BIT);
-    
     vec4s white = {1.0f, 1.0f, 1.0f, 1.0f};
-    render_quad_geometry(source, white);
+    render_quad(source, white);
     
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    // 2. Clear depth and color in portal area to background
+    glStencilFunc(GL_EQUAL, 1, 0xFF);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+    glStencilMask(0x00);
+    
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_ALWAYS);
+    glDepthRange(1, 1);
     
-    glStencilMask(0x00);
-    glStencilFunc(GL_EQUAL, 1, 0xFF);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    vec4s bg_color = {0.2f, 0.3f, 0.3f, 1.0f};
+    render_quad(source, bg_color);
     
-    glClear(GL_DEPTH_BUFFER_BIT);
+    glDepthRange(0, 1);
+    glDepthFunc(GL_LESS);
     
+    // 3. Render portal content
     glUniformMatrix4fv(view_loc, 1, GL_FALSE, final_view);
     glUniformMatrix4fv(proj_loc, 1, GL_FALSE, portal_proj);
     
-    level_render(state.levels);
+    level_render(state.editor->level, depth - 1);
     
-    glDisable(GL_STENCIL_TEST);
+    // 4. Restore original matrices and seal the portal window in depth buffer
+    glUniformMatrix4fv(view_loc, 1, GL_FALSE, saved_view);
+    glUniformMatrix4fv(proj_loc, 1, GL_FALSE, saved_proj);
+    
+    if (was_stencil_enabled) {
+        glEnable(GL_STENCIL_TEST);
+        glStencilFunc(GL_EQUAL, 1, 0xFF);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+    } else {
+        glDisable(GL_STENCIL_TEST);
+    }
+    
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDepthMask(GL_TRUE);
-    glEnable(GL_DEPTH_TEST);
-    
-    glClear(GL_DEPTH_BUFFER_BIT);
-    render_quad_geometry(source, white);
+    glDepthFunc(GL_LESS);
+    render_quad(source, white);
     
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glEnable(GL_STENCIL_TEST);
+    glStencilMask(0xFF);
 }

@@ -29,7 +29,7 @@ typedef struct {
     camera_t cam;
 } level_data_t;
 
-void level_render(const level_data_t *level);
+void level_render(const level_data_t *level, int depth);
 bool level_ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, const level_quad_t* quad, f32* out_t, vec3s* out_hit, vec3s* out_local_hit);
 bool level_get_height(const level_data_t* level, vec3s pos, f32* h);
 

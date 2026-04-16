@@ -3,6 +3,6 @@
 
 #include "level.h"
 
-void render_portal(level_quad_t *a, level_quad_t *b);
+void render_portal(level_quad_t *a, level_quad_t *b, int depth);
 
 #endif // PORTAL_H

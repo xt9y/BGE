@@ -1,7 +1,6 @@
 #include "level.h"
 #include "state.h"
 #include "gfx.h"
-#include "portal.h"
 #include <glad/glad.h>
 #include "util/types.h"
 
@@ -82,70 +81,11 @@ static void render_quad(const level_quad_t* quad, const vec4s color)
     glBindVertexArray(0);
 }
 
-static bool is_quad_occluded(const level_quad_t* target, const level_data_t* level, f32 target_dist)
-{
-    f32 rot_y[16], rot_x[16], rot_z[16];
-    mat4_rotate_y(rot_y, -DEG2RAD(target->rot.y));
-    mat4_rotate_x(rot_x, -DEG2RAD(target->rot.x));
-    mat4_rotate_z(rot_z, -DEG2RAD(target->rot.z));
-    f32 temp[16], model[16];
-    mat4_multiply(temp, rot_y, rot_x);
-    mat4_multiply(model, temp, rot_z);
-
-    vec3s corners[5] = {
-        {0.0f, 0.0f, 0.0f},
-        {target->size.x, 0.0f, 0.0f},
-        {0.0f, target->size.y, 0.0f},
-        {target->size.x, target->size.y, 0.0f},
-        {target->size.x * 0.5f, target->size.y * 0.5f, 0.0f}
-    };
-
-    for (i32 c = 0; c < 5; c++) {
-        vec3s world_corner = {
-            target->pos.x + model[0] * corners[c].x + model[4] * corners[c].y + model[8] * corners[c].z,
-            target->pos.y + model[1] * corners[c].x + model[5] * corners[c].y + model[9] * corners[c].z,
-            target->pos.z + model[2] * corners[c].x + model[6] * corners[c].y + model[10] * corners[c].z
-        };
-
-        f32 closest_t = 1e10f;
-
-        for (i32 s = 0; s < level->sector_count; s++) {
-            for (i32 q = 0; q < level->sectors[s].quad_count; q++) {
-                if (&level->sectors[s].quads[q] == target) continue;
-                if (!level->sectors[s].quads[q].is_solid) continue;
-
-                f32 t;
-                if (level_ray_intersects_quad(state.cam->pos, vec3_normalize(vec3_sub(world_corner, state.cam->pos)), &level->sectors[s].quads[q], &t, NULL, NULL)) {
-                    if (t > 0.01f && t < closest_t) closest_t = t;
-                }
-            }
-        } if (closest_t >= target_dist - 0.5f) return false;
-    } return true;
-}
-
-static void render_sector(const level_data_t *level, const level_sector_data_t *sector)
+static void render_sector(const level_sector_data_t *sector)
 {
     for (i32 i = 0; i < sector->quad_count; i++)
     {
-        if (sector->quads[i].is_invisible || sector->quads[i].portal_id > 0) continue;
-
-        level_quad_t* quad = &sector->quads[i];
-
-        f32 rot_y[16], rot_x[16], rot_z[16];
-        mat4_rotate_y(rot_y, -DEG2RAD(quad->rot.y));
-        mat4_rotate_x(rot_x, -DEG2RAD(quad->rot.x));
-        mat4_rotate_z(rot_z, -DEG2RAD(quad->rot.z));
-        f32 temp[16], model[16];
-        mat4_multiply(temp, rot_y, rot_x);
-        mat4_multiply(model, temp, rot_z);
-        vec3s center = {
-            quad->pos.x + model[0] * quad->size.x * 0.5f + model[4] * quad->size.y * 0.5f,
-            quad->pos.y + model[1] * quad->size.x * 0.5f + model[5] * quad->size.y * 0.5f,
-            quad->pos.z + model[2] * quad->size.x * 0.5f + model[6] * quad->size.y * 0.5f
-        };
-        vec3s to_cam = vec3_sub(center, state.cam->pos);
-
-        if (is_quad_occluded(quad, level, sqrtf(to_cam.x * to_cam.x + to_cam.y * to_cam.y + to_cam.z * to_cam.z))) continue;
+        if (sector->quads[i].is_invisible) continue;
 
         const vec4s wall_color = {
             sector->quads[i].color.x * sector->light.x,
@@ -158,57 +98,9 @@ static void render_sector(const level_data_t *level, const level_sector_data_t *
     }
 }
 
-static void render_portals(const level_data_t *level, int depth)
+void level_render(const level_data_t *level)
 {
-    for (i32 s = 0; s < level->sector_count; s++) {
-        for (i32 q = 0; q < level->sectors[s].quad_count; q++) {
-            level_quad_t* quad = &level->sectors[s].quads[q];
-            if (quad->is_invisible) continue;
-            if (quad->portal_id > 0) {
-                // find matching portal
-                for (i32 s2 = 0; s2 < level->sector_count; s2++) {
-                    for (i32 q2 = 0; q2 < level->sectors[s2].quad_count; q2++) {
-                        if (s == s2 && q == q2) continue;
-                        if (level->sectors[s2].quads[q2].portal_id != quad->portal_id) continue;
-
-                        render_portal(quad, &level->sectors[s2].quads[q2], depth);
-                    }
-                }
-            }
-            else {
-                f32 rot_y[16], rot_x[16], rot_z[16];
-                mat4_rotate_y(rot_y, -DEG2RAD(quad->rot.y));
-                mat4_rotate_x(rot_x, -DEG2RAD(quad->rot.x));
-                mat4_rotate_z(rot_z, -DEG2RAD(quad->rot.z));
-                f32 temp[16], model[16];
-                mat4_multiply(temp, rot_y, rot_x);
-                mat4_multiply(model, temp, rot_z);
-                vec3s center = {
-                    quad->pos.x + model[0] * quad->size.x * 0.5f + model[4] * quad->size.y * 0.5f,
-                    quad->pos.y + model[1] * quad->size.x * 0.5f + model[5] * quad->size.y * 0.5f,
-                    quad->pos.z + model[2] * quad->size.x * 0.5f + model[6] * quad->size.y * 0.5f
-                };
-                vec3s to_cam = vec3_sub(center, state.cam->pos);
-
-                if (is_quad_occluded(quad, level, sqrtf(to_cam.x * to_cam.x + to_cam.y * to_cam.y + to_cam.z * to_cam.z))) continue;
-
-                const vec4s wall_color = {
-                    quad->color.x * level->sectors[s].light.x,
-                    quad->color.y * level->sectors[s].light.y,
-                    quad->color.z * level->sectors[s].light.z,
-                    1.0f
-                };
-
-                render_quad(quad, wall_color);
-            }
-        }
-    }
-}
-
-void level_render(const level_data_t *level, int depth)
-{
-    for (i32 i = 0; i < level->sector_count; i++) render_sector(level, &level->sectors[i]);
-    if (depth > 0) render_portals(level, depth);
+    for (i32 i = 0; i < level->sector_count; i++) render_sector(&level->sectors[i]);
 }
 
 bool level_ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, const level_quad_t* quad, f32* out_t, vec3s* out_hit, vec3s* out_local_hit)

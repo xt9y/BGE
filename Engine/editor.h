@@ -20,7 +20,6 @@ typedef enum {
     EDITOR_MOD_ROTATION  = 1 << 3,
     EDITOR_MOD_SOLID     = 1 << 4,
     EDITOR_MOD_INVISIBLE = 1 << 5,
-    EDITOR_MOD_PORTAL    = 1 << 6,
     EDITOR_MOD_ALL       = 0xFF
 } editor_mod_e;
 
@@ -62,7 +61,7 @@ static level_quad_t get_default_quad(camera_t *cam)
 {
     return (level_quad_t) { 
         .pos = {roundf(cam->pos.x + cam->front.x * 3.0f), roundf(cam->pos.y + cam->front.y * 3.0f), roundf(cam->pos.z + cam->front.z * 3.0f)}, 
-        .rot = {0, 0, 0}, .size = {2, 2}, .tex_idx = 0, .color = {1, 1, 1}, .is_solid = true, .is_invisible = false, .sector_id = 0, .portal_id = 0
+        .rot = {0, 0, 0}, .size = {2, 2}, .tex_idx = 0, .color = {1, 1, 1}, .is_solid = true, .is_invisible = false, .sector_id = 0
     };
 }
 

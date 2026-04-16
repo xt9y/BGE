@@ -11,7 +11,7 @@
 typedef struct {
     vec3s pos, rot, color; 
     vec2s size;
-    i32 tex_idx, sector_id, portal_id;
+    i32 tex_idx, sector_id;
     bool is_solid, is_invisible;
 } level_quad_t;
 
@@ -29,7 +29,7 @@ typedef struct {
     camera_t cam;
 } level_data_t;
 
-void level_render(const level_data_t *level, int depth);
+void level_render(const level_data_t *level);
 bool level_ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, const level_quad_t* quad, f32* out_t, vec3s* out_hit, vec3s* out_local_hit);
 bool level_get_height(const level_data_t* level, vec3s pos, f32* h);
 

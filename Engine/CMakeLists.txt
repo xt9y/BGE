@@ -7,7 +7,7 @@ if(NOT WIN32)
 endif()
 
 add_library(engine STATIC
-    App.c cam.c gfx.c text.c level.c editor.c portal.c util/math.c
+    App.c cam.c gfx.c text.c level.c editor.c util/math.c
 )
 
 target_sources(engine PRIVATE ../Vendor/glad/src/glad.c)

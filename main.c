@@ -42,7 +42,7 @@
  *
  *  > press shift + i to toggle invisibilty
  *
- * > and play mode:
+ * > ... and play mode:
  *  > press w a s d to walk around
  *  > use mouse to look around
  */
@@ -125,8 +125,7 @@ void RENDER()
 
     text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");
     text_draw((vec2s){10.0f, 10.0f}, "()*+-./ :;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz ");
-    int ww, wh;
-    glfwGetWindowSize(state.win, &ww, &wh);
+    int ww, wh; glfwGetWindowSize(state.win, &ww, &wh);
     text_draw((vec2s){10.0f, 30.0f}, "FPS %.1f, WIN: %d x %d (FB: %d x %d)", GL_GETFPS(), ww, wh, state.fb->w, state.fb->h);
     text_draw((vec2s){10.0f, 50.0f}, "POS: %.1f %.1f %.1f ; YAW %.1f ; PITCH %.1f", state.cam->pos.x, state.cam->pos.y, state.cam->pos.z, state.cam->yaw, state.cam->pitch);
     text_draw((vec2s){10.0f, 70.0f}, "CURRENT_LVL: %d ; MAX_LVLS: %d", state.level_id + 1, state.level_count);

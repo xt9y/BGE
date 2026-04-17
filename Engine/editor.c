@@ -677,7 +677,7 @@ void editor_render_selected_info()
     if (!is_template) { text_draw((vec2s){x, y}, "%c Solid: %s", mod_sld, q->is_solid ? "YES" : "NO"); y += line_height; }
     if (!is_template) { text_draw((vec2s){x, y}, "%c Invisible: %s", mod_inv, q->is_invisible ? "YES" : "NO"); y += line_height; }
     text_draw((vec2s){x, y}, "%c Tex ID: %d", mod_t, q->tex_idx); y += line_height;
-    if (!is_template) { text_draw((vec2s){x, y}, " Portal ID: %d", q->portal_id); y += line_height; }
+    if (!is_template) { text_draw((vec2s){x, y}, "  Portal ID: %d", q->portal_id); y += line_height; }
     if (!is_template && s) { text_draw((vec2s){x, y}, "  Light: %.1f %.1f %.1f", s->light.x, s->light.y, s->light.z); y += line_height; }
     text_draw((vec2s){x, y}, "%c Color: %.1f %.1f %.1f", mod_c, q->color.x, q->color.y, q->color.z);
 }

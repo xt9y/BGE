@@ -11,7 +11,7 @@
 typedef struct {
     vec3s pos, rot, color; 
     vec2s size;
-    i32 tex_idx, sector_id;
+    i32 tex_idx, sector_id, portal_id;
     bool is_solid, is_invisible;
 } level_quad_t;
 

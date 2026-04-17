@@ -185,6 +185,17 @@ static level_sector_data_t* get_sector_by_id(i32 id) {
     return NULL;
 }
 
+static int count_portal_quads(const level_data_t* level, int portal_id) {
+    if (portal_id <= 0) return 0;
+    int count = 0;
+    for (int s = 0; s < level->sector_count; s++) {
+        for (int i = 0; i < level->sectors[s].quad_count; i++) {
+            if (level->sectors[s].quads[i].portal_id == portal_id) count++;
+        }
+    }
+    return count;
+}
+
 static void editor_move_quad_to_sector(level_sector_data_t* old_sector, level_sector_data_t* new_sector, i32 quad_idx)
 {
     if (!old_sector || !new_sector || old_sector == new_sector) return;
@@ -381,7 +392,6 @@ void editor_update()
         }
     } else i_pressed = false;
 
-    static bool p_pressed = false;
     static bool adj_pressed[9] = {0};
     static f32 adj_timer[9] = {0};
     static const int adj_keys[] = { GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6, GLFW_KEY_7, GLFW_KEY_8, GLFW_KEY_9 };
@@ -460,6 +470,25 @@ void editor_update()
             q_pressed = true;
         }
     } else q_pressed = false;
+
+    static bool p_pressed = false;
+    if (glfwGetKey(state.win, GLFW_KEY_P) == GLFW_PRESS && state.editor->id != EDITOR_PAINT) {
+        if (!p_pressed) {
+            level_quad_t* q = state.editor->selected_quad ? state.editor->selected_quad : &state.editor->template_quad;
+            if (shift_held) {
+                do { q->portal_id--; if (q->portal_id < 0) { q->portal_id = 0; break; }
+                } while (q->portal_id > 0 && count_portal_quads(state.editor->level, q->portal_id) >= 2);
+            } else {
+                int limit = 256; do q->portal_id++;
+                while (count_portal_quads(state.editor->level, q->portal_id) > 2 && --limit > 0);
+            }
+            if (state.editor->selected_quad) {
+                state.editor->template_quad = *state.editor->selected_quad;
+                state.editor->template_mods = EDITOR_MOD_ALL;
+            } else state.editor->template_mods |= EDITOR_MOD_PORTAL;
+            p_pressed = true;
+        }
+    } else p_pressed = false;
 
     mouse_was_pressed = mouse_is_pressed;
 }
@@ -652,7 +681,8 @@ void editor_render_selected_info()
     if (!is_template) { text_draw((vec2s){x, y}, "  Size: %.0f %.0f", q->size.x, q->size.y); y += line_height; }
     if (!is_template) { text_draw((vec2s){x, y}, "%c Solid: %s", mod_sld, q->is_solid ? "YES" : "NO"); y += line_height; }
     if (!is_template) { text_draw((vec2s){x, y}, "%c Invisible: %s", mod_inv, q->is_invisible ? "YES" : "NO"); y += line_height; }
-    text_draw((vec2s){x, y}, "%c Tex: %d", mod_t, q->tex_idx); y += line_height;
+    text_draw((vec2s){x, y}, "%c Tex ID: %d", mod_t, q->tex_idx); y += line_height;
+    if (!is_template) { text_draw((vec2s){x, y}, "%c Portal ID: %d", mod_p, q->portal_id); y += line_height; }
     if (!is_template && s) { text_draw((vec2s){x, y}, "  Light: %.1f %.1f %.1f", s->light.x, s->light.y, s->light.z); y += line_height; }
     text_draw((vec2s){x, y}, "%c Color: %.1f %.1f %.1f", mod_c, q->color.x, q->color.y, q->color.z);
 }
@@ -660,7 +690,7 @@ void editor_render_selected_info()
 void editor_render_legend(void)
 {
     f32 x = 10.0f, y = (f32)state.fb->h - 30.0f, line_height = 20.0f;
-    text_draw((vec2s){x, y}, "ESC:EXIT E:PLAY TAB:CURS CLICK:DRAG CTRL:RESIZE ENTER:DESEL B:NEXT_LVL N:NEW X:DEL R:RESET I:SLD SHFT+I:INV V:PAINT"); y -= line_height;
+    text_draw((vec2s){x, y}, "ESC:EXIT E:PLAY TAB:CURS CLICK:DRAG CTRL:RESIZE ENTER:DESEL B:NEXT_LVL N:NEW X:DEL R:RESET I:SLD SHFT+I:INV P:+PRTLV SHIFT+P:-PRTL :PAINT"); y -= line_height;
     text_draw((vec2s){x, y}, "1-3:+CLR 4-6:+LIT 7-9:+ROT SHFT+7-9:-ROT 0:TEX_ID Q:+SEC SHFT+Q:-SEC");
 }
 

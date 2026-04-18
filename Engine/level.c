@@ -12,6 +12,11 @@ static u32 g_wall_vbo = 0;
 static u32 g_wall_ebo = 0;
 static bool g_wall_vao_initialized = false;
 
+static u32 g_billboard_vao = 0;
+static u32 g_billboard_vbo = 0;
+static u32 g_billboard_ebo = 0;
+static bool g_billboard_vao_initialized = false;
+
 static void ensure_vao()
 {
     if (g_wall_vao_initialized) return;
@@ -35,6 +40,29 @@ static void ensure_vao()
     g_wall_vao_initialized = true;
 }
 
+static void ensure_billboard_vao()
+{
+    if (g_billboard_vao_initialized) return;
+
+    glGenVertexArrays(1, &g_billboard_vao);
+    glGenBuffers(1, &g_billboard_vbo);
+    glGenBuffers(1, &g_billboard_ebo);
+
+    glBindVertexArray(g_billboard_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_billboard_vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_billboard_ebo);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(3 * sizeof(f32)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(6 * sizeof(f32)));
+    glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0);
+    g_billboard_vao_initialized = true;
+}
+
 static void render_quad(const level_quad_t* quad, const vec4s color)
 {
     ensure_vao();
@@ -55,7 +83,7 @@ static void render_quad(const level_quad_t* quad, const vec4s color)
     GLint model_loc = glGetUniformLocation(state.data->program, "model");
     glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
 
-    if (quad->tex_idx >= 0 && quad->tex_idx < state.text->count) texture_bind(&state.text->textures[quad->tex_idx], 0);
+    if (quad->tex_id >= 0 && quad->tex_id < state.text->count) texture_bind(&state.text->textures[quad->tex_id], 0);
     else texture_bind(texture_get_fallback(), 0);
 
     f32 u_repeat = quad->size.x * 0.5f, v_repeat = quad->size.y * 0.5f;
@@ -83,9 +111,9 @@ static void render_quad(const level_quad_t* quad, const vec4s color)
 
 static void render_sector(const level_sector_data_t *sector)
 {
-    for (i32 i = 0; i < sector->quad_count; i++)
-    {
+    for (i32 i = 0; i < sector->quad_count; i++) {
         if (sector->quads[i].is_invisible) continue;
+        if (sector->quads[i].is_billboard) continue;
 
         const vec4s wall_color = {
             sector->quads[i].color.x * sector->light.x,
@@ -95,6 +123,76 @@ static void render_sector(const level_sector_data_t *sector)
         };
 
         render_quad(&sector->quads[i], wall_color);
+    }
+}
+
+static void render_billboard_quad(const level_quad_t* quad, const vec4s color, const vec3s cam_pos)
+{
+    ensure_billboard_vao();
+
+    vec3s to_cam = vec3_normalize(vec3_sub(cam_pos, quad->pos));
+    f32 yaw = atan2f(to_cam.x, to_cam.z) * 180.0f / M_PI;
+
+    f32 model[16];
+    mat4_identity(model);
+
+    f32 cos_y = cosf(-DEG2RAD(yaw));
+    f32 sin_y = sinf(-DEG2RAD(yaw));
+    model[0] = cos_y;
+    model[2] = sin_y;
+    model[8] = -sin_y;
+    model[10] = cos_y;
+
+    model[12] = quad->pos.x;
+    model[13] = quad->pos.y;
+    model[14] = quad->pos.z;
+
+    GLint model_loc = glGetUniformLocation(state.data->program, "model");
+    glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
+
+    if (quad->tex_id >= 0 && quad->tex_id < state.text->count) texture_bind(&state.text->textures[quad->tex_id], 0);
+    else texture_bind(texture_get_fallback(), 0);
+
+    f32 u_repeat = quad->size.x * 0.5f, v_repeat = quad->size.y * 0.5f;
+
+    f32 vertices[] = {
+         quad->size.x,  quad->size.y, 0.0f,   color.x, color.y, color.z,   u_repeat, v_repeat,
+         quad->size.x,  0.0f,         0.0f,   color.x, color.y, color.z,   u_repeat, 0.0f,
+         0.0f,          0.0f,         0.0f,   color.x, color.y, color.z,   0.0f,     0.0f,
+         0.0f,          quad->size.y, 0.0f,   color.x, color.y, color.z,   0.0f,     v_repeat,
+    };
+
+    u32 indices[] = {
+        0, 1, 3, 1, 2, 3
+    };
+
+    glBindBuffer(GL_ARRAY_BUFFER, g_billboard_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_billboard_ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glBindVertexArray(g_billboard_vao);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+}
+
+void level_render_billboards(const level_data_t *level, const camera_t *cam)
+{
+    for (i32 i = 0; i < level->sector_count; i++) {
+        level_sector_data_t *sector = &level->sectors[i];
+        for (i32 j = 0; j < sector->quad_count; j++) {
+            level_quad_t *quad = &sector->quads[j];
+            if (!quad->is_billboard || quad->is_invisible) continue;
+
+            const vec4s billboard_color = {
+                quad->color.x * sector->light.x,
+                quad->color.y * sector->light.y,
+                quad->color.z * sector->light.z,
+                1.0f
+            };
+
+            render_billboard_quad(quad, billboard_color, cam->pos);
+        }
     }
 }
 
@@ -129,8 +227,7 @@ bool level_ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, cons
     f32 t = vec3_dot(vec3_sub(wall_pos, ray_origin), normal) / vec3_dot(normal, ray_dir);
     if (t < 0.0f) return false;
 
-    vec3s hit = vec3_add(ray_origin, vec3_scale(ray_dir, t)),
-          local_hit = vec3_sub(hit, wall_pos);
+    vec3s hit = vec3_add(ray_origin, vec3_scale(ray_dir, t)), local_hit = vec3_sub(hit, wall_pos);
 
     f32 inv_rot_z[16], inv_rot_x[16], inv_rot_y[16], inv_model[16], temp2[16];
     mat4_rotate_z(inv_rot_z, DEG2RAD(quad->rot.z));

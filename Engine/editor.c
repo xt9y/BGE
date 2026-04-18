@@ -25,9 +25,8 @@ static void editor_add_sector(level_data_t* level) {
     }
     
     level->sectors[level->sector_count].id = 0; 
-    for (i32 i = 0; i < level->sector_count; i++) {
+    for (i32 i = 0; i < level->sector_count; i++)
         if (level->sectors[i].id >= level->sectors[level->sector_count].id) level->sectors[level->sector_count].id = level->sectors[i].id + 1;
-    }
 
     level->sectors[level->sector_count].light = (vec3s){1.0f, 1.0f, 1.0f};
     level->sectors[level->sector_count].quads = NULL;
@@ -232,9 +231,7 @@ void editor_update()
             if (info.hit) {
                 if (state.editor->template_mods & EDITOR_MOD_COLOR) info.quad->color = state.editor->template_quad.color;
                 if (state.editor->template_mods & EDITOR_MOD_ROTATION) info.quad->rot = state.editor->template_quad.rot;
-                if (state.editor->template_mods & EDITOR_MOD_TEXTURE) info.quad->tex_idx = state.editor->template_quad.tex_idx;
-                if (state.editor->template_mods & EDITOR_MOD_SOLID) info.quad->is_solid = state.editor->template_quad.is_solid;
-                if (state.editor->template_mods & EDITOR_MOD_INVISIBLE) info.quad->is_invisible = state.editor->template_quad.is_invisible;
+                if (state.editor->template_mods & EDITOR_MOD_TEXTURE) info.quad->tex_id = state.editor->template_quad.tex_id;
                 if (state.editor->template_mods & EDITOR_MOD_SECTOR) {
                     if (info.quad->sector_id != state.editor->template_quad.sector_id) {
                         level_sector_data_t* target_sector = get_sector_by_id(state.editor->template_quad.sector_id);
@@ -335,8 +332,8 @@ void editor_update()
     if (glfwGetKey(state.win, GLFW_KEY_0) == GLFW_PRESS) {
         if (tex_timer <= 0) {
             level_quad_t* q = state.editor->selected_quad ? state.editor->selected_quad : &state.editor->template_quad;
-            q->tex_idx++;
-            if (q->tex_idx >= state.text->count) q->tex_idx = -1;
+            q->tex_id++;
+            if (q->tex_id >= state.text->count) q->tex_id = -1;
             if (state.editor->selected_quad) {
                 state.editor->template_quad = *state.editor->selected_quad;
                 state.editor->template_mods = EDITOR_MOD_ALL;
@@ -375,20 +372,9 @@ void editor_update()
     static bool i_pressed = false;
     if (glfwGetKey(state.win, GLFW_KEY_I) == GLFW_PRESS && state.editor->id != EDITOR_PAINT) {
         if (!i_pressed) {
-            level_quad_t* q = state.editor->selected_quad ? state.editor->selected_quad : &state.editor->template_quad;
-            if (shift_held) {
-                q->is_invisible = !q->is_invisible;
-                if (state.editor->selected_quad) {
-                    state.editor->template_quad = *state.editor->selected_quad;
-                    state.editor->template_mods = EDITOR_MOD_ALL;
-                } else state.editor->template_mods |= EDITOR_MOD_INVISIBLE;
-            } else {
-                q->is_solid = !q->is_solid;
-                if (state.editor->selected_quad) {
-                    state.editor->template_quad = *state.editor->selected_quad;
-                    state.editor->template_mods = EDITOR_MOD_ALL;
-                } else state.editor->template_mods |= EDITOR_MOD_SOLID;
-            } i_pressed = true;
+            if (shift_held) state.editor->selected_quad->is_invisible = !state.editor->selected_quad->is_invisible;
+            else state.editor->selected_quad->is_solid = !state.editor->selected_quad->is_solid;
+            i_pressed = true;
         }
     } else i_pressed = false;
 
@@ -513,14 +499,16 @@ void editor_save(level_data_t* level)
             fprintf(f, "static level_quad_t level%d_sector%d_quads[] = {\n", level_num, s);
             for (int q = 0; q < sector->quad_count; q++) {
                 level_quad_t* quad = &sector->quads[q];
-                fprintf(f, "    { .pos = {%.0f, %.0f, %.0f}, .rot = {%.0f, %.0f, %.0f}, .size = {%.0f, %.0f}, .tex_idx = %d, .is_solid = %s, .is_invisible = %s, .color = {%.1ff, %.1ff, %.1ff}, .sector_id = %d },\n",
+                fprintf(f, "    { .pos = {%.0f, %.0f, %.0f}, .rot = {%.0f, %.0f, %.0f}, .size = {%.0f, %.0f}, .tex_id = %d, .is_solid = %s, .is_invisible = %s, .is_billboard = %s, .color = {%.1ff, %.1ff, %.1ff}, .portal_id = %d, .sector_id = %d },\n",
                     roundf(quad->pos.x), roundf(quad->pos.y), roundf(quad->pos.z),
                     roundf(quad->rot.x), roundf(quad->rot.y), roundf(quad->rot.z),
                     roundf(quad->size.x), roundf(quad->size.y),
-                    quad->tex_idx,
+                    quad->tex_id,
                     quad->is_solid ? "true" : "false",
                     quad->is_invisible ? "true" : "false",
+                    quad->is_billboard ? "true" : "false",
                     quad->color.x, quad->color.y, quad->color.z,
+                    quad->portal_id,
                     quad->sector_id);
             }
             fprintf(f, "};\n\n");
@@ -666,26 +654,25 @@ void editor_render_selected_info()
     char mod_t = (is_template && (state.editor->template_mods & EDITOR_MOD_TEXTURE)) ? '*' : ' ';
     char mod_c = (is_template && (state.editor->template_mods & EDITOR_MOD_COLOR)) ? '*' : ' ';
     char mod_r = (is_template && (state.editor->template_mods & EDITOR_MOD_ROTATION)) ? '*' : ' ';
-    char mod_sld = (is_template && (state.editor->template_mods & EDITOR_MOD_SOLID)) ? '*' : ' ';
-    char mod_inv = (is_template && (state.editor->template_mods & EDITOR_MOD_INVISIBLE)) ? '*' : ' ';
 
     text_draw((vec2s){x, y}, "%c Sector ID: %d", mod_s, is_template ? q->sector_id : s->id); y += line_height;
     if (!is_template) { text_draw((vec2s){x, y}, "  Wall ID: %d", state.editor->selected_wall_idx); y += line_height; }
     if (!is_template) { text_draw((vec2s){x, y}, "  Pos: %.0f %.0f %.0f", q->pos.x, q->pos.y, q->pos.z); y += line_height; }
     text_draw((vec2s){x, y}, "%c Rot: %.0f %.0f %.0f", mod_r, q->rot.x, q->rot.y, q->rot.z); y += line_height;
     if (!is_template) { text_draw((vec2s){x, y}, "  Size: %.0f %.0f", q->size.x, q->size.y); y += line_height; }
-    if (!is_template) { text_draw((vec2s){x, y}, "%c Solid: %s", mod_sld, q->is_solid ? "YES" : "NO"); y += line_height; }
-    if (!is_template) { text_draw((vec2s){x, y}, "%c Invisible: %s", mod_inv, q->is_invisible ? "YES" : "NO"); y += line_height; }
-    text_draw((vec2s){x, y}, "%c Tex ID: %d", mod_t, q->tex_idx); y += line_height;
+    if (!is_template) { text_draw((vec2s){x, y}, "  Solid: %s", q->is_solid ? "YES" : "NO"); y += line_height; }
+    if (!is_template) { text_draw((vec2s){x, y}, "  Invisible: %s", q->is_invisible ? "YES" : "NO"); y += line_height; }
+    if (!is_template) { text_draw((vec2s){x, y}, "  Billboard: %s", q->is_billboard ? "YES" : "NO"); y += line_height; }
+    text_draw((vec2s){x, y}, "%c Tex ID: %d", mod_t, q->tex_id); y += line_height;
     if (!is_template) { text_draw((vec2s){x, y}, "  Portal ID: %d", q->portal_id); y += line_height; }
     if (!is_template && s) { text_draw((vec2s){x, y}, "  Light: %.1f %.1f %.1f", s->light.x, s->light.y, s->light.z); y += line_height; }
     text_draw((vec2s){x, y}, "%c Color: %.1f %.1f %.1f", mod_c, q->color.x, q->color.y, q->color.z);
 }
 
-void editor_render_legend(void)
+void editor_render_legend()
 {
     f32 x = 10.0f, y = (f32)state.fb->h - 30.0f, line_height = 20.0f;
-    text_draw((vec2s){x, y}, "ESC:EXIT E:PLAY TAB:CURS CLICK:DRAG CTRL:RESIZE ENTER:DESEL B:NEXT_LVL N:NEW X:DEL R:RESET I:SLD SHFT+I:INV P:+PRTLV SHIFT+P:-PRTL :PAINT"); y -= line_height;
+    text_draw((vec2s){x, y}, "ESC:EXIT E:PLAY TAB:CURS CLICK:DRAG CTRL:RESIZE ENTER:DESEL B:NEXT_LVL SHFT+B:BIL N:NEW X:DEL R:RESET I:SLD SHFT+I:INV P:+PRTLV SHIFT+P:-PRTL :PAINT"); y -= line_height;
     text_draw((vec2s){x, y}, "1-3:+CLR 4-6:+LIT 7-9:+ROT SHFT+7-9:-ROT 0:TEX_ID Q:+SEC SHFT+Q:-SEC");
 }
 

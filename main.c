@@ -27,6 +27,8 @@
  *
  *  > press q to cycle through sectors (Shift: reverse)
  *
+ *  > press b to make quad into a billboard
+ *
  *  > dragging drags the quad 
  *
  *  > dragging + ctrl resizes on dragging at pink edges
@@ -70,9 +72,9 @@ void RUN()
 
     {   // Levels 
         state.level_count, state.level_id = 0;
-        state.levels[state.level_count++] = load_3();
-        state.levels[state.level_count++] = load_2();
         state.levels[state.level_count++] = load_1();
+        state.levels[state.level_count++] = load_2();
+        state.levels[state.level_count++] = load_3();
     }
 
     {   // Editor
@@ -121,6 +123,7 @@ void RENDER()
 
     text_begin();
     level_render(state.editor->level);
+    level_render_billboards(state.editor->level, state.cam);
     if (state.id == STATE_EDITOR) editor_render();
 
     text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");
@@ -167,14 +170,18 @@ void INPUT()
     static bool b_pressed = false;
     if (glfwGetKey(state.win, GLFW_KEY_B) == GLFW_PRESS) {
         if (!b_pressed) {
-            editor_save(state.editor->level);
-            state.level_id = (state.level_id + 1) % state.level_count;
-            apply_level_camera(state.cam, &state.levels[state.level_id]);
-            state.cam->firstMouse = true;
-            state.editor->selected_quad = NULL;
-            state.editor->selected_sector = NULL;
-            state.editor->template_quad = get_default_quad(state.cam);
-            state.editor->template_mods = EDITOR_MOD_NONE;
+            if (glfwGetKey(state.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
+                state.editor->selected_quad->is_billboard = !state.editor->selected_quad->is_billboard;
+            } else {
+                editor_save(state.editor->level);
+                state.level_id = (state.level_id + 1) % state.level_count;
+                apply_level_camera(state.cam, &state.levels[state.level_id]);
+                state.cam->firstMouse = true;
+                state.editor->selected_quad = NULL;
+                state.editor->selected_sector = NULL;
+                state.editor->template_quad = get_default_quad(state.cam);
+                state.editor->template_mods = EDITOR_MOD_NONE;
+            }
             b_pressed = true;
         }
     } else b_pressed = false;

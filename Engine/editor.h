@@ -55,6 +55,12 @@ void editor_render();
 void editor_update();
 void editor_save(level_data_t* level);
 
+void editor_add_quad(level_sector_data_t* sector, const level_quad_t* template);
+void editor_delete_quad(level_sector_data_t* sector, i32 idx);
+void editor_add_sector(level_data_t* level);
+void editor_move_quad_to_sector(level_sector_data_t* from, level_sector_data_t* to, i32 idx);
+int count_portal_quads(level_data_t* level, int portal_id);
+
 static level_quad_t get_default_quad(camera_t *cam) 
 {
     return (level_quad_t) { 

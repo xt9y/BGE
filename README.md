@@ -3,7 +3,10 @@
 
 #### THIS IS IT:
 
-![Alt text](./Engine/res/GAME.png)
+<video controls>
+  <source src="./Engine/res/GAME.mov" type="video/quicktime">
+  <img src="./Engine/res/GAME.png" alt="Game screenshot">
+</video>
 
 #### NOTES:
 - `git clone --recursive ...` is required to fetch the GLFW submodule.

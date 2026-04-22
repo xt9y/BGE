@@ -3,10 +3,8 @@
 
 #### THIS IS IT:
 
-![Game](./Engine/res/GAME.png)
-
-*Video: [GAME.mov](./Engine/res/GAME.mov)*
+[![Watch the video](https://raw.githubusercontent.com/FelixJaschul/openglc/main/Engine/res/GAME.png)](https://raw.githubusercontent.com/FelixJaschul/openglc/main/Engine/res/GAME.mov)
 
 #### NOTES:
 - `git clone --recursive ...` is required to fetch the GLFW submodule.
-- Linux build requirements : OpenGL loader/headers, X11 
+- Linux build requirements : OpenGL loader/headers, X11

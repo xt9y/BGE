@@ -3,8 +3,8 @@
 
 #### THIS IS IT:
 
-![Alt text](./Engine/res/GAME.png)
+[![Watch the video](./Engine/res/GAME.png)](./Engine/res/GAME.mov)
 
 #### NOTES:
 - `git clone --recursive ...` is required to fetch the GLFW submodule.
-- Linux build requirements : OpenGL loader/headers, X11 
+- Linux build requirements : OpenGL loader/headers, X11

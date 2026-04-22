@@ -8,6 +8,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static u32 g_editor_vao = 0;
+static u32 g_editor_vbo = 0;
+static u32 g_editor_ebo = 0;
+static bool g_editor_vao_initialized = false;
+
+static void ensure_editor_vao(void)
+{
+    if (g_editor_vao_initialized) return;
+
+    glGenVertexArrays(1, &g_editor_vao);
+    glGenBuffers(1, &g_editor_vbo);
+    glGenBuffers(1, &g_editor_ebo);
+
+    glBindVertexArray(g_editor_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_editor_vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_editor_ebo);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(3 * sizeof(f32)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(6 * sizeof(f32)));
+    glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0);
+    g_editor_vao_initialized = true;
+}
+
 void editor_add_sector(level_data_t* level) 
 {
     i32 selected_sector_id = state.editor->selected_sector ? state.editor->selected_sector->id : -1;
@@ -84,8 +112,7 @@ level_sector_data_t* get_sector_by_id(i32 id)
 
 void editor_move_quad_to_sector(level_sector_data_t* old_sector, level_sector_data_t* new_sector, i32 quad_idx) {
     if (!old_sector || !new_sector || quad_idx < 0 || quad_idx >= old_sector->quad_count) return;
-    level_quad_t q = old_sector->quads[quad_idx];
-    q.sector_id = new_sector->id;
+    old_sector->quads[quad_idx].sector_id = new_sector->id;
     
     if (new_sector->quad_capacity <= new_sector->quad_count) {
         i32 new_cap = (new_sector->quad_capacity == 0) ? new_sector->quad_count + 16 : new_sector->quad_capacity * 2;
@@ -96,7 +123,7 @@ void editor_move_quad_to_sector(level_sector_data_t* old_sector, level_sector_da
         new_sector->quad_capacity = new_cap;
     }
     
-    new_sector->quads[new_sector->quad_count++] = q;
+    new_sector->quads[new_sector->quad_count++] = old_sector->quads[quad_idx];
     
     for (i32 i = quad_idx; i < old_sector->quad_count - 1; i++) old_sector->quads[i] = old_sector->quads[i + 1];
     old_sector->quad_count--;
@@ -259,9 +286,10 @@ void editor_update()
     mouse_was_pressed = mouse_is_pressed;
 }
 
-static void render_quad(const level_quad_t* quad, const vec4s color)
+static void render_border_segments(const level_quad_t* quad, const vec4s color, bool top, bool bottom, bool left, bool right)
 {
     if (!quad) return;
+    ensure_editor_vao();
 
     f32 rot_y[16], rot_x[16], rot_z[16];
     mat4_rotate_y(rot_y, -DEG2RAD(quad->rot.y));
@@ -278,50 +306,74 @@ static void render_quad(const level_quad_t* quad, const vec4s color)
 
     GLint model_loc = glGetUniformLocation(state.data->program, "model");
     glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
+    texture_bind(texture_get_fallback(), 0);
 
-    f32 hx = quad->size.x,
-        hy = quad->size.y,
-        t = 0.05f, 
-        z = 0.0f;
+    const f32 t = 0.08f;
+    const f32 z = 0.01f;
 
-    f32 vertices[] = {
-        hx,     hy,     z,  color.x, color.y, color.z, 0, 0,
-        hx,     hy - t, z,  color.x, color.y, color.z, 0, 0,
-        0,      hy - t, z,  color.x, color.y, color.z, 0, 0,
-        0,      hy,     z,  color.x, color.y, color.z, 0, 0,
-        hx,     t,      z,  color.x, color.y, color.z, 0, 0,
-        hx,     0,      z,  color.x, color.y, color.z, 0, 0,
-        0,      0,      z,  color.x, color.y, color.z, 0, 0,
-        0,      t,      z,  color.x, color.y, color.z, 0, 0,
-    };
+    f32 vertices[16 * 8];
+    u32 indices[4 * 6];
+    u32 vcount = 0, icount = 0;
 
-    u32 indices[] = {
-        0,1,3, 1,2,3, 
-        4,5,7, 5,6,7,
-    };
+#define PUSH_QUAD(x0, y0, x1, y1) \
+    do { \
+        const u32 base = vcount / 8; \
+        vertices[vcount++] = (x1); vertices[vcount++] = (y1); vertices[vcount++] = z; vertices[vcount++] = color.x; vertices[vcount++] = color.y; vertices[vcount++] = color.z; vertices[vcount++] = 0; vertices[vcount++] = 0; \
+        vertices[vcount++] = (x1); vertices[vcount++] = (y0); vertices[vcount++] = z; vertices[vcount++] = color.x; vertices[vcount++] = color.y; vertices[vcount++] = color.z; vertices[vcount++] = 0; vertices[vcount++] = 0; \
+        vertices[vcount++] = (x0); vertices[vcount++] = (y0); vertices[vcount++] = z; vertices[vcount++] = color.x; vertices[vcount++] = color.y; vertices[vcount++] = color.z; vertices[vcount++] = 0; vertices[vcount++] = 0; \
+        vertices[vcount++] = (x0); vertices[vcount++] = (y1); vertices[vcount++] = z; vertices[vcount++] = color.x; vertices[vcount++] = color.y; vertices[vcount++] = color.z; vertices[vcount++] = 0; vertices[vcount++] = 0; \
+        indices[icount++] = base + 0; indices[icount++] = base + 1; indices[icount++] = base + 3; \
+        indices[icount++] = base + 1; indices[icount++] = base + 2; indices[icount++] = base + 3; \
+    } while (0)
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_DYNAMIC_DRAW);
-    glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
+    if (top) PUSH_QUAD(0.0f, quad->size.y - t, quad->size.x, quad->size.y);
+    if (bottom) PUSH_QUAD(0.0f, 0.0f, quad->size.x, t);
+    if (left) PUSH_QUAD(0.0f, 0.0f, t, quad->size.y);
+    if (right) PUSH_QUAD(quad->size.x - t, 0.0f, quad->size.x, quad->size.y);
+
+#undef PUSH_QUAD
+
+    glBindVertexArray(g_editor_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_editor_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(f32) * vcount, vertices, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_editor_ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * icount, indices, GL_DYNAMIC_DRAW);
+    glDrawElements(GL_TRIANGLES, (GLsizei)icount, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
 }
 
 static void editor_render_sector(const level_sector_data_t *sector)
 {
     for (i32 i = 0; i < sector->quad_count; i++) {
-        const level_quad_t* quad = &sector->quads[i];
-        const vec4s wall_color = { quad->color.x * sector->light.x, quad->color.y * sector->light.y, quad->color.z * sector->light.z, 1.0f };
-        render_quad(quad, wall_color);
-        
-        if (state.editor->selected_quad == quad) {
-            const vec4s select_color = { 1.0f, 0.0f, 1.0f, 1.0f };
-            render_quad(quad, select_color);
+        if (state.editor->selected_quad == &sector->quads[i]) {
+            editor_e border_id = state.editor->id != EDITOR_IDLE ? state.editor->id : state.editor->hover_id;
+            bool top_yellow = true, bottom_yellow = true, left_yellow = true, right_yellow = true;
+
+            if (border_id == EDITOR_RESIZE_TOP) top_yellow = false;
+            if (border_id == EDITOR_RESIZE_RIGHT) right_yellow = false;
+
+            const vec4s select_color = { 1.0f, 1.0f, 0.0f, 1.0f };
+            render_border_segments(&sector->quads[i], select_color, top_yellow, bottom_yellow, left_yellow, right_yellow);
+
+            const vec4s resize_color = { 1.0f, 0.0f, 1.0f, 1.0f };
+            if (border_id == EDITOR_RESIZE_TOP) render_border_segments(&sector->quads[i], resize_color, true, false, false, false);
+            if (border_id == EDITOR_RESIZE_RIGHT) render_border_segments(&sector->quads[i], resize_color, false, false, false, true);
         }
     }
 }
 
+void editor_render_info();
+void editor_render_legend();
+
 void editor_render()
 {
+    glDisable(GL_STENCIL_TEST);
+    glDisable(GL_DEPTH_TEST);
+    editor_render_info();
+    editor_render_legend();
     for (i32 i = 0; i < state.editor->level->sector_count; i++) editor_render_sector(&state.editor->level->sectors[i]);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
 }
 
 void editor_render_info()
@@ -348,6 +400,7 @@ void editor_render_info()
     if (!is_template) { text_draw((vec2s){x, y}, "  Size: %.0f %.0f", q->size.x, q->size.y); y += line_height; }
     text_draw((vec2s){x, y}, "%c Tex ID: %d", mod_t, q->tex_id); y += line_height;
     if (!is_template) { text_draw((vec2s){x, y}, "  Portal ID: %d", q->portal_id); y += line_height; }
+    if (!is_template) { text_draw((vec2s){x, y}, "  Portal Side Flip: %s", q->portal_side_flip ? "ON" : "OFF"); y += line_height; }
     if (!is_template && s) { text_draw((vec2s){x, y}, "  Light: %.1f %.1f %.1f", s->light.x, s->light.y, s->light.z); y += line_height; }
     text_draw((vec2s){x, y}, "%c Color: %.1f %.1f %.1f", mod_c, q->color.x, q->color.y, q->color.z);
 }
@@ -355,8 +408,13 @@ void editor_render_info()
 void editor_render_legend()
 {
     f32 x = 10.0f, y = (f32)state.fb->h - 30.0f, line_height = 20.0f;
-    text_draw((vec2s){x, y}, "ESC:EXIT E:PLAY TAB:CURS CLICK:DRAG CTRL:RESIZE ENTER:DESEL B:NEXT_LVL SHFT+B:BIL N:NEW X:DEL R:RESET I:SLD SHFT+I:INV P:+PRTLV SHIFT+P:-PRTL :PAINT"); y -= line_height;
-    text_draw((vec2s){x, y}, "1-3:+CLR 4-6:+LIT 7-9:+ROT SHFT+7-9:-ROT 0:TEX_ID Q:+SEC SHFT+Q:-SEC");
+    text_draw((vec2s){x, y}, "  SHFT+B:BIL   I:SLD     SHFT+I:INV   P:+PRTLV        SHIFT+P:-PRTL  CTRL+P:PRTL_SIDE"); y -= line_height;
+    text_draw((vec2s){x, y}, "  1-3:+CLR     4-6:+LIT  7-9:+ROT     SHFT+7-9:-ROT   0:TEX_ID       Q:+SEC            SHFT+Q:-SEC"); y -= line_height;
+    text_draw((vec2s){x, y}, "  N:NEW        X:DEL     R:RESET      ENTER:DESEL     DRAG:MOVE      CTRL:RESIZE       V:PAINT_MODE"); y -= line_height;
+    text_draw((vec2s){x, y}, "QUAD SETTINGS:"); y -= line_height;
+    text_draw((vec2s){x, y}, "  ESC:EXIT     E:PLAY    TAB:CURS     B:NEXT_LVL"); y -= line_height;
+    text_draw((vec2s){x, y}, "SETTINGS: "); y -= line_height; 
+    text_draw((vec2s){x, y}, "EDITOR INPUT INFO:");
 }
 
 void editor_save(level_data_t* level)
@@ -384,7 +442,7 @@ void editor_save(level_data_t* level)
             fprintf(f, "static level_quad_t level%d_sector%d_quads[] = {\n", level_num, s);
             for (int q = 0; q < sector->quad_count; q++) {
                 level_quad_t* quad = &sector->quads[q];
-                fprintf(f, "    { .pos = {%.0f, %.0f, %.0f}, .rot = {%.0f, %.0f, %.0f}, .size = {%.0f, %.0f}, .tex_id = %d, .is_solid = %s, .is_invisible = %s, .is_billboard = %s, .color = {%.1ff, %.1ff, %.1ff}, .portal_id = %d, .sector_id = %d },\n",
+                fprintf(f, "    { .pos = {%.0f, %.0f, %.0f}, .rot = {%.0f, %.0f, %.0f}, .size = {%.0f, %.0f}, .tex_id = %d, .is_solid = %s, .is_invisible = %s, .is_billboard = %s, .portal_side_flip = %s, .color = {%.1ff, %.1ff, %.1ff}, .portal_id = %d, .sector_id = %d },\n",
                     roundf(quad->pos.x), roundf(quad->pos.y), roundf(quad->pos.z),
                     roundf(quad->rot.x), roundf(quad->rot.y), roundf(quad->rot.z),
                     roundf(quad->size.x), roundf(quad->size.y),
@@ -392,6 +450,7 @@ void editor_save(level_data_t* level)
                     quad->is_solid ? "true" : "false",
                     quad->is_invisible ? "true" : "false",
                     quad->is_billboard ? "true" : "false",
+                    quad->portal_side_flip ? "true" : "false",
                     quad->color.x, quad->color.y, quad->color.z,
                     quad->portal_id,
                     quad->sector_id);

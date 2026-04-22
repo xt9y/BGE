@@ -63,7 +63,7 @@ static void ensure_billboard_vao()
     g_billboard_vao_initialized = true;
 }
 
-static void render_quad(const level_quad_t* quad, const vec4s color)
+void level_render_quad(const level_quad_t* quad, const vec4s color)
 {
     ensure_vao();
 
@@ -109,10 +109,18 @@ static void render_quad(const level_quad_t* quad, const vec4s color)
     glBindVertexArray(0);
 }
 
-static void render_sector(const level_sector_data_t *sector)
+static bool should_render_quad(const level_quad_t* quad, const level_render_options_t* options)
+{
+    if (!quad) return false;
+    if (quad->is_invisible) return false;
+    if (options && options->skip_quad == quad) return false;
+    return true;
+}
+
+static void render_sector(const level_sector_data_t *sector, const level_render_options_t* options)
 {
     for (i32 i = 0; i < sector->quad_count; i++) {
-        if (sector->quads[i].is_invisible) continue;
+        if (!should_render_quad(&sector->quads[i], options)) continue;
         if (sector->quads[i].is_billboard) continue;
 
         const vec4s wall_color = {
@@ -122,7 +130,7 @@ static void render_sector(const level_sector_data_t *sector)
             1.0f
         };
 
-        render_quad(&sector->quads[i], wall_color);
+        level_render_quad(&sector->quads[i], wall_color);
     }
 }
 
@@ -176,13 +184,13 @@ static void render_billboard_quad(const level_quad_t* quad, const vec4s color, c
     glBindVertexArray(0);
 }
 
-void level_render_billboards(const level_data_t *level, const camera_t *cam)
+void level_render_billboards_with_options(const level_data_t *level, const camera_t *cam, const level_render_options_t* options)
 {
     for (i32 i = 0; i < level->sector_count; i++) {
         level_sector_data_t *sector = &level->sectors[i];
         for (i32 j = 0; j < sector->quad_count; j++) {
             level_quad_t *quad = &sector->quads[j];
-            if (!quad->is_billboard || quad->is_invisible) continue;
+            if (!quad->is_billboard || !should_render_quad(quad, options)) continue;
 
             const vec4s billboard_color = {
                 quad->color.x * sector->light.x,
@@ -196,9 +204,19 @@ void level_render_billboards(const level_data_t *level, const camera_t *cam)
     }
 }
 
+void level_render_billboards(const level_data_t *level, const camera_t *cam)
+{
+    level_render_billboards_with_options(level, cam, NULL);
+}
+
+void level_render_with_options(const level_data_t *level, const level_render_options_t* options)
+{
+    for (i32 i = 0; i < level->sector_count; i++) render_sector(&level->sectors[i], options);
+}
+
 void level_render(const level_data_t *level)
 {
-    for (i32 i = 0; i < level->sector_count; i++) render_sector(&level->sectors[i]);
+    level_render_with_options(level, NULL);
 }
 
 bool level_ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, const level_quad_t* quad, f32* out_t, vec3s* out_hit, vec3s* out_local_hit)

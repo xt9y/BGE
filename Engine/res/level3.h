@@ -16,7 +16,7 @@ static level_quad_t level3_sector0_quads[] = {
 
 static level_quad_t level3_sector1_quads[] = {
     { .pos = {10, -4, 9}, .rot = {0, 0, 0}, .size = {5, 10}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.7f, 0.7f, 0.7f}, .portal_id = 0, .sector_id = 1 },
-    { .pos = {-31, -1, -0}, .rot = {0, 0, 0}, .size = {24, 10}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
+    { .pos = {-31, -1, 0}, .rot = {0, 0, 0}, .size = {24, 10}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
     { .pos = {-2, -4, 5}, .rot = {0, 90, 0}, .size = {4, 10}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.7f, 0.7f, 0.7f}, .portal_id = 0, .sector_id = 1 },
     { .pos = {38, -1, -8}, .rot = {0, 90, 0}, .size = {24, 10}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
     { .pos = {28, -1, -8}, .rot = {0, 0, 0}, .size = {7, 10}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 1, .sector_id = 1 },
@@ -40,14 +40,18 @@ static level_quad_t level3_sector1_quads[] = {
     { .pos = {15, -1, -8}, .rot = {0, 0, 0}, .size = {3, 10}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
     { .pos = {25, -1, -1}, .rot = {0, 0, 0}, .size = {3, 10}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
     { .pos = {28, -1, -8}, .rot = {0, 90, 0}, .size = {7, 10}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
-    { .pos = {29, 3, -10}, .rot = {0, 0, 0}, .size = {5, 3}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
     { .pos = {25, -1, -8}, .rot = {0, 0, 0}, .size = {3, 10}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
     { .pos = {10, -4, 5}, .rot = {0, 90, 0}, .size = {4, 10}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = true, .color = {0.7f, 0.7f, 0.7f}, .portal_id = 0, .sector_id = 1 },
+};
+
+static level_quad_t level3_sector2_quads[] = {
+    { .pos = {20, 3, -5}, .rot = {0, 0, 0}, .size = {2, 2}, .tex_id = 2, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 2 },
 };
 
 static level_sector_data_t level3_sectors[] = {
     { .id = 0, .light = {0.8f, 0.8f, 0.8f}, .quads = level3_sector0_quads, .quad_count = sizeof(level3_sector0_quads) / sizeof(level3_sector0_quads[0]) },
     { .id = 1, .light = {0.7f, 0.0f, 1.0f}, .quads = level3_sector1_quads, .quad_count = sizeof(level3_sector1_quads) / sizeof(level3_sector1_quads[0]) },
+    { .id = 2, .light = {1.0f, 1.0f, 1.0f}, .quads = level3_sector2_quads, .quad_count = sizeof(level3_sector2_quads) / sizeof(level3_sector2_quads[0]) },
 };
 
 static inline level_data_t load_3(void)
@@ -57,7 +61,7 @@ static inline level_data_t load_3(void)
         .path = "level3.h",
         .sectors = level3_sectors,
         .sector_count = sizeof(level3_sectors) / sizeof(level3_sectors[0]),
-        .cam = { .pos = {-10.354f, 3.500f, 17.217f}, .yaw = -3395.370f, .pitch = 1.937f }
+        .cam = { .pos = {31.410f, 3.500f, 11.815f}, .yaw = -3344.101f, .pitch = 3.237f }
     };
 }
 

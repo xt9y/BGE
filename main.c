@@ -18,32 +18,35 @@
  * > press e to switch betwen editor mode ... :
  *  > at the bottom of the screen is a small legend which button does what 
  *
- *  > press 1 2 3 to cycle r g b color value ... 
- *
- *  > press 4 5 6 to cycle r g b sector light ...
- *
- *  > press 7 8 9 to cycle x y z rotational values (Shift: reverse) ...
- *
- *  > press 0 to cycles through textures
- *
- *  > press q to cycle through sectors (Shift: reverse)
- *
- *  > dragging drags the quad 
- *
- *  > dragging + ctrl resizes on dragging at pink edges
+ *  > click to select / start drag
+ *  > ctrl + click near edge to resize
+ *  > enter to deselect
  *
  *  > press n to create a new default quad
- *  > press n while a quad is selected duplicates that quad 
+ *  > press n while a quad is selected duplicates that quad
  *
- *  > press x to delete a quad
- *
- *  > press r to reset the attributes of a quad
+ *  > press x to delete the quad
+ *  > press r to reset the  quad
  *
  *  > press i to toggle solid
- *
- *  > press shift + i to toggle invisibilty
- *
+ *  > press shift + i to toggle invisible
  *  > press shift + b to toggle billboard
+ *
+ *  > press p to increase portal id
+ *  > press shift + p to decrease portal id
+ *  > press ctrl + p to flip the shown portal side
+ *
+ *  > press q to next sector
+ *  > press shift + q to previous sector
+ *
+ *  > press 0 to cycle texture id
+ *
+ *  > press 1 2 3 to change quad rgb
+ *  > press 4 5 6 to change sector light rgb
+ *  > press 7 8 9 to change quad rotation xyz
+ *  > press shift + 7 8 9 to reverse rotation xyz
+ *
+ *  > press v to toggle paint mode
  *
  * > ... and play mode:
  *  > press w a s d to walk around
@@ -74,7 +77,7 @@ static bool is_linked_portal_quad(const level_data_t* level, const level_quad_t*
     return portal_find_link(level, quad, &link);
 }
 
-static void render_level_without_portals(const level_data_t* level, const camera_t* cam)
+static void render_level(const level_data_t* level, const camera_t* cam)
 {
     for (i32 s = 0; s < level->sector_count; s++) {
         const level_sector_data_t* sector = &level->sectors[s];
@@ -89,6 +92,7 @@ static void render_level_without_portals(const level_data_t* level, const camera
                 quad->color.z * sector->light.z,
                 1.0f
             };
+
             level_render_quad(quad, wall_color);
         }
     }
@@ -129,7 +133,6 @@ static void render_portals(const level_data_t* level, const camera_t* cam)
             glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
             set_camera_uniforms(&portal_cam);
-
             options.skip_quad = link.dst;
             level_render_with_options(level, &options);
             level_render_billboards_with_options(level, &portal_cam, &options);
@@ -214,7 +217,7 @@ void RENDER()
 
     text_begin();
     render_portals(state.editor->level, state.cam);
-    render_level_without_portals(state.editor->level, state.cam);
+    render_level(state.editor->level, state.cam);
     if (state.id == STATE_EDITOR) editor_render();
 
     text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");

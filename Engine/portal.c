@@ -10,18 +10,6 @@ typedef struct {
     vec3s normal;
 } portal_basis_t;
 
-static vec3s rotate_y(const vec3s v, const f32 angle_deg)
-{
-    const f32 a = DEG2RAD(angle_deg);
-    const f32 c = cosf(a);
-    const f32 s = sinf(a);
-    return (vec3s){
-        v.x * c + v.z * s,
-        v.y,
-        -v.x * s + v.z * c
-    };
-}
-
 static vec3s portal_center(const level_quad_t* quad, const portal_basis_t basis)
 {
     return vec3_add(

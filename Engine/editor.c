@@ -319,8 +319,13 @@ static void editor_render_sector(const level_sector_data_t *sector)
     }
 }
 
+void editor_render_info();
+void editor_render_legend();
+
 void editor_render()
 {
+    editor_render_info();
+    editor_render_legend();
     for (i32 i = 0; i < state.editor->level->sector_count; i++) editor_render_sector(&state.editor->level->sectors[i]);
 }
 
@@ -348,6 +353,7 @@ void editor_render_info()
     if (!is_template) { text_draw((vec2s){x, y}, "  Size: %.0f %.0f", q->size.x, q->size.y); y += line_height; }
     text_draw((vec2s){x, y}, "%c Tex ID: %d", mod_t, q->tex_id); y += line_height;
     if (!is_template) { text_draw((vec2s){x, y}, "  Portal ID: %d", q->portal_id); y += line_height; }
+    if (!is_template) { text_draw((vec2s){x, y}, "  Portal Side Flip: %s", q->portal_side_flip ? "ON" : "OFF"); y += line_height; }
     if (!is_template && s) { text_draw((vec2s){x, y}, "  Light: %.1f %.1f %.1f", s->light.x, s->light.y, s->light.z); y += line_height; }
     text_draw((vec2s){x, y}, "%c Color: %.1f %.1f %.1f", mod_c, q->color.x, q->color.y, q->color.z);
 }
@@ -355,7 +361,7 @@ void editor_render_info()
 void editor_render_legend()
 {
     f32 x = 10.0f, y = (f32)state.fb->h - 30.0f, line_height = 20.0f;
-    text_draw((vec2s){x, y}, "ESC:EXIT E:PLAY TAB:CURS CLICK:DRAG CTRL:RESIZE ENTER:DESEL B:NEXT_LVL SHFT+B:BIL N:NEW X:DEL R:RESET I:SLD SHFT+I:INV P:+PRTLV SHIFT+P:-PRTL :PAINT"); y -= line_height;
+    text_draw((vec2s){x, y}, "ESC:EXIT E:PLAY TAB:CURS CLICK:DRAG CTRL:RESIZE ENTER:DESEL B:NEXT_LVL SHFT+B:BIL N:NEW X:DEL R:RESET I:SLD SHFT+I:INV P:+PRTLV SHIFT+P:-PRTL CTRL+P:PRTL_SIDE V:PAINT"); y -= line_height;
     text_draw((vec2s){x, y}, "1-3:+CLR 4-6:+LIT 7-9:+ROT SHFT+7-9:-ROT 0:TEX_ID Q:+SEC SHFT+Q:-SEC");
 }
 
@@ -384,7 +390,7 @@ void editor_save(level_data_t* level)
             fprintf(f, "static level_quad_t level%d_sector%d_quads[] = {\n", level_num, s);
             for (int q = 0; q < sector->quad_count; q++) {
                 level_quad_t* quad = &sector->quads[q];
-                fprintf(f, "    { .pos = {%.0f, %.0f, %.0f}, .rot = {%.0f, %.0f, %.0f}, .size = {%.0f, %.0f}, .tex_id = %d, .is_solid = %s, .is_invisible = %s, .is_billboard = %s, .color = {%.1ff, %.1ff, %.1ff}, .portal_id = %d, .sector_id = %d },\n",
+                fprintf(f, "    { .pos = {%.0f, %.0f, %.0f}, .rot = {%.0f, %.0f, %.0f}, .size = {%.0f, %.0f}, .tex_id = %d, .is_solid = %s, .is_invisible = %s, .is_billboard = %s, .portal_side_flip = %s, .color = {%.1ff, %.1ff, %.1ff}, .portal_id = %d, .sector_id = %d },\n",
                     roundf(quad->pos.x), roundf(quad->pos.y), roundf(quad->pos.z),
                     roundf(quad->rot.x), roundf(quad->rot.y), roundf(quad->rot.z),
                     roundf(quad->size.x), roundf(quad->size.y),
@@ -392,6 +398,7 @@ void editor_save(level_data_t* level)
                     quad->is_solid ? "true" : "false",
                     quad->is_invisible ? "true" : "false",
                     quad->is_billboard ? "true" : "false",
+                    quad->portal_side_flip ? "true" : "false",
                     quad->color.x, quad->color.y, quad->color.z,
                     quad->portal_id,
                     quad->sector_id);

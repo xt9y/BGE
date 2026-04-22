@@ -1,6 +1,7 @@
 #include "Engine/level.h"
 #include "Engine/editor.h"
 #include "Engine/App.h"
+#include "Engine/portal.h"
 
 #include "Engine/res/level1.h"
 #include "Engine/res/level2.h"
@@ -57,6 +58,100 @@ void apply_level_camera(camera_t *cam, level_data_t *level) {
     update_camera_vectors(cam);
 }
 
+static void set_camera_uniforms(const camera_t* cam)
+{
+    f32 view[16], proj[16];
+    mat4_lookat(view, cam->pos, vec3_add(cam->pos, cam->front), cam->up);
+    mat4_perspective(proj, DEG2RAD(45.0f), (f32)state.fb->w / (f32)state.fb->h, 0.1f, 100.0f);
+
+    glUniformMatrix4fv(glGetUniformLocation(state.data->program, "view"), 1, GL_FALSE, view);
+    glUniformMatrix4fv(glGetUniformLocation(state.data->program, "projection"), 1, GL_FALSE, proj);
+}
+
+static bool is_linked_portal_quad(const level_data_t* level, const level_quad_t* quad)
+{
+    portal_link_t link;
+    return portal_find_link(level, quad, &link);
+}
+
+static void render_level_without_portals(const level_data_t* level, const camera_t* cam)
+{
+    for (i32 s = 0; s < level->sector_count; s++) {
+        const level_sector_data_t* sector = &level->sectors[s];
+        for (i32 q = 0; q < sector->quad_count; q++) {
+            const level_quad_t* quad = &sector->quads[q];
+            if (quad->is_invisible || quad->is_billboard) continue;
+            if (quad->portal_id > 0 && is_linked_portal_quad(level, quad)) continue;
+
+            const vec4s wall_color = {
+                quad->color.x * sector->light.x,
+                quad->color.y * sector->light.y,
+                quad->color.z * sector->light.z,
+                1.0f
+            };
+            level_render_quad(quad, wall_color);
+        }
+    }
+
+    level_render_billboards(level, cam);
+}
+
+static void render_portals(const level_data_t* level, const camera_t* cam)
+{
+    for (i32 s = 0; s < level->sector_count; s++) {
+        const level_sector_data_t* sector = &level->sectors[s];
+        for (i32 q = 0; q < sector->quad_count; q++) {
+            const level_quad_t* quad = &sector->quads[q];
+            portal_link_t link;
+            camera_t portal_cam;
+            level_render_options_t options;
+
+            if (!portal_find_link(level, quad, &link)) continue;
+            if (link.src != quad) continue;
+            if (!portal_build_camera(link.src, link.dst, cam, &portal_cam)) continue;
+
+            glClear(GL_STENCIL_BUFFER_BIT);
+
+            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+            glDepthMask(GL_FALSE);
+            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_CULL_FACE);
+            glStencilMask(0xFF);
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+            level_render_quad(link.src, (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
+
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+            glDepthMask(GL_TRUE);
+            glEnable(GL_DEPTH_TEST);
+            glStencilMask(0x00);
+            glStencilFunc(GL_EQUAL, 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+            set_camera_uniforms(&portal_cam);
+
+            options.skip_quad = link.dst;
+            level_render_with_options(level, &options);
+            level_render_billboards_with_options(level, &portal_cam, &options);
+
+            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+            glDepthMask(GL_TRUE);
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_ALWAYS);
+            glStencilMask(0x00);
+            glStencilFunc(GL_EQUAL, 1, 0xFF);
+            level_render_quad(link.src, (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
+            glDepthFunc(GL_LESS);
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+            set_camera_uniforms(cam);
+            glStencilMask(0xFF);
+            glStencilFunc(GL_ALWAYS, 0, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+        }
+    }
+}
+
 void RUN()
 {
     GL_START();
@@ -107,22 +202,19 @@ void RENDER()
     glViewport(0, 0, state.fb->w, state.fb->h);
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f); 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     glUseProgram(state.data->program);
     
-    f32 model[16], view[16], proj[16];
+    f32 model[16];
     mat4_identity(model);
-    mat4_lookat(view, state.cam->pos, vec3_add(state.cam->pos, state.cam->front), state.cam->up);
-    mat4_perspective(proj, DEG2RAD(45.0f), (f32)state.fb->w / (f32)state.fb->h, 0.1f, 100.0f);
 
     glUniformMatrix4fv(glGetUniformLocation(state.data->program, "model"), 1, GL_FALSE, model);
-    glUniformMatrix4fv(glGetUniformLocation(state.data->program, "view"), 1, GL_FALSE, view);
-    glUniformMatrix4fv(glGetUniformLocation(state.data->program, "projection"), 1, GL_FALSE, proj);
+    set_camera_uniforms(state.cam);
 
     text_begin();
-    level_render(state.editor->level);
-    level_render_billboards(state.editor->level, state.cam);
+    render_portals(state.editor->level, state.cam);
+    render_level_without_portals(state.editor->level, state.cam);
     if (state.id == STATE_EDITOR) editor_render();
 
     text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");
@@ -147,6 +239,7 @@ void INPUT()
     glfwSetInputMode(state.win, GLFW_CURSOR, state.cursor_locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 
     bool shift_held = glfwGetKey(state.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+    bool ctrl_held = glfwGetKey(state.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
 
     { // ESC - Exit
         if (glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id = STATE_EXIT;
@@ -347,13 +440,20 @@ void INPUT()
         if (glfwGetKey(state.win, GLFW_KEY_P) == GLFW_PRESS && state.editor->id != EDITOR_PAINT) {
             if (!p_pressed) {
                 level_quad_t* q = state.editor->selected_quad ? state.editor->selected_quad : &state.editor->template_quad;
-                if (shift_held) {
+                if (ctrl_held) {
+                    q->portal_side_flip = !q->portal_side_flip;
+                } else if (shift_held) {
                     do { q->portal_id--; if (q->portal_id < 0) { q->portal_id = 0; break; }
                     } while (q->portal_id > 0 && count_portal_quads(state.editor->level, q->portal_id) >= 2);
                 } else {
                     int limit = 256; do q->portal_id++;
                     while (count_portal_quads(state.editor->level, q->portal_id) > 2 && --limit > 0);
-                } p_pressed = true;
+                }
+                if (state.editor->selected_quad) {
+                    state.editor->template_quad = *state.editor->selected_quad;
+                    state.editor->template_mods = EDITOR_MOD_ALL;
+                }
+                p_pressed = true;
             }
         } else p_pressed = false;
     }

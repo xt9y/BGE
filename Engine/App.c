@@ -33,6 +33,7 @@ void GL_START()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_STENCIL_BITS, 8);
 #if defined(GLFW_PLATFORM_X11)
     glfwWindowHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
 #endif
@@ -58,6 +59,10 @@ void GL_START()
     state.data->program = create_program(VS, FS);
     
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
+    glStencilMask(0xFF);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+    glStencilFunc(GL_ALWAYS, 0, 0xFF);
     state.id = STATE_PLAYING;
     g_last_time = (f32)glfwGetTime();
 }

@@ -4,16 +4,16 @@
 #include "level.h"
 
 static level_quad_t level2_sector0_quads[] = {
-    { .pos = {-9, -1, 19}, .rot = {90, 0, 0}, .size = {34, 23}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .color = {0.6f, 0.6f, 0.6f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {-9, -1, 19}, .rot = {90, 0, 0}, .size = {34, 23}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.6f, 0.6f, 0.6f}, .portal_id = 0, .sector_id = 0 },
 };
 
 static level_quad_t level2_sector1_quads[] = {
-    { .pos = {-4, -1, 2}, .rot = {0, 90, 0}, .size = {14, 10}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .color = {1.0f, 0.8f, 0.7f}, .portal_id = 0, .sector_id = 0 },
-    { .pos = {-4, -1, 2}, .rot = {0, 10, 0}, .size = {12, 10}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
+    { .pos = {-4, -1, 2}, .rot = {0, 90, 0}, .size = {14, 10}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 0.8f, 0.7f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {-4, -1, 2}, .rot = {0, 10, 0}, .size = {12, 10}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
 };
 
 static level_quad_t level2_sector2_quads[] = {
-    { .pos = {6, 0, -6}, .rot = {0, 0, 0}, .size = {8, 6}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .color = {0.5f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 2 },
+    { .pos = {6, 0, -6}, .rot = {0, 0, 0}, .size = {8, 6}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.5f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 2 },
 };
 
 static level_sector_data_t level2_sectors[] = {

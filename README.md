@@ -3,7 +3,7 @@
 
 #### THIS IS IT:
 
-[![Watch the video](https://raw.githubusercontent.com/FelixJaschul/openglc/main/Engine/res/GAME.png)](https://raw.githubusercontent.com/FelixJaschul/openglc/main/Engine/res/GAME.mov)
+[![Watch the video](./Engine/res/GAME.png)](./Engine/res/GAME.mov)
 
 #### NOTES:
 - `git clone --recursive ...` is required to fetch the GLFW submodule.

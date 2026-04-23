@@ -141,9 +141,9 @@ void RUN()
 
     {   // Levels 
         state.level_count, state.level_id = 0;
-        state.levels[state.level_count++] = load_1();
-        state.levels[state.level_count++] = load_2();
         state.levels[state.level_count++] = load_3();
+        state.levels[state.level_count++] = load_2();
+        state.levels[state.level_count++] = load_1();
     }
 
     {   // Editor

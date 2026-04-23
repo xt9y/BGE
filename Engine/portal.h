@@ -9,6 +9,12 @@ typedef struct {
     const level_quad_t* dst;
 } portal_link_t;
 
+typedef struct {
+    vec3s right;
+    vec3s up;
+    vec3s normal;
+} portal_basis_t;
+
 bool portal_find_link(const level_data_t* level, const level_quad_t* src, portal_link_t* out_link);
 bool portal_build_camera(const level_quad_t* src, const level_quad_t* dst, const camera_t* in_cam, camera_t* out_cam);
 

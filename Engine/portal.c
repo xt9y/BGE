@@ -4,21 +4,14 @@
 #include <math.h>
 #include <stddef.h>
 
-typedef struct {
-    vec3s right;
-    vec3s up;
-    vec3s normal;
-} portal_basis_t;
-
 static vec3s portal_center(const level_quad_t* quad, const portal_basis_t basis)
 {
-    return vec3_add(
-        quad->pos,
-        vec3_add(
-            vec3_scale(basis.right, quad->size.x * 0.5f),
-            vec3_scale(basis.up, quad->size.y * 0.5f)
-        )
-    );
+    return vec3_add(quad->pos, vec3_add(vec3_scale(basis.right, quad->size.x * 0.5f), vec3_scale(basis.up, quad->size.y * 0.5f)));
+}
+
+static vec3s portal_from_local(const vec3s local, const vec3s origin, const portal_basis_t basis)
+{
+    return vec3_add(origin, vec3_add(vec3_scale(basis.right, local.x), vec3_add(vec3_scale(basis.up, local.y), vec3_scale(basis.normal, local.z))));
 }
 
 static portal_basis_t portal_basis_from_quad(const level_quad_t* quad)
@@ -30,7 +23,7 @@ static portal_basis_t portal_basis_from_quad(const level_quad_t* quad)
     mat4_multiply(temp, rot_y, rot_x);
     mat4_multiply(model, temp, rot_z);
 
-    return (portal_basis_t){
+    return (portal_basis_t) {
         .right = vec3_normalize((vec3s){ model[0], model[1], model[2] }),
         .up = vec3_normalize((vec3s){ model[4], model[5], model[6] }),
         .normal = vec3_normalize((vec3s){ model[8], model[9], model[10] })
@@ -44,29 +37,6 @@ static portal_basis_t portal_basis_for_side(portal_basis_t basis, const vec3s ce
         basis.normal = vec3_scale(basis.normal, -1.0f);
     }
     return basis;
-}
-
-static vec3s portal_to_local(const vec3s p, const vec3s origin, const portal_basis_t basis)
-{
-    const vec3s rel = vec3_sub(p, origin);
-    return (vec3s){
-        vec3_dot(rel, basis.right),
-        vec3_dot(rel, basis.up),
-        vec3_dot(rel, basis.normal)
-    };
-}
-
-static vec3s portal_from_local(const vec3s local, const vec3s origin, const portal_basis_t basis)
-{
-    return vec3_add(origin,
-        vec3_add(
-            vec3_scale(basis.right, local.x),
-            vec3_add(
-                vec3_scale(basis.up, local.y),
-                vec3_scale(basis.normal, local.z)
-            )
-        )
-    );
 }
 
 bool portal_find_link(const level_data_t* level, const level_quad_t* src, portal_link_t* out_link)
@@ -95,6 +65,11 @@ bool portal_find_link(const level_data_t* level, const level_quad_t* src, portal
     return true;
 }
 
+void vec3_flip_no_y(vec3s* local) {
+    local->x = -local->x;
+    local->z = -local->z;
+}
+
 bool portal_build_camera(const level_quad_t* src, const level_quad_t* dst, const camera_t* in_cam, camera_t* out_cam)
 {
     if (!src || !dst || !in_cam || !out_cam) return false;
@@ -105,6 +80,7 @@ bool portal_build_camera(const level_quad_t* src, const level_quad_t* dst, const
     const vec3s dst_center = portal_center(dst, dst_basis);
 
     src_basis = portal_basis_for_side(src_basis, src_center, in_cam->pos);
+
     if (vec3_dot(src_basis.normal, portal_basis_from_quad(src).normal) < 0.0f) {
         dst_basis.right = vec3_scale(dst_basis.right, -1.0f);
         dst_basis.normal = vec3_scale(dst_basis.normal, -1.0f);
@@ -116,24 +92,27 @@ bool portal_build_camera(const level_quad_t* src, const level_quad_t* dst, const
 
     *out_cam = *in_cam;
 
-    vec3s local_pos = portal_to_local(in_cam->pos, src_center, src_basis);
+    vec3s local_pos = {
+        vec3_dot(vec3_sub(in_cam->pos, src_center), src_basis.right),
+        vec3_dot(vec3_sub(in_cam->pos, src_center), src_basis.up),
+        vec3_dot(vec3_sub(in_cam->pos, src_center), src_basis.normal)
+    };
+
     vec3s local_front = {
         vec3_dot(in_cam->front, src_basis.right),
         vec3_dot(in_cam->front, src_basis.up),
         vec3_dot(in_cam->front, src_basis.normal)
     };
+
     vec3s local_up = {
         vec3_dot(in_cam->up, src_basis.right),
         vec3_dot(in_cam->up, src_basis.up),
         vec3_dot(in_cam->up, src_basis.normal)
     };
 
-    local_pos.x = -local_pos.x;
-    local_pos.z = -local_pos.z;
-    local_front.x = -local_front.x;
-    local_front.z = -local_front.z;
-    local_up.x = -local_up.x;
-    local_up.z = -local_up.z;
+    vec3_flip_no_y(&local_pos);
+    vec3_flip_no_y(&local_front);
+    vec3_flip_no_y(&local_up);
 
     out_cam->pos = portal_from_local(local_pos, dst_center, dst_basis);
     out_cam->front = vec3_normalize(portal_from_local(local_front, (vec3s){0.0f, 0.0f, 0.0f}, dst_basis));

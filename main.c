@@ -71,22 +71,13 @@ static void set_camera_uniforms(const camera_t* cam)
     glUniformMatrix4fv(glGetUniformLocation(state.data->program, "projection"), 1, GL_FALSE, proj);
 }
 
-static bool is_linked_portal_quad(const level_data_t* level, const level_quad_t* quad)
-{
-    portal_link_t link;
-    return portal_find_link(level, quad, &link);
-}
-
-static void render_main(const level_data_t* level, const camera_t* cam)
-{
-    level_render(level, cam, NULL);
-}
-
 static void render_portals(const level_data_t* level, const camera_t* cam)
 {
-    for (i32 s = 0; s < level->sector_count; s++) {
+    for (i32 s = 0; s < level->sector_count; s++) 
+    {
         const level_sector_data_t* sector = &level->sectors[s];
-        for (i32 q = 0; q < sector->quad_count; q++) {
+        for (i32 q = 0; q < sector->quad_count; q++) 
+        {
             const level_quad_t* quad = &sector->quads[q];
             portal_link_t link;
             camera_t portal_cam;
@@ -104,6 +95,7 @@ static void render_portals(const level_data_t* level, const camera_t* cam)
             glStencilMask(0xFF);
             glStencilFunc(GL_ALWAYS, 1, 0xFF);
             glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
             level_render_quad(link.src, (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
 
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -114,7 +106,7 @@ static void render_portals(const level_data_t* level, const camera_t* cam)
             glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
             set_camera_uniforms(&portal_cam);
-            level_render(level, &portal_cam, link.dst);
+            level_render(level, &portal_cam);
 
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
             glDepthMask(GL_TRUE);
@@ -196,7 +188,7 @@ void RENDER()
 
     text_begin();
     render_portals(state.editor->level, state.cam);
-    render_main(state.editor->level, state.cam);
+    level_render(state.editor->level, state.cam);
     if (state.id == STATE_EDITOR) editor_render();
 
     text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");

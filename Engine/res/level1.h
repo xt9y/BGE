@@ -66,15 +66,14 @@ static level_quad_t level1_sector0_quads[] = {
     { .pos = {33, -10, 8}, .rot = {0, 0, 0}, .size = {2, 9}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
     { .pos = {22, -10, 41}, .rot = {0, 90, 0}, .size = {14, 12}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.8f, 0.6f, 0.6f}, .portal_id = 0, .sector_id = 0 },
     { .pos = {13, 6, -33}, .rot = {330, 0, 0}, .size = {6, 6}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
-    { .pos = {6, -7, 2}, .rot = {330, 0, 0}, .size = {6, 6}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = true, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 1, .sector_id = 0 },
+    { .pos = {47, -5, -20}, .rot = {330, 0, 0}, .size = {6, 6}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = true, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 1, .sector_id = 0 },
     { .pos = {-3, -10, 32}, .rot = {0, 0, 0}, .size = {2, 11}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.6f, 0.7f, 1.0f}, .portal_id = 0, .sector_id = 0 },
     { .pos = {6, 6, -33}, .rot = {330, 0, 0}, .size = {6, 6}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 1, .sector_id = 0 },
 };
 
 static level_quad_t level1_sector1_quads[] = {
     { .pos = {0, -8, 1}, .rot = {90, 0, 0}, .size = {21, 12}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
-    { .pos = {0, -8, -11}, .rot = {0, 90, 0}, .size = {12, 8}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = true, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
-    { .pos = {0, -8, -11}, .rot = {0, 0, 0}, .size = {12, 8}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = true, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
+    { .pos = {0, -8, -11}, .rot = {0, 0, 0}, .size = {12, 8}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = true, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 3, .sector_id = 1 },
     { .pos = {12, -8, -11}, .rot = {0, 41, 0}, .size = {12, 8}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
     { .pos = {21, -8, -5}, .rot = {0, 90, 0}, .size = {6, 8}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
     { .pos = {0, 0, 1}, .rot = {90, 0, 0}, .size = {21, 12}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
@@ -84,6 +83,7 @@ static level_quad_t level1_sector1_quads[] = {
     { .pos = {22, -10, 31}, .rot = {0, 0, 0}, .size = {12, 12}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 1 },
     { .pos = {33, -10, 18}, .rot = {0, 90, 0}, .size = {14, 12}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.8f, 0.6f, 0.6f}, .portal_id = 0, .sector_id = 1 },
     { .pos = {22, 2, 19}, .rot = {0, 90, 90}, .size = {12, 11}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.2f, 0.1f, 0.1f}, .portal_id = 0, .sector_id = 1 },
+    { .pos = {0, -8, -11}, .rot = {0, 90, 0}, .size = {12, 8}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = true, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 3, .sector_id = 1 },
 };
 
 static level_quad_t level1_sector2_quads[] = {
@@ -119,7 +119,7 @@ static inline level_data_t load_1(void)
         .path = "level1.h",
         .sectors = level1_sectors,
         .sector_count = sizeof(level1_sectors) / sizeof(level1_sectors[0]),
-        .cam = { .pos = {7.994f, -3.500f, -5.403f}, .yaw = -9631.396f, .pitch = -7.976f }
+        .cam = { .pos = {15.273f, -5.500f, 16.056f}, .yaw = -10193.731f, .pitch = 2.087f }
     };
 }
 

@@ -99,7 +99,7 @@ void level_render_quad(const level_quad_t* quad, const vec4s color)
     glBindVertexArray(0);
 }
 
-void level_render(const level_data_t *level, const camera_t *cam, const level_quad_t *skip_quad)
+void level_render(const level_data_t *level, const camera_t *cam)
 {
     for (i32 i = 0; i < level->sector_count; i++)
     {
@@ -107,7 +107,6 @@ void level_render(const level_data_t *level, const camera_t *cam, const level_qu
         for (i32 j = 0; j < sector->quad_count; j++)
         {
             level_quad_t *quad = &sector->quads[j];
-            if (skip_quad == quad) continue;
             if (!quad || quad->is_invisible) continue;
             if (quad->portal_id > 0) continue;
 

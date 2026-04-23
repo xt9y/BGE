@@ -2,6 +2,9 @@
 #define PORTAL_H
 
 #include "level.h"
+#include "cam.h"
+
+#define MAX_PORTAL_DEPTH 4
 
 typedef struct {
     i32 portal_id;

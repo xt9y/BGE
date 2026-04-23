@@ -53,7 +53,8 @@
  *  > use mouse to look around
  */
 
-void apply_level_camera(camera_t *cam, level_data_t *level) {
+void apply_level_camera(camera_t *cam, level_data_t *level) 
+{
     cam->pos = level->cam.pos;
     cam->yaw = level->cam.yaw;
     cam->pitch = level->cam.pitch;
@@ -114,11 +115,14 @@ static void render_portals(const level_data_t* level, const camera_t* cam)
             glDepthFunc(GL_ALWAYS);
             glStencilMask(0x00);
             glStencilFunc(GL_EQUAL, 1, 0xFF);
+
             level_render_quad(link.src, (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
+
             glDepthFunc(GL_LESS);
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
             set_camera_uniforms(cam);
+
             glStencilMask(0xFF);
             glStencilFunc(GL_ALWAYS, 0, 0xFF);
             glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -177,6 +181,9 @@ void RENDER()
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    glEnable(GL_STENCIL_TEST);
+    glStencilMask(0xFF);
 
     glUseProgram(state.data->program);
     

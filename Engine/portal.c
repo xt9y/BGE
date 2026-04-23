@@ -126,3 +126,4 @@ bool portal_build_camera(const level_quad_t* src, const level_quad_t* dst, const
     out_cam->firstMouse = true;
     return true;
 }
+

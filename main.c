@@ -77,27 +77,9 @@ static bool is_linked_portal_quad(const level_data_t* level, const level_quad_t*
     return portal_find_link(level, quad, &link);
 }
 
-static void render_level(const level_data_t* level, const camera_t* cam)
+static void render_main(const level_data_t* level, const camera_t* cam)
 {
-    for (i32 s = 0; s < level->sector_count; s++) {
-        const level_sector_data_t* sector = &level->sectors[s];
-        for (i32 q = 0; q < sector->quad_count; q++) {
-            const level_quad_t* quad = &sector->quads[q];
-            if (quad->is_invisible || quad->is_billboard) continue;
-            if (quad->portal_id > 0 && is_linked_portal_quad(level, quad)) continue;
-
-            const vec4s wall_color = {
-                quad->color.x * sector->light.x,
-                quad->color.y * sector->light.y,
-                quad->color.z * sector->light.z,
-                1.0f
-            };
-
-            level_render_quad(quad, wall_color);
-        }
-    }
-
-    level_render_billboards(level, cam);
+    level_render(level, cam, NULL);
 }
 
 static void render_portals(const level_data_t* level, const camera_t* cam)
@@ -108,7 +90,6 @@ static void render_portals(const level_data_t* level, const camera_t* cam)
             const level_quad_t* quad = &sector->quads[q];
             portal_link_t link;
             camera_t portal_cam;
-            level_render_options_t options;
 
             if (!portal_find_link(level, quad, &link)) continue;
             if (link.src != quad) continue;
@@ -133,9 +114,7 @@ static void render_portals(const level_data_t* level, const camera_t* cam)
             glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
             set_camera_uniforms(&portal_cam);
-            options.skip_quad = link.dst;
-            level_render_with_options(level, &options);
-            level_render_billboards_with_options(level, &portal_cam, &options);
+            level_render(level, &portal_cam, link.dst);
 
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
             glDepthMask(GL_TRUE);
@@ -217,7 +196,7 @@ void RENDER()
 
     text_begin();
     render_portals(state.editor->level, state.cam);
-    render_level(state.editor->level, state.cam);
+    render_main(state.editor->level, state.cam);
     if (state.id == STATE_EDITOR) editor_render();
 
     text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");

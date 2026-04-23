@@ -58,7 +58,7 @@ static level_quad_t level1_sector0_quads[] = {
     { .pos = {21, -10, 1}, .rot = {0, 90, 0}, .size = {2, 12}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.6f, 0.7f, 1.0f}, .portal_id = 0, .sector_id = 0 },
     { .pos = {21, -10, 3}, .rot = {0, 0, 0}, .size = {1, 12}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.6f, 0.7f, 1.0f}, .portal_id = 0, .sector_id = 0 },
     { .pos = {-1, -10, 3}, .rot = {0, 0, 0}, .size = {2, 10}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.6f, 0.7f, 1.0f}, .portal_id = 0, .sector_id = 0 },
-    { .pos = {21, -10, 1}, .rot = {0, 0, 0}, .size = {14, 12}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 3, .sector_id = 0 },
+    { .pos = {21, -10, 1}, .rot = {0, 0, 0}, .size = {14, 12}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
     { .pos = {22, 1, 19}, .rot = {0, 90, 0}, .size = {12, 1}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.6f, 0.7f, 1.0f}, .portal_id = 0, .sector_id = 0 },
     { .pos = {22, -10, 33}, .rot = {0, 0, 0}, .size = {12, 12}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
     { .pos = {35, -10, 1}, .rot = {0, 90, 0}, .size = {7, 9}, .tex_id = -1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.6f, 0.7f, 1.0f}, .portal_id = 2, .sector_id = 0 },
@@ -122,7 +122,7 @@ static inline level_data_t load_1(void)
         .path = "level1.h",
         .sectors = level1_sectors,
         .sector_count = sizeof(level1_sectors) / sizeof(level1_sectors[0]),
-        .cam = { .pos = {8.235f, -5.500f, 12.734f}, .yaw = -8655.735f, .pitch = -3.076f }
+        .cam = { .pos = {10.038f, -5.500f, 10.487f}, .yaw = -9102.288f, .pitch = -3.676f }
     };
 }
 

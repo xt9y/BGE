@@ -45,7 +45,7 @@ static level_quad_t level3_sector1_quads[] = {
 };
 
 static level_quad_t level3_sector2_quads[] = {
-    { .pos = {20, 3, -5}, .rot = {0, 0, 0}, .size = {2, 2}, .tex_id = 2, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 2 },
+    { .pos = {20, 3, -3}, .rot = {0, 0, 0}, .size = {2, 2}, .tex_id = 2, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 2 },
 };
 
 static level_sector_data_t level3_sectors[] = {
@@ -61,7 +61,7 @@ static inline level_data_t load_3(void)
         .path = "level3.h",
         .sectors = level3_sectors,
         .sector_count = sizeof(level3_sectors) / sizeof(level3_sectors[0]),
-        .cam = { .pos = {15.923f, 3.500f, 13.158f}, .yaw = -3298.806f, .pitch = 0.937f }
+        .cam = { .pos = {0.637f, 0.500f, 14.652f}, .yaw = -3663.506f, .pitch = 3.037f }
     };
 }
 

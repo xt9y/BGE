@@ -99,14 +99,6 @@ void level_render_quad(const level_quad_t* quad, const vec4s color)
     glBindVertexArray(0);
 }
 
-static bool should_render_quad(const level_quad_t* quad, const level_render_options_t* options)
-{
-    if (!quad) return false;
-    if (quad->is_invisible) return false;
-    if (options && options->skip_quad == quad) return false;
-    return true;
-}
-
 void level_render(const level_data_t *level, const camera_t *cam, const level_quad_t *skip_quad)
 {
     for (i32 i = 0; i < level->sector_count; i++)

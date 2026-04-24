@@ -119,7 +119,8 @@ static void set_camera_uniforms(const camera_t* cam)
     mat4_perspective(proj, DEG2RAD(45.0f), (f32)state.fb->w / (f32)state.fb->h, 0.1f, 100.0f);
 
     glUniformMatrix4fv(state.data->u_view, 1, GL_FALSE, view);
-    glUniformMatrix4fv(state.data->u_proj, 1, GL_FALSE, proj);  
+    glUniformMatrix4fv(state.data->u_proj, 1, GL_FALSE, proj);
+    level_set_frustum(view, proj);
 }
 
 static void render_portals(const level_data_t* level, const camera_t* cam, i32 depth, i32 stencil_ref)
@@ -133,9 +134,12 @@ static void render_portals(const level_data_t* level, const camera_t* cam, i32 d
         {
             portal_link_t link;
             camera_t portal_cam;
+            const level_quad_t* quad = &sector->quads[q];
 
-            if (!portal_find_link(level, &sector->quads[q], &link)) continue;
-            if (link.src != &sector->quads[q]) continue;
+            if (quad->portal_id <= 0) continue;
+            if (!portal_find_link(level, quad, &link)) continue;
+            if (link.src != quad) continue;
+            if (!quad_visible(link.src)) continue;
             if (!portal_build_camera(link.src, link.dst, cam, &portal_cam)) continue;
 
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -169,7 +173,8 @@ static void render_portals(const level_data_t* level, const camera_t* cam, i32 d
             oblique_near_clip(proj, view, link.dst->pos, quad_world_normal(link.dst));
 
             glUniformMatrix4fv(state.data->u_view, 1, GL_FALSE, view);
-            glUniformMatrix4fv(state.data->u_proj, 1, GL_FALSE, proj);            
+            glUniformMatrix4fv(state.data->u_proj, 1, GL_FALSE, proj);
+            level_set_frustum(view, proj);
 
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
             glDepthMask(GL_TRUE);

@@ -304,8 +304,7 @@ static void render_border_segments(const level_quad_t* quad, const vec4s color, 
     model[13] = quad->pos.y;
     model[14] = quad->pos.z;
 
-    GLint model_loc = glGetUniformLocation(state.data->program, "model");
-    glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
+    glUniformMatrix4fv(state.data->u_model, 1, GL_FALSE, model);
     texture_bind(texture_get_fallback(), 0);
 
     const f32 t = 0.08f;

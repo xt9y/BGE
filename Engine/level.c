@@ -70,8 +70,7 @@ void level_render_quad(const level_quad_t* quad, const vec4s color)
     model[13] = quad->pos.y;
     model[14] = quad->pos.z;
 
-    GLint model_loc = glGetUniformLocation(state.data->program, "model");
-    glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
+    glUniformMatrix4fv(state.data->u_model, 1, GL_FALSE, model);
 
     if (quad->tex_id >= 0 && quad->tex_id < state.text->count) texture_bind(&state.text->textures[quad->tex_id], 0);
     else texture_bind(texture_get_fallback(), 0);

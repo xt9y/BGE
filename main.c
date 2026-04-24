@@ -118,50 +118,78 @@ static void set_camera_uniforms(const camera_t* cam)
     mat4_lookat(view, cam->pos, vec3_add(cam->pos, cam->front), cam->up);
     mat4_perspective(proj, DEG2RAD(45.0f), (f32)state.fb->w / (f32)state.fb->h, 0.1f, 100.0f);
 
-    glUniformMatrix4fv(glGetUniformLocation(state.data->program, "view"), 1, GL_FALSE, view);
-    glUniformMatrix4fv(glGetUniformLocation(state.data->program, "projection"), 1, GL_FALSE, proj);
+    glUniformMatrix4fv(state.data->u_view, 1, GL_FALSE, view);
+    glUniformMatrix4fv(state.data->u_proj, 1, GL_FALSE, proj);  
 }
 
-static void render_portals(const level_data_t* level, const camera_t* cam)
+static void render_portals(const level_data_t* level, const camera_t* cam, i32 depth, i32 stencil_ref)
 {
-    for (i32 s = 0; s < level->sector_count; s++) 
+    if (depth >= MAX_PORTAL_DEPTH) return;
+
+    for (i32 s = 0; s < level->sector_count; s++)
     {
         const level_sector_data_t* sector = &level->sectors[s];
-        for (i32 q = 0; q < sector->quad_count; q++) 
+        for (i32 q = 0; q < sector->quad_count; q++)
         {
-            const level_quad_t* quad = &sector->quads[q];
             portal_link_t link;
             camera_t portal_cam;
 
-            if (!portal_find_link(level, quad, &link)) continue;
-            if (link.src != quad) continue;
+            if (!portal_find_link(level, &sector->quads[q], &link)) continue;
+            if (link.src != &sector->quads[q]) continue;
             if (!portal_build_camera(link.src, link.dst, cam, &portal_cam)) continue;
-
-            glClear(GL_STENCIL_BUFFER_BIT);
 
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
             glDepthMask(GL_FALSE);
             glDisable(GL_DEPTH_TEST);
             glDisable(GL_CULL_FACE);
             glStencilMask(0xFF);
-            glStencilFunc(GL_ALWAYS, 1, 0xFF);
-            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+            glStencilFunc(GL_EQUAL, stencil_ref, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
 
-            level_render_quad(link.src, (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
+            level_render_quad(link.src, (vec4s){1,1,1,1});
 
-            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
             glDepthMask(GL_TRUE);
             glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_ALWAYS);
             glStencilMask(0x00);
-            glStencilFunc(GL_EQUAL, 1, 0xFF);
+            glStencilFunc(GL_EQUAL, stencil_ref + 1, 0xFF);
             glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+            glDepthRange(1.0, 1.0);
+
+            level_render_quad(link.src, (vec4s){1,1,1,1});
+
+            glDepthRange(0.0, 1.0);
+            glDepthFunc(GL_LESS);
 
             f32 view[16], proj[16];
             mat4_lookat(view, portal_cam.pos, vec3_add(portal_cam.pos, portal_cam.front), portal_cam.up);
             mat4_perspective(proj, DEG2RAD(45.0f), (f32)state.fb->w / (f32)state.fb->h, 0.1f, 100.0f);
+
             oblique_near_clip(proj, view, link.dst->pos, quad_world_normal(link.dst));
-            glUniformMatrix4fv(glGetUniformLocation(state.data->program, "view"), 1, GL_FALSE, view);
-            glUniformMatrix4fv(glGetUniformLocation(state.data->program, "projection"), 1, GL_FALSE, proj);
+
+            glUniformMatrix4fv(state.data->u_view, 1, GL_FALSE, view);
+            glUniformMatrix4fv(state.data->u_proj, 1, GL_FALSE, proj);            
+
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+            glDepthMask(GL_TRUE);
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+            glStencilMask(0x00);
+            glStencilFunc(GL_EQUAL, stencil_ref + 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+            render_portals(level, &portal_cam, depth + 1, stencil_ref + 1);
+
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+            glDepthMask(GL_TRUE);
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+            glStencilMask(0x00);
+            glStencilFunc(GL_EQUAL, stencil_ref + 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+            glUniformMatrix4fv(state.data->u_view, 1, GL_FALSE, view);
+            glUniformMatrix4fv(state.data->u_proj, 1, GL_FALSE, proj);
 
             level_render(level, &portal_cam);
 
@@ -172,13 +200,26 @@ static void render_portals(const level_data_t* level, const camera_t* cam)
             glEnable(GL_DEPTH_TEST);
             glDepthFunc(GL_ALWAYS);
             glStencilMask(0x00);
-            glStencilFunc(GL_EQUAL, 1, 0xFF);
+            glStencilFunc(GL_EQUAL, stencil_ref + 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
-            level_render_quad(link.src, (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
+            level_render_quad(link.src, (vec4s){1,1,1,1});
 
             glDepthFunc(GL_LESS);
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
+            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+            glDepthMask(GL_FALSE);
+            glDisable(GL_DEPTH_TEST);
+            glStencilMask(0xFF);
+            glStencilFunc(GL_EQUAL, stencil_ref + 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_DECR);
+
+            level_render_quad(link.src, (vec4s){1,1,1,1});
+
+            glEnable(GL_DEPTH_TEST);
+            glDepthMask(GL_TRUE);
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
             glStencilMask(0xFF);
             glStencilFunc(GL_ALWAYS, 0, 0xFF);
             glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -245,12 +286,11 @@ void RENDER()
     
     f32 model[16];
     mat4_identity(model);
-
-    glUniformMatrix4fv(glGetUniformLocation(state.data->program, "model"), 1, GL_FALSE, model);
+    glUniformMatrix4fv(state.data->u_model, 1, GL_FALSE, model);
     set_camera_uniforms(state.cam);
 
     text_begin();
-    render_portals(state.editor->level, state.cam);
+    render_portals(state.editor->level, state.cam, 0, 0);
     level_render(state.editor->level, state.cam);
     if (state.id == STATE_EDITOR) editor_render();
 

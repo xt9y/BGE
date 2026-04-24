@@ -57,6 +57,9 @@ void GL_START()
     ASSERT(state.fb && state.data && state.cam && state.text && state.editor);
 
     state.data->program = create_program(VS, FS);
+    state.data->u_model = glGetUniformLocation(state.data->program, "model");
+    state.data->u_view  = glGetUniformLocation(state.data->program, "view");
+    state.data->u_proj  = glGetUniformLocation(state.data->program, "projection");
     
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);

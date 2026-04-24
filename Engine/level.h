@@ -32,6 +32,8 @@ typedef struct {
 
 void level_render_quad(const level_quad_t* quad, vec4s color);
 void level_render(const level_data_t *level, const camera_t *cam);
+void level_set_frustum(const f32* view, const f32* proj);
+bool quad_visible(const level_quad_t* quad);
 bool level_ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, const level_quad_t* quad, f32* out_t, vec3s* out_hit, vec3s* out_local_hit);
 bool level_get_height(const level_data_t* level, vec3s pos, f32* h);
 

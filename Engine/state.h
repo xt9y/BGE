@@ -19,6 +19,7 @@ typedef enum {
 
 typedef struct {
     u32 vao, vbo, ebo, program;
+    GLint u_model, u_view, u_proj;
 } data_t;
 
 typedef struct {

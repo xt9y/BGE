@@ -7,6 +7,61 @@
 #include <string.h>
 #include <math.h>
 
+typedef struct {
+    vec3s n;
+    f32 d;
+} plane_t;
+
+static plane_t g_planes[6];
+static bool g_frustum_set = false;
+
+static void extract_frustum_planes(const f32* view, const f32* proj)
+{
+    f32 m[16];
+    mat4_multiply(m, proj, view);
+
+    g_planes[0].n = (vec3s){ m[3]+m[0], m[7]+m[4], m[11]+m[8] };
+    g_planes[0].d = m[15]+m[12];
+    g_planes[1].n = (vec3s){ m[3]-m[0], m[7]-m[4], m[11]-m[8] };
+    g_planes[1].d = m[15]-m[12];
+    g_planes[2].n = (vec3s){ m[3]+m[1], m[7]+m[5], m[11]+m[9] };
+    g_planes[2].d = m[15]+m[13];
+    g_planes[3].n = (vec3s){ m[3]-m[1], m[7]-m[5], m[11]-m[9] };
+    g_planes[3].d = m[15]-m[13];
+    g_planes[4].n = (vec3s){ m[3]+m[2], m[7]+m[6], m[11]+m[10] };
+    g_planes[4].d = m[15]+m[14];
+    g_planes[5].n = (vec3s){ m[3]-m[2], m[7]-m[6], m[11]-m[10] };
+    g_planes[5].d = m[15]-m[14];
+
+    for (i32 i = 0; i < 6; i++) {
+        f32 mag = vec3_magnitude(g_planes[i].n);
+        if (mag > 0.0001f) {
+            g_planes[i].n = vec3_scale(g_planes[i].n, 1.0f / mag);
+            g_planes[i].d /= mag;
+        }
+    }
+}
+
+static bool sphere_inside_frustum(vec3s center, f32 radius)
+{
+    for (i32 i = 0; i < 6; i++) {
+        f32 dist = vec3_dot(center, g_planes[i].n) + g_planes[i].d;
+        if (dist + radius < 0.0f) return false;
+    }
+    return true;
+}
+
+void level_set_frustum(const f32* view, const f32* proj)
+{
+    extract_frustum_planes(view, proj);
+    g_frustum_set = true;
+}
+
+bool quad_visible(const level_quad_t* quad)
+{
+    return true;
+}
+
 static u32 g_quad_vao = 0;
 static u32 g_quad_vbo = 0;
 static u32 g_quad_ebo = 0;
@@ -70,8 +125,7 @@ void level_render_quad(const level_quad_t* quad, const vec4s color)
     model[13] = quad->pos.y;
     model[14] = quad->pos.z;
 
-    GLint model_loc = glGetUniformLocation(state.data->program, "model");
-    glUniformMatrix4fv(model_loc, 1, GL_FALSE, model);
+    glUniformMatrix4fv(state.data->u_model, 1, GL_FALSE, model);
 
     if (quad->tex_id >= 0 && quad->tex_id < state.text->count) texture_bind(&state.text->textures[quad->tex_id], 0);
     else texture_bind(texture_get_fallback(), 0);
@@ -109,6 +163,7 @@ void level_render(const level_data_t *level, const camera_t *cam)
             level_quad_t *quad = &sector->quads[j];
             if (!quad || quad->is_invisible) continue;
             if (quad->portal_id > 0) continue;
+            if (!quad_visible(quad)) continue;
 
             const vec4s color = {
                 quad->color.x * sector->light.x,

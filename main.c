@@ -62,67 +62,169 @@ void apply_level_camera(camera_t *cam, level_data_t *level)
     update_camera_vectors(cam);
 }
 
+static vec3s quad_world_normal(const level_quad_t* q)
+{
+    f32 ry[16], rx[16], rz[16], m[16], t[16];
+    mat4_rotate_y(ry, -DEG2RAD(q->rot.y));
+    mat4_rotate_x(rx, -DEG2RAD(q->rot.x));
+    mat4_rotate_z(rz, -DEG2RAD(q->rot.z));
+    mat4_multiply(t, ry, rx);
+    mat4_multiply(m, t, rz);
+    return vec3_normalize((vec3s){m[8], m[9], m[10]});
+}
+
+static void oblique_near_clip(f32* proj, const f32* view, vec3s plane_pos, vec3s plane_normal)
+{
+    vec3s pos_v = {
+        view[0]*plane_pos.x + view[4]*plane_pos.y + view[8]*plane_pos.z  + view[12],
+        view[1]*plane_pos.x + view[5]*plane_pos.y + view[9]*plane_pos.z  + view[13],
+        view[2]*plane_pos.x + view[6]*plane_pos.y + view[10]*plane_pos.z + view[14]
+    };
+
+    vec3s norm_v = {
+        view[0]*plane_normal.x + view[4]*plane_normal.y + view[8]*plane_normal.z,
+        view[1]*plane_normal.x + view[5]*plane_normal.y + view[9]*plane_normal.z,
+        view[2]*plane_normal.x + view[6]*plane_normal.y + view[10]*plane_normal.z
+    };
+
+    f32 d = -vec3_dot(norm_v, pos_v);
+    if (d > 0.0f) { norm_v = vec3_scale(norm_v, -1.0f); d = -d; }
+    if (fabsf(d) < 0.005f) return;
+
+    vec4s cp = {
+        norm_v.x, 
+        norm_v.y, 
+        norm_v.z, 
+        d
+    };
+
+    f32 sx = cp.x > 0.0f ? 1.0f : (cp.x < 0.0f ? -1.0f : 0.0f);
+    f32 sy = cp.y > 0.0f ? 1.0f : (cp.y < 0.0f ? -1.0f : 0.0f);
+
+    vec4s q = { (sx + proj[8]) / proj[0], (sy + proj[9]) / proj[5], -1.0f, (1.0f + proj[10]) / proj[14] };
+    f32 dot = cp.x*q.x + cp.y*q.y + cp.z*q.z + cp.w*q.w;
+    if (fabsf(dot) < 0.0001f) return;
+    f32 s = 2.0f / dot;
+
+    proj[2]  = cp.x * s;
+    proj[6]  = cp.y * s;
+    proj[10] = cp.z * s + 1.0f;
+    proj[14] = cp.w * s;
+}
+
 static void set_camera_uniforms(const camera_t* cam)
 {
     f32 view[16], proj[16];
     mat4_lookat(view, cam->pos, vec3_add(cam->pos, cam->front), cam->up);
     mat4_perspective(proj, DEG2RAD(45.0f), (f32)state.fb->w / (f32)state.fb->h, 0.1f, 100.0f);
 
-    glUniformMatrix4fv(glGetUniformLocation(state.data->program, "view"), 1, GL_FALSE, view);
-    glUniformMatrix4fv(glGetUniformLocation(state.data->program, "projection"), 1, GL_FALSE, proj);
+    glUniformMatrix4fv(state.data->u_view, 1, GL_FALSE, view);
+    glUniformMatrix4fv(state.data->u_proj, 1, GL_FALSE, proj);
+    level_set_frustum(view, proj);
 }
 
-static void render_portals(const level_data_t* level, const camera_t* cam)
+static void render_portals(const level_data_t* level, const camera_t* cam, i32 depth, i32 stencil_ref)
 {
-    for (i32 s = 0; s < level->sector_count; s++) 
+    if (depth >= MAX_PORTAL_DEPTH) return;
+
+    for (i32 s = 0; s < level->sector_count; s++)
     {
         const level_sector_data_t* sector = &level->sectors[s];
-        for (i32 q = 0; q < sector->quad_count; q++) 
+        for (i32 q = 0; q < sector->quad_count; q++)
         {
-            const level_quad_t* quad = &sector->quads[q];
             portal_link_t link;
             camera_t portal_cam;
+            const level_quad_t* quad = &sector->quads[q];
 
+            if (quad->portal_id <= 0) continue;
             if (!portal_find_link(level, quad, &link)) continue;
             if (link.src != quad) continue;
+            if (!quad_visible(link.src)) continue;
             if (!portal_build_camera(link.src, link.dst, cam, &portal_cam)) continue;
-
-            glClear(GL_STENCIL_BUFFER_BIT);
 
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
             glDepthMask(GL_FALSE);
             glDisable(GL_DEPTH_TEST);
             glDisable(GL_CULL_FACE);
             glStencilMask(0xFF);
-            glStencilFunc(GL_ALWAYS, 1, 0xFF);
-            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+            glStencilFunc(GL_EQUAL, stencil_ref, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
 
-            level_render_quad(link.src, (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
-
-            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-            glDepthMask(GL_TRUE);
-            glEnable(GL_DEPTH_TEST);
-            glStencilMask(0x00);
-            glStencilFunc(GL_EQUAL, 1, 0xFF);
-            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-
-            set_camera_uniforms(&portal_cam);
-            level_render(level, &portal_cam);
+            level_render_quad(link.src, (vec4s){1,1,1,1});
 
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
             glDepthMask(GL_TRUE);
             glEnable(GL_DEPTH_TEST);
             glDepthFunc(GL_ALWAYS);
             glStencilMask(0x00);
-            glStencilFunc(GL_EQUAL, 1, 0xFF);
+            glStencilFunc(GL_EQUAL, stencil_ref + 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+            glDepthRange(1.0, 1.0);
 
-            level_render_quad(link.src, (vec4s){1.0f, 1.0f, 1.0f, 1.0f});
+            level_render_quad(link.src, (vec4s){1,1,1,1});
+
+            glDepthRange(0.0, 1.0);
+            glDepthFunc(GL_LESS);
+
+            f32 view[16], proj[16];
+            mat4_lookat(view, portal_cam.pos, vec3_add(portal_cam.pos, portal_cam.front), portal_cam.up);
+            mat4_perspective(proj, DEG2RAD(45.0f), (f32)state.fb->w / (f32)state.fb->h, 0.1f, 100.0f);
+
+            oblique_near_clip(proj, view, link.dst->pos, quad_world_normal(link.dst));
+
+            glUniformMatrix4fv(state.data->u_view, 1, GL_FALSE, view);
+            glUniformMatrix4fv(state.data->u_proj, 1, GL_FALSE, proj);
+            level_set_frustum(view, proj);
+
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+            glDepthMask(GL_TRUE);
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+            glStencilMask(0x00);
+            glStencilFunc(GL_EQUAL, stencil_ref + 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+            render_portals(level, &portal_cam, depth + 1, stencil_ref + 1);
+
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+            glDepthMask(GL_TRUE);
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+            glStencilMask(0x00);
+            glStencilFunc(GL_EQUAL, stencil_ref + 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+            glUniformMatrix4fv(state.data->u_view, 1, GL_FALSE, view);
+            glUniformMatrix4fv(state.data->u_proj, 1, GL_FALSE, proj);
+
+            level_render(level, &portal_cam);
+
+            set_camera_uniforms(cam);
+
+            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+            glDepthMask(GL_TRUE);
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_ALWAYS);
+            glStencilMask(0x00);
+            glStencilFunc(GL_EQUAL, stencil_ref + 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+            level_render_quad(link.src, (vec4s){1,1,1,1});
 
             glDepthFunc(GL_LESS);
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
-            set_camera_uniforms(cam);
+            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+            glDepthMask(GL_FALSE);
+            glDisable(GL_DEPTH_TEST);
+            glStencilMask(0xFF);
+            glStencilFunc(GL_EQUAL, stencil_ref + 1, 0xFF);
+            glStencilOp(GL_KEEP, GL_KEEP, GL_DECR);
 
+            level_render_quad(link.src, (vec4s){1,1,1,1});
+
+            glEnable(GL_DEPTH_TEST);
+            glDepthMask(GL_TRUE);
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
             glStencilMask(0xFF);
             glStencilFunc(GL_ALWAYS, 0, 0xFF);
             glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -189,12 +291,11 @@ void RENDER()
     
     f32 model[16];
     mat4_identity(model);
-
-    glUniformMatrix4fv(glGetUniformLocation(state.data->program, "model"), 1, GL_FALSE, model);
+    glUniformMatrix4fv(state.data->u_model, 1, GL_FALSE, model);
     set_camera_uniforms(state.cam);
 
     text_begin();
-    render_portals(state.editor->level, state.cam);
+    render_portals(state.editor->level, state.cam, 0, 0);
     level_render(state.editor->level, state.cam);
     if (state.id == STATE_EDITOR) editor_render();
 

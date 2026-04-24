@@ -62,6 +62,56 @@ void apply_level_camera(camera_t *cam, level_data_t *level)
     update_camera_vectors(cam);
 }
 
+static vec3s quad_world_normal(const level_quad_t* q)
+{
+    f32 ry[16], rx[16], rz[16], m[16], t[16];
+    mat4_rotate_y(ry, -DEG2RAD(q->rot.y));
+    mat4_rotate_x(rx, -DEG2RAD(q->rot.x));
+    mat4_rotate_z(rz, -DEG2RAD(q->rot.z));
+    mat4_multiply(t, ry, rx);
+    mat4_multiply(m, t, rz);
+    return vec3_normalize((vec3s){m[8], m[9], m[10]});
+}
+
+static void oblique_near_clip(f32* proj, const f32* view, vec3s plane_pos, vec3s plane_normal)
+{
+    vec3s pos_v = {
+        view[0]*plane_pos.x + view[4]*plane_pos.y + view[8]*plane_pos.z  + view[12],
+        view[1]*plane_pos.x + view[5]*plane_pos.y + view[9]*plane_pos.z  + view[13],
+        view[2]*plane_pos.x + view[6]*plane_pos.y + view[10]*plane_pos.z + view[14]
+    };
+
+    vec3s norm_v = {
+        view[0]*plane_normal.x + view[4]*plane_normal.y + view[8]*plane_normal.z,
+        view[1]*plane_normal.x + view[5]*plane_normal.y + view[9]*plane_normal.z,
+        view[2]*plane_normal.x + view[6]*plane_normal.y + view[10]*plane_normal.z
+    };
+
+    f32 d = -vec3_dot(norm_v, pos_v);
+    if (d > 0.0f) { norm_v = vec3_scale(norm_v, -1.0f); d = -d; }
+    if (fabsf(d) < 0.005f) return;
+
+    vec4s cp = {
+        norm_v.x, 
+        norm_v.y, 
+        norm_v.z, 
+        d
+    };
+
+    f32 sx = cp.x > 0.0f ? 1.0f : (cp.x < 0.0f ? -1.0f : 0.0f);
+    f32 sy = cp.y > 0.0f ? 1.0f : (cp.y < 0.0f ? -1.0f : 0.0f);
+
+    vec4s q = { (sx + proj[8]) / proj[0], (sy + proj[9]) / proj[5], -1.0f, (1.0f + proj[10]) / proj[14] };
+    f32 dot = cp.x*q.x + cp.y*q.y + cp.z*q.z + cp.w*q.w;
+    if (fabsf(dot) < 0.0001f) return;
+    f32 s = 2.0f / dot;
+
+    proj[2]  = cp.x * s;
+    proj[6]  = cp.y * s;
+    proj[10] = cp.z * s + 1.0f;
+    proj[14] = cp.w * s;
+}
+
 static void set_camera_uniforms(const camera_t* cam)
 {
     f32 view[16], proj[16];
@@ -106,8 +156,16 @@ static void render_portals(const level_data_t* level, const camera_t* cam)
             glStencilFunc(GL_EQUAL, 1, 0xFF);
             glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
-            set_camera_uniforms(&portal_cam);
+            f32 view[16], proj[16];
+            mat4_lookat(view, portal_cam.pos, vec3_add(portal_cam.pos, portal_cam.front), portal_cam.up);
+            mat4_perspective(proj, DEG2RAD(45.0f), (f32)state.fb->w / (f32)state.fb->h, 0.1f, 100.0f);
+            oblique_near_clip(proj, view, link.dst->pos, quad_world_normal(link.dst));
+            glUniformMatrix4fv(glGetUniformLocation(state.data->program, "view"), 1, GL_FALSE, view);
+            glUniformMatrix4fv(glGetUniformLocation(state.data->program, "projection"), 1, GL_FALSE, proj);
+
             level_render(level, &portal_cam);
+
+            set_camera_uniforms(cam);
 
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
             glDepthMask(GL_TRUE);
@@ -120,8 +178,6 @@ static void render_portals(const level_data_t* level, const camera_t* cam)
 
             glDepthFunc(GL_LESS);
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-            set_camera_uniforms(cam);
 
             glStencilMask(0xFF);
             glStencilFunc(GL_ALWAYS, 0, 0xFF);

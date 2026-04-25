@@ -15,33 +15,6 @@ typedef struct {
 static plane_t g_planes[6];
 static bool g_frustum_set = false;
 
-static void extract_frustum_planes(const f32* view, const f32* proj)
-{
-    f32 m[16];
-    mat4_multiply(m, proj, view);
-
-    g_planes[0].n = (vec3s){ m[3]+m[0], m[7]+m[4], m[11]+m[8] };
-    g_planes[0].d = m[15]+m[12];
-    g_planes[1].n = (vec3s){ m[3]-m[0], m[7]-m[4], m[11]-m[8] };
-    g_planes[1].d = m[15]-m[12];
-    g_planes[2].n = (vec3s){ m[3]+m[1], m[7]+m[5], m[11]+m[9] };
-    g_planes[2].d = m[15]+m[13];
-    g_planes[3].n = (vec3s){ m[3]-m[1], m[7]-m[5], m[11]-m[9] };
-    g_planes[3].d = m[15]-m[13];
-    g_planes[4].n = (vec3s){ m[3]+m[2], m[7]+m[6], m[11]+m[10] };
-    g_planes[4].d = m[15]+m[14];
-    g_planes[5].n = (vec3s){ m[3]-m[2], m[7]-m[6], m[11]-m[10] };
-    g_planes[5].d = m[15]-m[14];
-
-    for (i32 i = 0; i < 6; i++) {
-        f32 mag = vec3_magnitude(g_planes[i].n);
-        if (mag > 0.0001f) {
-            g_planes[i].n = vec3_scale(g_planes[i].n, 1.0f / mag);
-            g_planes[i].d /= mag;
-        }
-    }
-}
-
 static bool sphere_inside_frustum(vec3s center, f32 radius)
 {
     for (i32 i = 0; i < 6; i++) {
@@ -53,13 +26,48 @@ static bool sphere_inside_frustum(vec3s center, f32 radius)
 
 void level_set_frustum(const f32* view, const f32* proj)
 {
-    extract_frustum_planes(view, proj);
+    f32 m[16];
+    mat4_multiply(m, view, proj);
+    
+    g_planes[0].n = (vec3s){ m[3]+m[0], m[7]+m[4], m[11]+m[8] }; g_planes[0].d = m[15]+m[12];
+    g_planes[1].n = (vec3s){ m[3]-m[0], m[7]-m[4], m[11]-m[8] }; g_planes[1].d = m[15]-m[12];
+    g_planes[2].n = (vec3s){ m[3]+m[1], m[7]+m[5], m[11]+m[9] }; g_planes[2].d = m[15]+m[13];
+    g_planes[3].n = (vec3s){ m[3]-m[1], m[7]-m[5], m[11]-m[9] }; g_planes[3].d = m[15]-m[13];
+    g_planes[4].n = (vec3s){ m[3]+m[2], m[7]+m[6], m[11]+m[10]}; g_planes[4].d = m[15]+m[14];
+    g_planes[5].n = (vec3s){ m[3]-m[2], m[7]-m[6], m[11]-m[10]}; g_planes[5].d = m[15]-m[14];
+
+    for (i32 i = 0; i < 6; i++) {
+        f32 mag = vec3_magnitude(g_planes[i].n);
+        if (mag > 0.0001f) {
+            g_planes[i].n = vec3_scale(g_planes[i].n, 1.0f / mag);
+            g_planes[i].d /= mag;
+        }
+    }
+
     g_frustum_set = true;
 }
 
 bool quad_visible(const level_quad_t* quad)
 {
-    return true;
+    // return true;
+    if (!g_frustum_set) return true;
+
+    f32 rot_y[16], rot_x[16], rot_z[16], model[16], temp[16];
+    mat4_rotate_y(rot_y, -DEG2RAD(quad->rot.y));
+    mat4_rotate_x(rot_x, -DEG2RAD(quad->rot.x));
+    mat4_rotate_z(rot_z, -DEG2RAD(quad->rot.z));
+    mat4_multiply(temp, rot_y, rot_x);
+    mat4_multiply(model, temp, rot_z);
+
+    const vec3s lc = { quad->size.x * 0.5f, quad->size.y * 0.5f, 0.0f };
+    const vec3s center = {
+        model[0]*lc.x + model[4]*lc.y + model[8]*lc.z  + quad->pos.x,
+        model[1]*lc.x + model[5]*lc.y + model[9]*lc.z  + quad->pos.y,
+        model[2]*lc.x + model[6]*lc.y + model[10]*lc.z + quad->pos.z,
+    };
+
+    const f32 radius = sqrtf(quad->size.x * quad->size.x + quad->size.y * quad->size.y) * 0.5f;
+    return sphere_inside_frustum(center, radius);
 }
 
 static u32 g_quad_vao = 0;

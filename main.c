@@ -88,7 +88,7 @@ static void oblique_near_clip(f32* proj, const f32* view, vec3s plane_pos, vec3s
     };
 
     f32 d = -vec3_dot(norm_v, pos_v);
-    if (d > 0.0f) { norm_v = vec3_scale(norm_v, -1.0f); d = -d; }
+    if (norm_v.z > 0.0f) { norm_v = vec3_scale(norm_v, -1.0f); d = -d; }
     if (fabsf(d) < 0.005f) return;
 
     vec4s cp = {
@@ -281,7 +281,8 @@ void RENDER()
     glfwGetFramebufferSize(state.win, &state.fb->w, &state.fb->h);
     glViewport(0, 0, state.fb->w, state.fb->h);
 
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f); 
+    // glClearColor(0.2f, 0.3f, 0.3f, 1.0f); 
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     glEnable(GL_STENCIL_TEST);

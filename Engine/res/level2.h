@@ -4,14 +4,50 @@
 #include "level.h"
 
 static level_quad_t level2_sector0_quads[] = {
+    { .pos = {-9, 12, 19}, .rot = {90, 0, 0}, .size = {34, 22}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.4f, 0.4f, 0.4f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {-4, -1, 2}, .rot = {0, 303, 0}, .size = {8, 13}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {4, 0, 19}, .rot = {0, 0, 0}, .size = {16, 9}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = true, .color = {0.5f, 1.0f, 1.0f}, .portal_id = 1, .sector_id = 0 },
+    { .pos = {4, -1, -3}, .rot = {0, 0, 0}, .size = {16, 9}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = true, .color = {0.5f, 1.0f, 1.0f}, .portal_id = 1, .sector_id = 0 },
+    { .pos = {4, 8, -3}, .rot = {0, 0, 0}, .size = {16, 4}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {20, -1, -3}, .rot = {0, 0, 0}, .size = {5, 13}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {-9, -1, 19}, .rot = {0, 0, 0}, .size = {13, 13}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {4, -1, 19}, .rot = {0, 0, 0}, .size = {16, 1}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {-1, -1, -3}, .rot = {0, 0, 0}, .size = {5, 13}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {20, -1, 19}, .rot = {0, 0, 0}, .size = {5, 13}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {4, 9, 19}, .rot = {0, 0, 0}, .size = {16, 3}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {-4, -1, 2}, .rot = {0, 104, 0}, .size = {17, 13}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 0.8f, 0.7f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {19, 30, 22}, .rot = {0, 90, 0}, .size = {14, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.0f, 0.4f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {35, 30, 22}, .rot = {0, 90, 0}, .size = {6, 11}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 0.0f, 0.0f}, .portal_id = 2, .sector_id = 0 },
+    { .pos = {31, 27, -11}, .rot = {0, 90, 0}, .size = {6, 11}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 4, .sector_id = 0 },
+    { .pos = {25, -1, -2}, .rot = {0, 90, 0}, .size = {6, 11}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 4, .sector_id = 0 },
+    { .pos = {25, -1, 5}, .rot = {0, 90, 0}, .size = {6, 11}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 3, .sector_id = 0 },
+    { .pos = {25, -1, 12}, .rot = {0, 90, 0}, .size = {6, 11}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 2, .sector_id = 0 },
+    { .pos = {31, 38, -19}, .rot = {0, 90, 270}, .size = {14, 16}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 0.0f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {19, 30, 36}, .rot = {0, 0, 0}, .size = {16, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.0f, 0.4f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {33, 27, 8}, .rot = {0, 90, 0}, .size = {6, 11}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 3, .sector_id = 0 },
+    { .pos = {15, 27, -19}, .rot = {0, 0, 0}, .size = {16, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.4f, 0.0f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {35, 30, 28}, .rot = {0, 90, 0}, .size = {8, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.0f, 0.4f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {35, 41, 22}, .rot = {0, 90, 270}, .size = {14, 16}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {33, 27, 4}, .rot = {0, 90, 270}, .size = {14, 16}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 1.0f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {31, 27, -19}, .rot = {0, 90, 0}, .size = {8, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.4f, 0.0f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {17, 27, 18}, .rot = {0, 0, 0}, .size = {16, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.4f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {19, 30, 22}, .rot = {0, 0, 0}, .size = {16, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.0f, 0.4f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {15, 27, -19}, .rot = {0, 90, 0}, .size = {14, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.4f, 0.0f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {35, 30, 22}, .rot = {0, 90, 270}, .size = {14, 16}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {17, 27, 4}, .rot = {0, 0, 0}, .size = {16, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.4f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {17, 27, 4}, .rot = {0, 90, 0}, .size = {14, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.4f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {33, 38, 4}, .rot = {0, 90, 270}, .size = {14, 16}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 1.0f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {31, 27, -19}, .rot = {0, 90, 270}, .size = {14, 16}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 0.0f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {15, 27, -5}, .rot = {0, 0, 0}, .size = {16, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.4f, 0.0f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {33, 27, 4}, .rot = {0, 90, 0}, .size = {4, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.4f, 0.0f}, .portal_id = 0, .sector_id = 0 },
     { .pos = {-9, -1, 19}, .rot = {90, 0, 0}, .size = {34, 23}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.6f, 0.6f, 0.6f}, .portal_id = 0, .sector_id = 0 },
-    { .pos = {-4, -1, 2}, .rot = {0, 90, 0}, .size = {14, 10}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 0.8f, 0.7f}, .portal_id = 0, .sector_id = 0 },
-    { .pos = {-4, -1, 2}, .rot = {0, 10, 0}, .size = {12, 10}, .tex_id = 1, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
-    { .pos = {-6, 0, 23}, .rot = {0, 0, 0}, .size = {8, 6}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = true, .color = {0.5f, 1.0f, 1.0f}, .portal_id = 1, .sector_id = 0 },
-    { .pos = {5, 0, -6}, .rot = {0, 0, 0}, .size = {8, 6}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = true, .color = {0.5f, 1.0f, 1.0f}, .portal_id = 1, .sector_id = 0 },
-    { .pos = {0, 2, 15}, .rot = {0, 0, 0}, .size = {2, 2}, .tex_id = 2, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
-    { .pos = {5, 2, 0}, .rot = {0, 0, 0}, .size = {2, 2}, .tex_id = 2, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
-    { .pos = {-9, -1, 19}, .rot = {0, 0, 0}, .size = {5, 13}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {1.0f, 1.0f, 1.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {25, -1, 18}, .rot = {0, 90, 0}, .size = {1, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.0f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {25, 10, -3}, .rot = {0, 90, 0}, .size = {22, 2}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.0f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {25, -1, 4}, .rot = {0, 90, 0}, .size = {1, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.0f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {25, -1, 11}, .rot = {0, 90, 0}, .size = {1, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.0f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {25, -1, -3}, .rot = {0, 90, 0}, .size = {1, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.0f, 0.0f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {-9, -1, 19}, .rot = {90, 0, 0}, .size = {34, 22}, .tex_id = 0, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.6f, 0.6f, 0.6f}, .portal_id = 0, .sector_id = 0 },
+    { .pos = {33, 27, 14}, .rot = {0, 90, 0}, .size = {4, 11}, .tex_id = 3, .is_solid = true, .is_invisible = false, .is_billboard = false, .portal_side_flip = false, .color = {0.0f, 0.8f, 0.0f}, .portal_id = 0, .sector_id = 0 },
 };
 
 static level_sector_data_t level2_sectors[] = {
@@ -25,7 +61,7 @@ static inline level_data_t load_2(void)
         .path = "level2.h",
         .sectors = level2_sectors,
         .sector_count = sizeof(level2_sectors) / sizeof(level2_sectors[0]),
-        .cam = { .pos = {10.538f, 10.429f, 20.034f}, .yaw = -3028.684f, .pitch = -28.979f }
+        .cam = { .pos = {-1.449f, 3.500f, 4.729f}, .yaw = 41.219f, .pitch = 2.900f }
     };
 }
 

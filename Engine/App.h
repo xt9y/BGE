@@ -25,6 +25,7 @@ void RUN();
 #define TITLE  "opengl _f"
 #define WIDTH 1270 
 #define HEIGHT 800
+#define RENDER_SCALE 0.1f
 
 void GL_START();
 int  GL_FRAME();
@@ -35,3 +36,7 @@ double GL_GETFPS();
 #include "Engine/state.h"
 #include "Engine/util/math.h"
 #include "Engine/util.h"
+
+
+extern u32 g_fbo;
+void fbo_resize(const i32 w, const i32 h);

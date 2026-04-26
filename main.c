@@ -277,11 +277,18 @@ void RUN()
 
 void RENDER()
 {
-    state.fb->w = 0, state.fb->h = 0;
-    glfwGetFramebufferSize(state.win, &state.fb->w, &state.fb->h);
-    glViewport(0, 0, state.fb->w, state.fb->h);
+    i32 fbw = 0, fbh = 0;
+    glfwGetFramebufferSize(state.win, &fbw, &fbh);
 
-    // glClearColor(0.2f, 0.3f, 0.3f, 1.0f); 
+    const i32 rw = (i32)((f32)fbw * RENDER_SCALE);
+    const i32 rh = (i32)((f32)fbh * RENDER_SCALE);
+
+    fbo_resize(rw, rh);
+    state.fb->w = rw;
+    state.fb->h = rh;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, g_fbo);
+    glViewport(0, 0, rw, rh);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -289,21 +296,29 @@ void RENDER()
     glStencilMask(0xFF);
 
     glUseProgram(state.data->program);
-    
     f32 model[16];
     mat4_identity(model);
     glUniformMatrix4fv(state.data->u_model, 1, GL_FALSE, model);
     set_camera_uniforms(state.cam);
 
-    text_begin();
     render_portals(state.editor->level, state.cam, 0, 0);
     level_render(state.editor->level, state.cam);
-    if (state.id == STATE_EDITOR) editor_render();
+    if (state.id == STATE_EDITOR) editor_render_borders();
 
-    text_draw((vec2s){(f32)state.fb->w * 0.5f - 5.0f, (f32)state.fb->h * 0.5f - 10.0f}, "+");
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, g_fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(0, 0, rw, rh, 0, 0, fbw, fbh, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    state.fb->w = fbw;
+    state.fb->h = fbh;
+    glViewport(0, 0, fbw, fbh);
+    glDisable(GL_DEPTH_TEST);
+
+    text_begin();
+    text_draw((vec2s){(f32)fbw * 0.5f - 5.0f, (f32)fbh * 0.5f - 10.0f}, "+");
     text_draw((vec2s){10.0f, 10.0f}, "()*+-./ :;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz ");
-    int ww, wh; glfwGetWindowSize(state.win, &ww, &wh);
-    text_draw((vec2s){10.0f, 30.0f}, "FPS %.1f, WIN: %d x %d (FB: %d x %d)", GL_GETFPS(), ww, wh, state.fb->w, state.fb->h);
+    text_draw((vec2s){10.0f, 30.0f}, "FPS %.1f, WIN: %d x %d (FB: %d x %d)", GL_GETFPS(), WIDTH, HEIGHT, rw, rh);
     text_draw((vec2s){10.0f, 50.0f}, "POS: %.1f %.1f %.1f ; YAW %.1f ; PITCH %.1f", state.cam->pos.x, state.cam->pos.y, state.cam->pos.z, state.cam->yaw, state.cam->pitch);
     text_draw((vec2s){10.0f, 70.0f}, "CURRENT_LVL: %d ; MAX_LVLS: %d", state.level_id + 1, state.level_count);
     if (state.id != STATE_EDITOR) {
@@ -313,8 +328,12 @@ void RENDER()
     if (state.id == STATE_EDITOR) {
         const char* editor_modes[] = { "IDLE", "DRAG", "RESIZE_TOP", "RESIZE_RIGHT", "PAINT" };
         text_draw((vec2s){10.0f, 90.0f}, "EDITOR: EDITOR_%s", editor_modes[state.editor->id]);
+        editor_render_info();
+        editor_render_legend();
     }
-    text_flush(state.fb->w, state.fb->h);
+    text_flush(fbw, fbh);
+
+    glEnable(GL_DEPTH_TEST);
 }
 
 void INPUT()

@@ -129,14 +129,16 @@ void editor_move_quad_to_sector(level_sector_data_t* old_sector, level_sector_da
     old_sector->quad_count--;
 }
 
-static vec3s intersect_ray_plane(vec3s ray_origin, vec3s ray_dir, vec3s plane_pos, vec3s plane_normal) {
+static vec3s intersect_ray_plane(vec3s ray_origin, vec3s ray_dir, vec3s plane_pos, vec3s plane_normal) 
+{
     f32 denom = vec3_dot(plane_normal, ray_dir);
     if (fabsf(denom) < 0.0001f) return plane_pos;
     f32 t = vec3_dot(vec3_sub(plane_pos, ray_origin), plane_normal) / denom;
     return vec3_add(ray_origin, vec3_scale(ray_dir, t));
 }
 
-editor_look_at_info_t editor_get_look_at_info_with_ray(level_data_t* level, vec3s ray_origin, vec3s ray_dir, f32 max_dist) {
+editor_look_at_info_t editor_get_look_at_info_with_ray(level_data_t* level, vec3s ray_origin, vec3s ray_dir, f32 max_dist) 
+{
     editor_look_at_info_t best = {0};
     best.distance = max_dist;
     
@@ -363,6 +365,15 @@ static void editor_render_sector(const level_sector_data_t *sector)
 
 void editor_render_info();
 void editor_render_legend();
+
+void editor_render_borders()
+{
+    glDisable(GL_STENCIL_TEST);
+    glDisable(GL_DEPTH_TEST);
+    for (i32 i = 0; i < state.editor->level->sector_count; i++) editor_render_sector(&state.editor->level->sectors[i]);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
+}
 
 void editor_render()
 {

@@ -1,6 +1,6 @@
 #### First try in openGL (why did I start with vulkan ??)
 - repository for vulkan: https://github.com/FelixJaschul/vulkanc.git
-- last showcase of engine: https://youtu.be/8PBLB3s_mOI?si=S4tZ2i-HrfA8beAI
+- last showcase of engine: https://youtu.be/r_8WluwDGlU?si=t7fSQCzFctLcdEEh
 
 #### THIS IS IT:
 

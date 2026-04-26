@@ -589,8 +589,10 @@ void INPUT()
 
             if (vec3_magnitude(move) > 0.0001f) 
             {
+                const vec3s prev_pos = state.cam->pos;
                 move = vec3_normalize(move);
                 state.cam->pos = vec3_add(state.cam->pos, vec3_scale(move, speed));
+                portal_try_teleport(state.editor->level, prev_pos, state.cam);
             }
 
             f32 h;

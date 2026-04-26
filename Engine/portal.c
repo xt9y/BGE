@@ -127,3 +127,35 @@ bool portal_build_camera(const level_quad_t* src, const level_quad_t* dst, const
     return true;
 }
 
+bool portal_try_teleport(const level_data_t* level, const vec3s prev_pos, camera_t* cam)
+{
+    const vec3s move = vec3_sub(cam->pos, prev_pos);
+    const vec3s ray_dir = vec3_scale(move, 1.0f / vec3_magnitude(move));
+    if (vec3_magnitude(move) < 0.0001f) return false;
+ 
+    for (i32 s = 0; s < level->sector_count; s++) 
+    {
+        const level_sector_data_t* sector = &level->sectors[s];
+        for (i32 q = 0; q < sector->quad_count; q++) 
+        {
+            const level_quad_t* quad = &sector->quads[q];
+            if (quad->portal_id <= 0) continue;
+ 
+            portal_link_t link;
+            if (!portal_find_link(level, quad, &link)) continue;
+            if (link.src != quad) continue;
+ 
+            f32 t;
+            vec3s hit, local_hit;
+            if (!level_ray_intersects_quad(prev_pos, ray_dir, quad, &t, &hit, &local_hit)) continue;
+            if (t > vec3_magnitude(move) + 0.05f) continue;
+ 
+            camera_t new_cam;
+            if (!portal_build_camera(link.src, link.dst, cam, &new_cam)) continue;
+ 
+            *cam = new_cam;
+            return true;
+        }
+    }
+    return false;
+}

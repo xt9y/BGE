@@ -35,4 +35,8 @@ vec2s vec2_add(vec2s a, vec2s b);
 vec2s vec2_sub(vec2s a, vec2s b);
 vec2s vec2_scale(vec2s a, f32 s);
 
+f32 lerp(f32 a, f32 b, f32 t);
+vec2s vec2_lerp(vec2s a, vec2s b, f32 t);
+vec3s vec3_lerp(vec3s a, vec3s b, f32 t);
+
 #endif

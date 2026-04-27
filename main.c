@@ -62,6 +62,46 @@ void apply_level_camera(camera_t *cam, level_data_t *level)
     update_camera_vectors(cam);
 }
 
+static void player_collide_quads(const level_data_t* level, camera_t* cam)
+{
+    const f32 radius = 0.5f;
+
+    for (i32 s = 0; s < level->sector_count; s++) 
+    {
+        const level_sector_data_t* sector = &level->sectors[s];
+        for (i32 q = 0; q < sector->quad_count; q++) 
+        {
+            const level_quad_t* quad = &sector->quads[q];
+            if (quad->portal_id > 0 || !quad->is_solid || quad->is_billboard) continue;
+
+            f32 ry[16], rx[16], rz[16], m[16], t[16];
+            mat4_rotate_y(ry, -DEG2RAD(quad->rot.y));
+            mat4_rotate_x(rx, -DEG2RAD(quad->rot.x));
+            mat4_rotate_z(rz, -DEG2RAD(quad->rot.z));
+            mat4_multiply(t, ry, rx);
+            mat4_multiply(m, t, rz);
+
+            const vec3s normal = { m[8], m[9], m[10] };
+            const vec3s right  = { m[0], m[1], m[2] };
+            const vec3s up     = { m[4], m[5], m[6] };
+            const vec3s to_cam = vec3_sub(cam->pos, quad->pos);
+
+            const f32 dist = vec3_dot(to_cam, normal);
+            if (fabsf(dist) > radius) continue;
+
+            const f32 lx = vec3_dot(to_cam, right);
+            const f32 ly = vec3_dot(to_cam, up);
+            const f32 mg = radius * 0.5f;
+
+            if (lx < -mg || lx > quad->size.x + mg) continue;
+            if (ly < -mg || ly > quad->size.y + mg)  continue;
+
+            const f32 push = dist >= 0.0f ? (radius - dist) : -(radius + dist);
+            cam->pos = vec3_add(cam->pos, vec3_scale(normal, push));
+        }
+    }
+}
+
 static vec3s quad_world_normal(const level_quad_t* q)
 {
     f32 ry[16], rx[16], rz[16], m[16], t[16];
@@ -542,14 +582,13 @@ void INPUT()
         if (glfwGetKey(state.win, GLFW_KEY_P) == GLFW_PRESS && state.editor->id != EDITOR_PAINT) {
             if (!p_pressed) {
                 level_quad_t* q = state.editor->selected_quad ? state.editor->selected_quad : &state.editor->template_quad;
-                if (ctrl_held) {
-                    q->portal_side_flip = !q->portal_side_flip;
-                } else if (shift_held) {
+                if (ctrl_held) q->portal_side_flip = !q->portal_side_flip;
+                else if (shift_held)
                     do { q->portal_id--; if (q->portal_id < 0) { q->portal_id = 0; break; }
                     } while (q->portal_id > 0 && count_portal_quads(state.editor->level, q->portal_id) >= 2);
-                } else {
-                    int limit = 256; do q->portal_id++;
-                    while (count_portal_quads(state.editor->level, q->portal_id) > 2 && --limit > 0);
+                else {
+                    u8 limit = 256; do { q->portal_id++;
+                    } while (count_portal_quads(state.editor->level, q->portal_id) > 2 && --limit > 0);
                 }
                 if (state.editor->selected_quad) {
                     state.editor->template_quad = *state.editor->selected_quad;
@@ -593,6 +632,7 @@ void INPUT()
                 move = vec3_normalize(move);
                 state.cam->pos = vec3_add(state.cam->pos, vec3_scale(move, speed));
                 portal_try_teleport(state.editor->level, prev_pos, state.cam);
+                player_collide_quads(state.editor->level, state.cam);
             }
 
             f32 h;

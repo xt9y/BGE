@@ -4,7 +4,7 @@
 #include "level.h"
 #include "cam.h"
 
-#define MAX_PORTAL_DEPTH 4
+#define MAX_PORTAL_DEPTH 3
 #define PORTAL_SUCTION_DIST 1.2f
 
 typedef struct {

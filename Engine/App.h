@@ -26,6 +26,7 @@ void RUN();
 #define WIDTH 1270 
 #define HEIGHT 800
 #define RENDER_SCALE 0.1f
+#define PALETTE_LEVELS 32.0f
 
 void GL_START();
 int  GL_FRAME();
@@ -40,3 +41,5 @@ double GL_GETFPS();
 
 extern u32 g_fbo;
 void fbo_resize(const i32 w, const i32 h);
+void post_blit(i32 src_w, i32 src_h, i32 dst_w, i32 dst_h);
+

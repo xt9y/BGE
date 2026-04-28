@@ -155,3 +155,7 @@ vec3s vec3_cross(const vec3s a, const vec3s b) {
 vec2s vec2_add(const vec2s a, const vec2s b) { return (vec2s){a.x + b.x, a.y + b.y}; }
 vec2s vec2_sub(const vec2s a, const vec2s b) { return (vec2s){a.x - b.x, a.y - b.y}; }
 vec2s vec2_scale(const vec2s a, const f32 s) { return (vec2s){a.x * s, a.y * s}; }
+
+f32 lerp(const f32 a, const f32 b, const f32 t) { return a + (b - a) * t; }
+vec2s vec2_lerp(const vec2s a, const vec2s b, const f32 t) { return (vec2s){lerp(a.x, b.x, t), lerp(a.y, b.y, t)}; }
+vec3s vec3_lerp(const vec3s a, const vec3s b, const f32 t) { return (vec3s){lerp(a.x, b.x, t), lerp(a.y, b.y, t), lerp(a.z, b.z, t)}; }

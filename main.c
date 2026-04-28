@@ -345,9 +345,10 @@ void RENDER()
     level_render(state.editor->level, state.cam);
     if (state.id == STATE_EDITOR) editor_render_borders();
 
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, g_fbo);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glBlitFramebuffer(0, 0, rw, rh, 0, 0, fbw, fbh, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    // glBindFramebuffer(GL_READ_FRAMEBUFFER, g_fbo);
+    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    // glBlitFramebuffer(0, 0, rw, rh, 0, 0, fbw, fbh, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    post_blit(rw, rh, fbw, fbh);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     state.fb->w = fbw;

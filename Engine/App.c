@@ -56,6 +56,66 @@ static void mouse_callback(GLFWwindow* w, const f64 xpos, const f64 ypos)
     camera_mouse_callback(state.cam, xpos, ypos);
 }
 
+static u32 g_post_vao = 0;
+static u32 g_post_vbo = 0;
+static u32 g_post_program = 0;
+
+static void post_init()
+{
+    static const char* vs =
+        "#version 330 core\n"
+        "layout(location=0) in vec2 aPos;\n"
+        "out vec2 vUV;\n"
+        "void main(){\n"
+        "    vUV = aPos * 0.5 + 0.5;\n"
+        "    gl_Position = vec4(aPos, 0.0, 1.0);\n"
+        "}\n";
+    static const char* fs =
+        "#version 330 core\n"
+        "in vec2 vUV;\n"
+        "out vec4 FragColor;\n"
+        "uniform sampler2D u_screen;\n"
+        "uniform float u_levels;\n"
+        "void main(){\n"
+        "    vec3 c = texture(u_screen, vUV).rgb;\n"
+        "    c = round(c * (u_levels - 1.0)) / (u_levels - 1.0);\n"
+        "    FragColor = vec4(c, 1.0);\n"
+        "}\n";
+
+    g_post_program = create_program(vs, fs);
+
+    static const f32 quad[] = { -1,-1, 1,-1, 1,1, -1,-1, 1,1, -1,1 };
+    glGenVertexArrays(1, &g_post_vao);
+    glGenBuffers(1, &g_post_vbo);
+    glBindVertexArray(g_post_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_post_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindVertexArray(0);
+}
+
+void post_blit(const i32 src_w, const i32 src_h, const i32 dst_w, const i32 dst_h)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, dst_w, dst_h);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+
+    glUseProgram(g_post_program);
+    glUniform1i(glGetUniformLocation(g_post_program, "u_screen"), 0);
+    glUniform1f(glGetUniformLocation(g_post_program, "u_levels"), PALETTE_LEVELS);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, g_fbo_color);
+
+    glBindVertexArray(g_post_vao);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+    glEnable(GL_DEPTH_TEST);
+}
+
 void GL_START()
 {
     state = (state_t){0};
@@ -77,6 +137,7 @@ void GL_START()
     glfwMakeContextCurrent(state.win);
 
     ASSERT(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress));
+    post_init();
 
     glfwSwapInterval(0);
     glfwSetCursorPosCallback(state.win, mouse_callback);
@@ -123,7 +184,9 @@ void GL_END()
     if (g_fbo_color)         glDeleteTextures(1, &g_fbo_color);
     if (g_fbo_depth_stencil) glDeleteRenderbuffers(1, &g_fbo_depth_stencil);
     if (g_fbo)               glDeleteFramebuffers(1, &g_fbo);
-
+    if (g_post_program) glDeleteProgram(g_post_program);
+    if (g_post_vao)     glDeleteVertexArrays(1, &g_post_vao);
+    if (g_post_vbo)     glDeleteBuffers(1, &g_post_vbo);
     if (state.text) texture_registry_cleanup(state.text);
     text_shutdown();
     glfwTerminate();

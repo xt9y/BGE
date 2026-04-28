@@ -18,5 +18,5 @@ clean:
 
 add:
 	git status
-	git add Makefile README.md *.c *.h Engine/*.c Engine/*.h Engine/res/*.h Engine/res/*.png
+	git add Makefile README.md *.c *.h Engine/*.c Engine/util/*.c Engine/util/*.h Engine/*.h Engine/res/*.h Engine/res/*.png
 	git status

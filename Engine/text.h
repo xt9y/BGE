@@ -4,7 +4,7 @@
 #include "gfx.h"
 #include "util/types.h"
 
-#define MAX_TEXTURES 16
+#define MAX_TEXTURES 32
 #define MAX_TEXT_VERTICES 4096
 #define MAX_LEVELS 8
 

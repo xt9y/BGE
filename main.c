@@ -282,14 +282,20 @@ void RUN()
         state.text->textures[state.text->count++] = *texture_create("Engine/res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
         state.text->textures[state.text->count++] = *texture_create("Engine/res/awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
         state.text->textures[state.text->count++] = *texture_create_solid(255, 255, 255);
+        state.text->textures[state.text->count++] = *texture_create("Engine/res/metal_a.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+        state.text->textures[state.text->count++] = *texture_create("Engine/res/metal_b.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+        state.text->textures[state.text->count++] = *texture_create("Engine/res/grate.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+        state.text->textures[state.text->count++] = *texture_create("Engine/res/spider.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+        state.text->textures[state.text->count++] = *texture_create("Engine/res/banana.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+        state.text->textures[state.text->count++] = *texture_create("Engine/res/water.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
         text_init();
     }
 
     {   // Levels 
         state.level_count, state.level_id = 0;
         state.levels[state.level_count++] = load_3();
-        state.levels[state.level_count++] = load_2();
         state.levels[state.level_count++] = load_1();
+        state.levels[state.level_count++] = load_2();
     }
 
     {   // Editor

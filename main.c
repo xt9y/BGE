@@ -16,7 +16,7 @@
  * > press tab to toggle between mouse locking
  *
  * > press e to switch betwen editor mode ... :
- *  > at the bottom of the screen is a small legend which button does what 
+ *  > at the bottom of the screen is a small legend which button does what
  *
  *  > click to select / start drag
  *  > ctrl + click near edge to resize
@@ -53,7 +53,7 @@
  *  > use mouse to look around
  */
 
-void apply_level_camera(camera_t *cam, level_data_t *level) 
+void apply_level_camera(camera_t *cam, level_data_t *level)
 {
     cam->pos = level->cam.pos;
     cam->yaw = level->cam.yaw;
@@ -66,10 +66,10 @@ static void player_collide_quads(const level_data_t* level, camera_t* cam)
 {
     const f32 radius = 0.5f;
 
-    for (i32 s = 0; s < level->sector_count; s++) 
+    for (i32 s = 0; s < level->sector_count; s++)
     {
         const level_sector_data_t* sector = &level->sectors[s];
-        for (i32 q = 0; q < sector->quad_count; q++) 
+        for (i32 q = 0; q < sector->quad_count; q++)
         {
             const level_quad_t* quad = &sector->quads[q];
             if (quad->portal_id > 0 || !quad->is_solid || quad->is_billboard) continue;
@@ -132,9 +132,9 @@ static void oblique_near_clip(f32* proj, const f32* view, vec3s plane_pos, vec3s
     if (fabsf(d) < 0.005f) return;
 
     vec4s cp = {
-        norm_v.x, 
-        norm_v.y, 
-        norm_v.z, 
+        norm_v.x,
+        norm_v.y,
+        norm_v.z,
         d
     };
 
@@ -291,7 +291,7 @@ void RUN()
         text_init();
     }
 
-    {   // Levels 
+    {   // Levels
         state.level_count, state.level_id = 0;
         state.levels[state.level_count++] = load_3();
         state.levels[state.level_count++] = load_1();
@@ -311,7 +311,7 @@ void RUN()
         apply_level_camera(state.cam, &state.levels[state.level_id]);
     }
 
-    while (GL_FRAME()) 
+    while (GL_FRAME())
     {
         state.editor->level = &state.levels[state.level_id];
         if (state.id == STATE_EDITOR) editor_update();
@@ -438,7 +438,7 @@ void INPUT()
         static bool i_pressed = false;
         if (glfwGetKey(state.win, GLFW_KEY_I) == GLFW_PRESS) {
             if (!i_pressed && state.editor->selected_quad) {
-                if (shift_held) { 
+                if (shift_held) {
                     state.editor->selected_quad->is_invisible = !state.editor->selected_quad->is_invisible;
                 } else {
                     state.editor->selected_quad->is_solid = !state.editor->selected_quad->is_solid;
@@ -533,7 +533,7 @@ void INPUT()
                     if (i >= 6 && *val >= 360.0f) *val = 0.0f;
                     if (i >= 6 && *val < 0.0f)    *val = 359.0f;
                     if (i >= 6) *val = roundf(*val);
-                    
+
                     if (state.editor->selected_quad) {
                         state.editor->template_quad = *state.editor->selected_quad;
                         state.editor->template_mods = EDITOR_MOD_ALL;
@@ -573,7 +573,7 @@ void INPUT()
                 }
 
                 if (state.editor->selected_quad) editor_move_quad_to_sector(state.editor->selected_sector, &state.editor->level->sectors[target_idx], state.editor->selected_wall_idx);
-                
+
                 state.editor->template_quad.sector_id = state.editor->level->sectors[target_idx].id;
                 state.editor->template_mods |= EDITOR_MOD_SECTOR;
                 q_pressed = true;
@@ -615,12 +615,12 @@ void INPUT()
             }
         } else enter_pressed = false;
     }
-    
+
     { // Movement
         const f32 speed = 18.5f * state.dt;
         const vec3s right = vec3_normalize(vec3_cross(state.cam->front, state.cam->up));
 
-        if (state.id == STATE_PLAYING) 
+        if (state.id == STATE_PLAYING)
         {
             vec3s prev_pos = state.cam->pos;
             vec3s move = {0, 0, 0}, forward = {state.cam->front.x, 0, state.cam->front.z};
@@ -643,7 +643,7 @@ void INPUT()
             else state.cam->pos = vec3_lerp(state.cam->pos, prev_pos, 0.04f);
         }
 
-        if (state.id == STATE_EDITOR) 
+        if (state.id == STATE_EDITOR)
         {
             if (glfwGetKey(state.win, GLFW_KEY_W) == GLFW_PRESS) state.cam->pos = vec3_add(state.cam->pos, vec3_scale(state.cam->front, speed));
             if (glfwGetKey(state.win, GLFW_KEY_S) == GLFW_PRESS) state.cam->pos = vec3_sub(state.cam->pos, vec3_scale(state.cam->front, speed));

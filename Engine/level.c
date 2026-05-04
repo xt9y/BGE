@@ -108,7 +108,7 @@ void level_render_quad(const level_quad_t* quad, const vec4s color)
     if (quad->is_billboard && quad->billboard_cam)
     {
         vec3s to_cam = vec3_normalize(vec3_sub(quad->billboard_cam->pos, quad->pos));
-        f32 yaw = atan2f(to_cam.x, to_cam.z) * 180.0f / M_PI;
+        f32 yaw = atan2f(to_cam.x, to_cam.z) * 180.0f / PI;
 
         f32 cos_y = cosf(-DEG2RAD(yaw));
         f32 sin_y = sinf(-DEG2RAD(yaw));

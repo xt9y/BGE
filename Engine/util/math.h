@@ -1,0 +1,42 @@
+#ifndef MATH_H
+#define MATH_H
+
+#include "types.h"
+#include <math.h>
+
+#ifndef PI
+#define PI 3.1415926535f
+#endif
+
+#define DEG2RAD(deg) ((deg) * PI / 180.0f)
+#define RAD2DEG(rad) ((rad) * 180.0f / PI)
+
+void mat4_identity(f32* m);
+void mat4_perspective(f32* m, f32 fov, f32 aspect, f32 near, f32 far);
+void mat4_ortho(f32* m, f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
+void mat4_translate(f32* m, f32 x, f32 y, f32 z);
+void mat4_rotate_x(f32* m, f32 angle);
+void mat4_rotate_y(f32* m, f32 angle);
+void mat4_rotate_z(f32* m, f32 angle);
+void mat4_multiply(f32* res, const f32* a, const f32* b);
+void mat4_lookat(f32* m, vec3s eye, vec3s center, vec3s up);
+void mat4_transpose(f32* m);
+bool mat4_inverse(const f32* m, f32* out);
+
+vec3s vec3_add(vec3s a, vec3s b);
+vec3s vec3_sub(vec3s a, vec3s b);
+vec3s vec3_scale(vec3s a, f32 s);
+vec3s vec3_normalize(vec3s a);
+vec3s vec3_cross(vec3s a, vec3s b);
+f32 vec3_dot(vec3s a, vec3s b);
+f32 vec3_magnitude(vec3s a);
+
+vec2s vec2_add(vec2s a, vec2s b);
+vec2s vec2_sub(vec2s a, vec2s b);
+vec2s vec2_scale(vec2s a, f32 s);
+
+f32 lerp(f32 a, f32 b, f32 t);
+vec2s vec2_lerp(vec2s a, vec2s b, f32 t);
+vec3s vec3_lerp(vec3s a, vec3s b, f32 t);
+
+#endif

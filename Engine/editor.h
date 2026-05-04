@@ -54,7 +54,6 @@ typedef struct {
 void editor_render();
 void editor_render_borders();
 void editor_render_info();
-void editor_render_legend();
 void editor_update();
 void editor_save(level_data_t* level);
 

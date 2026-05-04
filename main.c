@@ -293,9 +293,9 @@ void RUN()
 
     {   // Levels
         state.level_count, state.level_id = 0;
+        state.levels[state.level_count++] = load_2();
         state.levels[state.level_count++] = load_3();
         state.levels[state.level_count++] = load_1();
-        state.levels[state.level_count++] = load_2();
     }
 
     {   // Editor
@@ -305,8 +305,8 @@ void RUN()
     {   // Camera
         state.cam->front = (vec3s){0.0f, 0.0f, -1.0f};
         state.cam->up = (vec3s){0.0f, 1.0f, 0.0f};
-        state.cam->lastX = (f32)state.fb->w * 0.5f;
-        state.cam->lastY = (f32)state.fb->h * 0.5f;
+        state.cam->lastX = (f32)state.fb->ww * 0.5f;
+        state.cam->lastY = (f32)state.fb->wh * 0.5f;
         state.cursor_locked = false;
         apply_level_camera(state.cam, &state.levels[state.level_id]);
     }
@@ -323,8 +323,9 @@ void RUN()
 
 void RENDER()
 {
-    i32 fbw = 0, fbh = 0;
+    i32 fbw, fbh;
     glfwGetFramebufferSize(state.win, &fbw, &fbh);
+    glfwGetWindowSize(state.win, &state.fb->ww, &state.fb->wh);
 
     const i32 rw = (i32)((f32)fbw * RENDER_SCALE);
     const i32 rh = (i32)((f32)fbh * RENDER_SCALE);
@@ -354,28 +355,14 @@ void RENDER()
     post_blit(rw, rh, fbw, fbh);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    state.fb->w = fbw;
-    state.fb->h = fbh;
     glViewport(0, 0, fbw, fbh);
     glDisable(GL_DEPTH_TEST);
 
     text_begin();
-    text_draw((vec2s){(f32)fbw * 0.5f - 5.0f, (f32)fbh * 0.5f - 10.0f}, "+");
-    text_draw((vec2s){10.0f, 10.0f}, "()*+-./ :;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz ");
-    text_draw((vec2s){10.0f, 30.0f}, "FPS %.1f, WIN: %d x %d (FB: %d x %d)", GL_GETFPS(), WIDTH, HEIGHT, rw, rh);
-    text_draw((vec2s){10.0f, 50.0f}, "POS: %.1f %.1f %.1f ; YAW %.1f ; PITCH %.1f", state.cam->pos.x, state.cam->pos.y, state.cam->pos.z, state.cam->yaw, state.cam->pitch);
-    text_draw((vec2s){10.0f, 70.0f}, "CURRENT_LVL: %d ; MAX_LVLS: %d", state.level_id + 1, state.level_count);
-    if (state.id != STATE_EDITOR) {
-        const char* game_modes[] = { "MENU", "PLAYING", "EDITOR", "EXIT" };
-        text_draw((vec2s){10.0f, 90.0f}, "STATE: STATE_%s", game_modes[state.id]);
-    }
-    if (state.id == STATE_EDITOR) {
-        const char* editor_modes[] = { "IDLE", "DRAG", "RESIZE_TOP", "RESIZE_RIGHT", "PAINT" };
-        text_draw((vec2s){10.0f, 90.0f}, "EDITOR: EDITOR_%s", editor_modes[state.editor->id]);
-        editor_render_info();
-        editor_render_legend();
-    }
-    text_flush(fbw, fbh);
+    text_draw((vec2s){10.0f, 10.0f}, "FPS %.1f", GL_GETFPS());
+    text_draw((vec2s){(f32)state.fb->ww * 0.5f - 5.0f, (f32)state.fb->wh * 0.5f - 10.0f}, "+");
+    if (state.id == STATE_EDITOR) editor_render_info();
+    text_flush(state.fb->ww, state.fb->wh);
 
     glEnable(GL_DEPTH_TEST);
 }
@@ -397,7 +384,7 @@ void INPUT()
             if (!tab_pressed) {
                 state.cursor_locked = !state.cursor_locked;
                 if (state.cursor_locked) {
-                    glfwSetCursorPos(state.win, state.fb->w * 0.5f, state.fb->h * 0.5f);
+                    glfwSetCursorPos(state.win, state.fb->ww * 0.5f, state.fb->wh * 0.5f);
                     state.cam->firstMouse = true;
                 } tab_pressed = true;
             }

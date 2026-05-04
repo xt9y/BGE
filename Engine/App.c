@@ -56,6 +56,11 @@ static void mouse_callback(GLFWwindow* w, const f64 xpos, const f64 ypos)
     camera_mouse_callback(state.cam, xpos, ypos);
 }
 
+static void framebuffer_size_callback(GLFWwindow* w, i32 width, i32 height)
+{
+    (void)w; state.fb->w = width; state.fb->h = height;
+}
+
 static u32 g_post_vao = 0;
 static u32 g_post_vbo = 0;
 static u32 g_post_program = 0;
@@ -141,6 +146,7 @@ void GL_START()
 
     glfwSwapInterval(0);
     glfwSetCursorPosCallback(state.win, mouse_callback);
+    glfwSetFramebufferSizeCallback(state.win, framebuffer_size_callback);
     glfwSetInputMode(state.win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     state.fb        = malloc(sizeof(*state.fb));         memset(state.fb,       0, sizeof(*state.fb));
@@ -149,6 +155,9 @@ void GL_START()
     state.text      = malloc(sizeof(*state.text));       memset(state.text,     0, sizeof(*state.text));
     state.editor    = malloc(sizeof(*state.editor));     memset(state.editor,   0, sizeof(*state.editor));
     ASSERT(state.fb && state.data && state.cam && state.text && state.editor);
+
+    glfwGetWindowContentScale(state.win, &state.fb->scale, NULL);
+    glfwGetWindowSize(state.win, &state.fb->ww, &state.fb->wh);
 
     state.data->program = create_program(VS, FS);
     state.data->u_model = glGetUniformLocation(state.data->program, "model");

@@ -1,3 +1,4 @@
+#include "App.h"
 #include "level.h"
 #include "state.h"
 #include <glad/glad.h>
@@ -388,7 +389,23 @@ void editor_render()
 
 void editor_render_info()
 {
-    f32 x = 10.0f, y = 150.0f, line_height = 20.0f;
+    f32 line_height = CHAR_HEIGHT, x = 10.0f, y = 30.0f;
+
+    text_draw((vec2s){x, y}, "()*+-./ :;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz "); y += line_height;
+    text_draw((vec2s){x, y}, "WIN: %d x %d (FB: %d x %d)", state.fb->ww, state.fb->wh, state.fb->w, state.fb->h); y += line_height;
+    text_draw((vec2s){x, y}, "POS: %.1f %.1f %.1f ; YAW %.1f ; PITCH %.1f", state.cam->pos.x, state.cam->pos.y, state.cam->pos.z, state.cam->yaw, state.cam->pitch); y += line_height;
+    text_draw((vec2s){x, y}, "CURRENT_LVL: %d ; MAX_LVLS: %d", state.level_id + 1, state.level_count); y += line_height;
+
+    if (state.id != STATE_EDITOR) {
+        const char* game_modes[] = { "MENU", "PLAYING", "EDITOR", "EXIT" };
+        text_draw((vec2s){x, y}, "STATE: STATE_%s", game_modes[state.id]); y += line_height;
+    } else {
+        const char* editor_modes[] = { "IDLE", "DRAG", "RESIZE_TOP", "RESIZE_RIGHT", "PAINT" };
+        text_draw((vec2s){x, y}, "EDITOR: EDITOR_%s", editor_modes[state.editor->id]); y += line_height;
+    }
+
+    // Editor quad info
+    y = 150.0f;
 
     level_quad_t* q = state.editor->selected_quad;
     level_sector_data_t* s = state.editor->selected_sector;
@@ -413,18 +430,21 @@ void editor_render_info()
     if (!is_template) { text_draw((vec2s){x, y}, "  Portal Side Flip: %s", q->portal_side_flip ? "ON" : "OFF"); y += line_height; }
     if (!is_template && s) { text_draw((vec2s){x, y}, "  Light: %.1f %.1f %.1f", s->light.x, s->light.y, s->light.z); y += line_height; }
     text_draw((vec2s){x, y}, "%c Color: %.1f %.1f %.1f", mod_c, q->color.x, q->color.y, q->color.z);
+
+    editor_render_legend();
+
 }
 
 void editor_render_legend()
 {
-    f32 x = 10.0f, y = (f32)state.fb->h - 30.0f, line_height = 20.0f;
-    text_draw((vec2s){x, y}, "  SHFT+B:BIL   I:SLD     SHFT+I:INV   P:+PRTLV        SHIFT+P:-PRTL  CTRL+P:PRTL_SIDE"); y -= line_height;
-    text_draw((vec2s){x, y}, "  1-3:+CLR     4-6:+LIT  7-9:+ROT     SHFT+7-9:-ROT   0:TEX_ID       Q:+SEC            SHFT+Q:-SEC"); y -= line_height;
-    text_draw((vec2s){x, y}, "  N:NEW        X:DEL     R:RESET      ENTER:DESEL     DRAG:MOVE      CTRL:RESIZE       V:PAINT_MODE"); y -= line_height;
+    f32 x = 10.0f, y = (f32)state.fb->wh - 30.0f, line_height = 20.0f;
+    text_draw((vec2s){x, y}, "  SHFT+B:BIL      I:SLD       SHFT+I:INV   P:+PRTLV        SHIFT+P:-PRTL  "); y -= line_height;
+    text_draw((vec2s){x, y}, "  1-3:+CLR        4-6:+LIT    7-9:+ROT     SHFT+7-9:-ROT   0:TEX_ID       "); y -= line_height;
+    text_draw((vec2s){x, y}, "  CTRL:RESIZE     CTRL+P:PRTL_SIDE         V:PAINT_MODE    Q:+SEC     SHFT+Q:-SEC"); y -= line_height;
+    text_draw((vec2s){x, y}, "  N:NEW           X:DEL       R:RESET      ENTER:DESEL     DRAG:MOVE      "); y -= line_height;
     text_draw((vec2s){x, y}, "QUAD SETTINGS:"); y -= line_height;
-    text_draw((vec2s){x, y}, "  ESC:EXIT     E:PLAY    TAB:CURS     B:NEXT_LVL"); y -= line_height;
+    text_draw((vec2s){x, y}, "  ESC:EXIT        E:PLAY      TAB:CURS     B:NEXT_LVL"); y -= line_height;
     text_draw((vec2s){x, y}, "SETTINGS: "); y -= line_height; 
-    text_draw((vec2s){x, y}, "EDITOR INPUT INFO:");
 }
 
 void editor_save(level_data_t* level)

@@ -23,7 +23,8 @@ typedef struct {
 } data_t;
 
 typedef struct {
-    i32 w, h;
+    i32 w, h, ww, wh;
+    f32 scale;
 } framebuffer_t;
 
 typedef struct {

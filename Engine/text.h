@@ -8,7 +8,7 @@
 #define MAX_TEXT_VERTICES 4096
 #define MAX_LEVELS 8
 
-#define CHAR_WIDTH 18.0f
+#define CHAR_WIDTH (7.0f * state.fb->scale)
 #define CHAR_HEIGHT CHAR_WIDTH 
 #define CHAR_SPACING 1.0f
 

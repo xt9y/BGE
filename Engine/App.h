@@ -25,7 +25,7 @@ void RUN();
 #define TITLE  "opengl _f"
 #define WIDTH 1270 
 #define HEIGHT 800
-#define RENDER_SCALE 0.1f
+#define RENDER_BASE_W 200
 #define PALETTE_LEVELS 32.0f
 
 void GL_START();

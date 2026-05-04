@@ -4,12 +4,12 @@
 #include "gfx.h"
 #include "util/types.h"
 
-#define MAX_TEXTURES 32
-#define MAX_TEXT_VERTICES 4096
+#define MAX_TEXTURES 100
+#define MAX_TEXT_VERTICES 8096
 #define MAX_LEVELS 8
 
-#define CHAR_WIDTH (7.0f * state.fb->scale)
-#define CHAR_HEIGHT CHAR_WIDTH 
+#define CHAR_WIDTH 12.0f
+#define CHAR_HEIGHT CHAR_WIDTH
 #define CHAR_SPACING 1.0f
 
 typedef enum {

@@ -389,7 +389,7 @@ void editor_render()
 
 void editor_render_info()
 {
-    f32 line_height = CHAR_HEIGHT, x = 10.0f, y = 30.0f;
+    f32 line_height = CHAR_HEIGHT, x = 10.0f, y = CHAR_HEIGHT+20;
 
     text_draw((vec2s){x, y}, "()*+-./ :;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz "); y += line_height;
     text_draw((vec2s){x, y}, "WIN: %d x %d (FB: %d x %d)", state.fb->ww, state.fb->wh, state.fb->w, state.fb->h); y += line_height;
@@ -434,17 +434,46 @@ void editor_render_info()
     editor_render_legend();
 
 }
-
 void editor_render_legend()
 {
-    f32 x = 10.0f, y = (f32)state.fb->wh - 30.0f, line_height = 20.0f;
-    text_draw((vec2s){x, y}, "  SHFT+B:BIL      I:SLD       SHFT+I:INV   P:+PRTLV        SHIFT+P:-PRTL  "); y -= line_height;
-    text_draw((vec2s){x, y}, "  1-3:+CLR        4-6:+LIT    7-9:+ROT     SHFT+7-9:-ROT   0:TEX_ID       "); y -= line_height;
-    text_draw((vec2s){x, y}, "  CTRL:RESIZE     CTRL+P:PRTL_SIDE         V:PAINT_MODE    Q:+SEC     SHFT+Q:-SEC"); y -= line_height;
-    text_draw((vec2s){x, y}, "  N:NEW           X:DEL       R:RESET      ENTER:DESEL     DRAG:MOVE      "); y -= line_height;
-    text_draw((vec2s){x, y}, "QUAD SETTINGS:"); y -= line_height;
-    text_draw((vec2s){x, y}, "  ESC:EXIT        E:PLAY      TAB:CURS     B:NEXT_LVL"); y -= line_height;
-    text_draw((vec2s){x, y}, "SETTINGS: "); y -= line_height; 
+    f32 x = 10.0f, y = state.fb->wh - CHAR_HEIGHT;
+    const f32 line_height = CHAR_HEIGHT;
+    
+    y -= line_height;
+    text_draw((vec2s){x, y}, "  ESC          Exit"); y -= line_height;
+    text_draw((vec2s){x, y}, "  TAB          Toggle cursor lock"); y -= line_height;
+    text_draw((vec2s){x, y}, "  E            Toggle editor/play mode"); y -= line_height;
+    text_draw((vec2s){x, y}, "  B            Next level"); y -= line_height;
+    text_draw((vec2s){x, y}, "SETTINGS"); y -= line_height;
+
+    y -= line_height * 0.5f;
+    text_draw((vec2s){x, y}, "  Click        Select quad / start drag"); y -= line_height;
+    text_draw((vec2s){x, y}, "  Ctrl+Click   Resize quad (near edge)"); y -= line_height;
+    text_draw((vec2s){x, y}, "  Enter        Deselect"); y -= line_height;
+    text_draw((vec2s){x, y}, "  N            New quad (dup if selected)"); y -= line_height;
+    text_draw((vec2s){x, y}, "  X / Delete   Delete selected quad"); y -= line_height;
+    text_draw((vec2s){x, y}, "  R            Reset selected quad"); y -= line_height;
+    text_draw((vec2s){x, y}, "  V            Toggle paint mode"); y -= line_height;
+    text_draw((vec2s){x, y}, "QUAD EDITING"); y -= line_height;
+
+    y -= line_height * 0.5f;
+    text_draw((vec2s){x, y}, "  I            Toggle solid"); y -= line_height;
+    text_draw((vec2s){x, y}, "  Shift+I      Toggle invisible"); y -= line_height;
+    text_draw((vec2s){x, y}, "  Shift+B      Toggle billboard"); y -= line_height;
+    text_draw((vec2s){x, y}, "  1 / 2 / 3    Adjust quad RGB"); y -= line_height;
+    text_draw((vec2s){x, y}, "  0            Cycle texture ID"); y -= line_height;
+    text_draw((vec2s){x, y}, "  7 / 8 / 9    Rotate quad X/Y/Z"); y -= line_height;
+    text_draw((vec2s){x, y}, "  Shift+7/8/9  Reverse rotate X/Y/Z"); y -= line_height;
+    text_draw((vec2s){x, y}, "QUAD PROPERTIES"); y -= line_height;
+
+    y -= line_height * 0.5f;
+    text_draw((vec2s){x, y}, "  Q            Next sector"); y -= line_height;
+    text_draw((vec2s){x, y}, "  Shift+Q      Previous sector"); y -= line_height;
+    text_draw((vec2s){x, y}, "  P            Increase portal ID"); y -= line_height;
+    text_draw((vec2s){x, y}, "  Shift+P      Decrease portal ID"); y -= line_height;
+    text_draw((vec2s){x, y}, "  Ctrl+P       Flip portal side"); y -= line_height;
+    text_draw((vec2s){x, y}, "  4 / 5 / 6    Adjust sector light RGB"); y -= line_height;
+    text_draw((vec2s){x, y}, "SECTORS & PORTALS"); y -= line_height;
 }
 
 void editor_save(level_data_t* level)

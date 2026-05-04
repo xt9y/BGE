@@ -327,8 +327,9 @@ void RENDER()
     glfwGetFramebufferSize(state.win, &fbw, &fbh);
     glfwGetWindowSize(state.win, &state.fb->ww, &state.fb->wh);
 
-    const i32 rw = (i32)((f32)fbw * RENDER_SCALE);
-    const i32 rh = (i32)((f32)fbh * RENDER_SCALE);
+    const f32 aspect = (f32)fbw / (f32)fbh;
+    const i32 rw = RENDER_BASE_W;
+    const i32 rh = (i32)((f32)RENDER_BASE_W / aspect);
 
     fbo_resize(rw, rh);
     state.fb->w = rw;

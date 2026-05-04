@@ -1,3 +1,9 @@
+ifeq ($(OS),Windows_NT)
+    EXE = cmake-build-debug/Debug/openglc.exe
+else
+    EXE = cmake-build-debug/openglc
+endif
+
 all: deps configure build run
 
 deps:
@@ -10,11 +16,10 @@ build:
 	cmake --build cmake-build-debug --target openglc
 
 run:
-	./cmake-build-debug/openglc
+	$(EXE)
 
 clean:
-	rm -rf cmake-build-debug/
-	rm -rf compile_commands.json
+	rm -rf cmake-build-debug compile_commands.json
 
 add:
 	git status

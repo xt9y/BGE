@@ -206,7 +206,7 @@ static void render_debug_shots(void)
 {
     f32 now = (f32)glfwGetTime();
     f32 verts[MAX_DEBUG_SHOTS * 32 * 8];
-    i32 total = 0, line_count = 0;
+    i32 line_verts = 0, tri_verts = 0;
 
     for (i32 i = 0; i < MAX_DEBUG_SHOTS; i++)
     {
@@ -214,22 +214,30 @@ static void render_debug_shots(void)
         if (now - g_debug_shots[i].time > 4.0f) { g_debug_shots[i].active = false; continue; }
 
         f32 r = g_debug_shots[i].r, gr = g_debug_shots[i].g, b = g_debug_shots[i].b;
-        vec3s n = g_debug_shots[i].normal;
 
         for (i32 j = 0; j < g_debug_shots[i].point_count - 1; j += 2)
         {
             vec3s a = g_debug_shots[i].points[j];
             vec3s pb = g_debug_shots[i].points[j+1];
-            verts[total*8+0]=a.x; verts[total*8+1]=a.y; verts[total*8+2]=a.z;
-            verts[total*8+3]=r; verts[total*8+4]=gr; verts[total*8+5]=b;
-            verts[total*8+6]=0; verts[total*8+7]=0; total++;
-            verts[total*8+0]=pb.x; verts[total*8+1]=pb.y; verts[total*8+2]=pb.z;
-            verts[total*8+3]=r; verts[total*8+4]=gr; verts[total*8+5]=b;
-            verts[total*8+6]=0; verts[total*8+7]=0; total++;
-            line_count += 2;
+            i32 n = line_verts;
+            verts[n*8+0]=a.x; verts[n*8+1]=a.y; verts[n*8+2]=a.z;
+            verts[n*8+3]=r; verts[n*8+4]=gr; verts[n*8+5]=b;
+            verts[n*8+6]=0; verts[n*8+7]=0; line_verts++;
+            verts[n*8+8]=pb.x; verts[n*8+9]=pb.y; verts[n*8+10]=pb.z;
+            verts[n*8+11]=r; verts[n*8+12]=gr; verts[n*8+13]=b;
+            verts[n*8+14]=0; verts[n*8+15]=0; line_verts++;
         }
+    }
 
+    for (i32 i = 0; i < MAX_DEBUG_SHOTS; i++)
+    {
+        if (!g_debug_shots[i].active) continue;
+        if (now - g_debug_shots[i].time > 4.0f) continue;
+
+        f32 r = g_debug_shots[i].r, gr = g_debug_shots[i].g, b = g_debug_shots[i].b;
+        vec3s n = g_debug_shots[i].normal;
         vec3s h = g_debug_shots[i].points[g_debug_shots[i].point_count - 1];
+
         vec3s up = {0,1,0};
         if (fabsf(vec3_dot(n, up)) > 0.99f) up = (vec3s){0,0,1};
         vec3s right = vec3_normalize(vec3_cross(n, up));
@@ -244,12 +252,14 @@ static void render_debug_shots(void)
         i32 idx[] = {0,1,2, 0,2,3};
         for (i32 ti = 0; ti < 6; ti++) {
             vec3s c = corners[idx[ti]];
-            verts[total*8+0]=c.x; verts[total*8+1]=c.y; verts[total*8+2]=c.z;
-            verts[total*8+3]=r; verts[total*8+4]=gr; verts[total*8+5]=b;
-            verts[total*8+6]=0; verts[total*8+7]=0; total++;
+            i32 n = line_verts + tri_verts;
+            verts[n*8+0]=c.x; verts[n*8+1]=c.y; verts[n*8+2]=c.z;
+            verts[n*8+3]=r; verts[n*8+4]=gr; verts[n*8+5]=b;
+            verts[n*8+6]=0; verts[n*8+7]=0; tri_verts++;
         }
     }
 
+    i32 total = line_verts + tri_verts;
     if (!total) return;
 
     glDepthFunc(GL_LEQUAL);
@@ -263,8 +273,8 @@ static void render_debug_shots(void)
     glBindVertexArray(g_debug_vao);
     glBindBuffer(GL_ARRAY_BUFFER, g_debug_vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, total * 8 * sizeof(f32), verts);
-    if (line_count) glDrawArrays(GL_LINES, 0, line_count);
-    if (total > line_count) glDrawArrays(GL_TRIANGLES, line_count, total - line_count);
+    if (line_verts) glDrawArrays(GL_LINES, 0, line_verts);
+    if (tri_verts) glDrawArrays(GL_TRIANGLES, line_verts, tri_verts);
     glBindVertexArray(0);
 
     glDepthFunc(GL_LESS);

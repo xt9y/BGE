@@ -6,6 +6,7 @@
 #include "Engine/res/level1.h"
 #include "Engine/res/level2.h"
 #include "Engine/res/level3.h"
+#include "text.h"
 
 /*
  * TL:DR
@@ -52,6 +53,98 @@
  *  > press w a s d to walk around
  *  > use mouse to look around
  */
+
+static u32 g_gun_vao = 0;
+static u32 g_gun_vbo = 0;
+static u32 g_gun_program = 0;
+
+static void gun_overlay_init(void)
+{
+    vertex_t verts[6] = {
+        {{0,0,0}, {0,0}, {1,1,1,1}},
+        {{1,1,0}, {1,1}, {1,1,1,1}},
+        {{1,0,0}, {1,0}, {1,1,1,1}},
+        {{0,0,0}, {0,0}, {1,1,1,1}},
+        {{0,1,0}, {0,1}, {1,1,1,1}},
+        {{1,1,0}, {1,1}, {1,1,1,1}},
+    };
+
+    glGenVertexArrays(1, &g_gun_vao);
+    glGenBuffers(1, &g_gun_vbo);
+    glBindVertexArray(g_gun_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_gun_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*)(sizeof(f32) * 3));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (void*)(sizeof(f32) * 5));
+    glBindVertexArray(0);
+
+    g_gun_program = text_get_program();
+}
+
+static void render_gun_overlay(i32 rw, i32 rh)
+{
+    if (state.id != STATE_PLAYING) return;
+    if (!g_gun_vao) return;
+
+    const texture_t* tex = &state.text->textures[10];
+    if (tex->width <= 0 || tex->height <= 0) return;
+
+    static f32 swing = 0.0f, swing_vel = 0.0f;
+    static bool a_prev = false, d_prev = false;
+    bool a_down = glfwGetKey(state.win, GLFW_KEY_A) == GLFW_PRESS;
+    bool d_down = glfwGetKey(state.win, GLFW_KEY_D) == GLFW_PRESS;
+
+    if (a_down && !a_prev) swing_vel = -120.0f;
+    if (d_down && !d_prev) swing_vel = 120.0f;
+    a_prev = a_down;
+    d_prev = d_down;
+
+    swing_vel += (-150.0f * swing - 12.0f * swing_vel) * state.dt;
+    swing += swing_vel * state.dt;
+
+    f32 t = (f32)glfwGetTime();
+    f32 aspect = (f32)tex->width / (f32)tex->height;
+    f32 gh = (f32)rh * 0.45f;
+    f32 gw = gh * aspect;
+    f32 gx = (rw - gw) * 0.5f + sinf(t * 1.8f) * 3.0f + swing;
+    f32 gy = (f32)rh - gh + cosf(t * 2.2f) * 2.5f;
+
+    f32 proj[16];
+    mat4_ortho(proj, 0.0f, (f32)rw, (f32)rh, 0.0f, -1.0f, 1.0f);
+
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glUseProgram(g_gun_program);
+    glUniformMatrix4fv(glGetUniformLocation(g_gun_program, "u_proj"), 1, GL_FALSE, proj);
+    glUniform1i(glGetUniformLocation(g_gun_program, "u_font"), 0);
+
+    texture_bind((texture_t*)tex, 0);
+
+    vertex_t verts[6] = {
+        {{gx, gy, 0}, {0, 0}, {1,1,1,1}},
+        {{gx+gw, gy+gh, 0}, {1, 1}, {1,1,1,1}},
+        {{gx+gw, gy, 0}, {1, 0}, {1,1,1,1}},
+        {{gx, gy, 0}, {0, 0}, {1,1,1,1}},
+        {{gx, gy+gh, 0}, {0, 1}, {1,1,1,1}},
+        {{gx+gw, gy+gh, 0}, {1, 1}, {1,1,1,1}},
+    };
+
+    glBindVertexArray(g_gun_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_gun_vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+}
 
 void apply_level_camera(camera_t *cam, level_data_t *level)
 {
@@ -288,7 +381,9 @@ void RUN()
         state.text->textures[state.text->count++] = *texture_create("Engine/res/spider.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
         state.text->textures[state.text->count++] = *texture_create("Engine/res/banana.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
         state.text->textures[state.text->count++] = *texture_create("Engine/res/water.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+        state.text->textures[state.text->count++] = *texture_create("Engine/res/gun_doom.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
         text_init();
+        gun_overlay_init();
     }
 
     {   // Levels
@@ -352,6 +447,8 @@ void RENDER()
     render_portals(state.editor->level, state.cam, 0, 0);
     level_render(state.editor->level, state.cam);
     if (state.id == STATE_EDITOR) editor_render_borders();
+
+    render_gun_overlay(rw, rh);
 
     post_blit(rw, rh, fbw, fbh);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

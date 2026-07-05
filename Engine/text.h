@@ -68,5 +68,6 @@ void text_shutdown();
 void text_begin();
 void text_draw(vec2s pos, const char* fmt, ...);
 void text_flush(int fbw, int fbh);
+u32 text_get_program(void);
 
 #endif

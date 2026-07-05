@@ -316,6 +316,11 @@ void text_init()
     glBindVertexArray(0);
 }
 
+u32 text_get_program(void)
+{
+    return g_text_program;
+}
+
 void text_shutdown(void)
 {
     if (g_text_vbo) glDeleteBuffers(1, &g_text_vbo);

@@ -104,7 +104,7 @@ static inline level_data_t load_3(void)
         .path = "level3.h",
         .sectors = level3_sectors,
         .sector_count = sizeof(level3_sectors) / sizeof(level3_sectors[0]),
-        .cam = { .pos = {24.238f, 3.500f, 14.439f}, .yaw = 183.917f, .pitch = -12.700f }
+        .cam = { .pos = {-11.497f, 3.500f, 14.347f}, .yaw = -8.283f, .pitch = -7.400f }
     };
 }
 

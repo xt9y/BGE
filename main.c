@@ -8,6 +8,8 @@
 #include "Engine/res/level3.h"
 #include "text.h"
 
+static vec3s quad_world_normal(const level_quad_t* q);
+
 /*
  * TL:DR
  * > start with 'make'
@@ -84,6 +86,144 @@ static void gun_overlay_init(void)
     glBindVertexArray(0);
 
     g_gun_program = text_get_program();
+}
+
+#define MAX_DEBUG_SHOTS 64
+
+typedef struct {
+    vec3s origin, hit, normal;
+    f32 time;
+    f32 r, g, b;
+    bool active;
+} debug_shot_t;
+
+static debug_shot_t g_debug_shots[MAX_DEBUG_SHOTS];
+static u32 g_debug_vao = 0;
+static u32 g_debug_vbo = 0;
+
+static void debug_init(void)
+{
+    glGenVertexArrays(1, &g_debug_vao);
+    glGenBuffers(1, &g_debug_vbo);
+    glBindVertexArray(g_debug_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_debug_vbo);
+    glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_SHOTS * 8 * 8 * (i32)sizeof(f32), NULL, GL_DYNAMIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(3 * sizeof(f32)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(6 * sizeof(f32)));
+    glBindVertexArray(0);
+}
+
+static void shoot_bullet(void)
+{
+    if (state.id != STATE_PLAYING) return;
+
+    f32 nearest_t = 1e10f;
+    vec3s hit_point = {0}, hit_normal = {0};
+    bool hit_anything = false;
+
+    for (i32 s = 0; s < state.editor->level->sector_count; s++)
+    {
+        const level_sector_data_t* sector = &state.editor->level->sectors[s];
+        for (i32 q = 0; q < sector->quad_count; q++)
+        {
+            const level_quad_t* quad = &sector->quads[q];
+            if (quad->is_invisible || quad->portal_id > 0) continue;
+            f32 t; vec3s hit;
+            if (level_ray_intersects_quad(state.cam->pos, state.cam->front, quad, &t, &hit, NULL) && t > 0.0f && t < nearest_t) {
+                nearest_t = t;
+                hit_point = hit;
+                hit_normal = quad_world_normal(quad);
+                hit_anything = true;
+            }
+        }
+    }
+
+    if (!hit_anything) return;
+
+    i32 slot = 0;
+    f32 oldest = g_debug_shots[0].time;
+    for (i32 i = 0; i < MAX_DEBUG_SHOTS; i++) {
+        if (!g_debug_shots[i].active) { slot = i; break; }
+        if (g_debug_shots[i].time < oldest) { oldest = g_debug_shots[i].time; slot = i; }
+    }
+
+    g_debug_shots[slot].origin = state.cam->pos;
+    g_debug_shots[slot].hit = hit_point;
+    g_debug_shots[slot].normal = hit_normal;
+    g_debug_shots[slot].time = (f32)glfwGetTime();
+    g_debug_shots[slot].r = (f32)(rand() % 256) / 255.0f;
+    g_debug_shots[slot].g = (f32)(rand() % 256) / 255.0f;
+    g_debug_shots[slot].b = (f32)(rand() % 256) / 255.0f;
+    g_debug_shots[slot].active = true;
+}
+
+static void render_debug_shots(void)
+{
+    f32 now = (f32)glfwGetTime();
+    f32 verts[MAX_DEBUG_SHOTS * 8 * 8];
+    i32 total = 0, line_count = 0;
+
+    for (i32 i = 0; i < MAX_DEBUG_SHOTS; i++)
+    {
+        if (!g_debug_shots[i].active) continue;
+        if (now - g_debug_shots[i].time > 4.0f) { g_debug_shots[i].active = false; continue; }
+
+        f32 r = g_debug_shots[i].r, gr = g_debug_shots[i].g, b = g_debug_shots[i].b;
+        vec3s o = g_debug_shots[i].origin, h = g_debug_shots[i].hit, n = g_debug_shots[i].normal;
+
+        verts[total*8+0]=o.x; verts[total*8+1]=o.y; verts[total*8+2]=o.z;
+        verts[total*8+3]=r; verts[total*8+4]=gr; verts[total*8+5]=b;
+        verts[total*8+6]=0; verts[total*8+7]=0; total++;
+        verts[total*8+0]=h.x; verts[total*8+1]=h.y; verts[total*8+2]=h.z;
+        verts[total*8+3]=r; verts[total*8+4]=gr; verts[total*8+5]=b;
+        verts[total*8+6]=0; verts[total*8+7]=0; total++;
+        line_count += 2;
+
+        vec3s up = {0,1,0};
+        if (fabsf(vec3_dot(n, up)) > 0.99f) up = (vec3s){0,0,1};
+        vec3s right = vec3_normalize(vec3_cross(n, up));
+        vec3s bt = vec3_cross(n, right);
+        f32 s = 0.12f;
+        vec3s corners[4] = {
+            vec3_add(vec3_add(h, vec3_scale(right,-s)), vec3_scale(bt,-s)),
+            vec3_add(vec3_add(h, vec3_scale(right, s)), vec3_scale(bt,-s)),
+            vec3_add(vec3_add(h, vec3_scale(right, s)), vec3_scale(bt, s)),
+            vec3_add(vec3_add(h, vec3_scale(right,-s)), vec3_scale(bt, s)),
+        };
+        i32 idx[] = {0,1,2, 0,2,3};
+        for (i32 ti = 0; ti < 6; ti++) {
+            vec3s c = corners[idx[ti]];
+            verts[total*8+0]=c.x; verts[total*8+1]=c.y; verts[total*8+2]=c.z;
+            verts[total*8+3]=r; verts[total*8+4]=gr; verts[total*8+5]=b;
+            verts[total*8+6]=0; verts[total*8+7]=0; total++;
+        }
+    }
+
+    if (!total) return;
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_STENCIL_TEST);
+
+    glUseProgram(state.data->program);
+    f32 identity[16];
+    mat4_identity(identity);
+    glUniformMatrix4fv(state.data->u_model, 1, GL_FALSE, identity);
+    texture_bind(&state.text->textures[3], 0);
+
+    glBindVertexArray(g_debug_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_debug_vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, total * 8 * sizeof(f32), verts);
+    if (line_count) glDrawArrays(GL_LINES, 0, line_count);
+    if (total > line_count) glDrawArrays(GL_TRIANGLES, line_count, total - line_count);
+    glBindVertexArray(0);
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
 }
 
 static void render_gun_overlay(i32 rw, i32 rh)
@@ -384,6 +524,7 @@ void RUN()
         state.text->textures[state.text->count++] = *texture_create("Engine/res/gun_doom.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
         text_init();
         gun_overlay_init();
+        debug_init();
     }
 
     {   // Levels
@@ -448,6 +589,7 @@ void RENDER()
     level_render(state.editor->level, state.cam);
     if (state.id == STATE_EDITOR) editor_render_borders();
 
+    render_debug_shots();
     render_gun_overlay(rw, rh);
 
     post_blit(rw, rh, fbw, fbh);
@@ -487,6 +629,15 @@ void INPUT()
                 } tab_pressed = true;
             }
         } else tab_pressed = false;
+    }
+
+    { // Mouse - Shoot
+        static bool shoot_pressed = false;
+        if (state.id == STATE_PLAYING && state.cursor_locked) {
+            if (glfwGetMouseButton(state.win, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+                if (!shoot_pressed) { shoot_bullet(); shoot_pressed = true; }
+            } else shoot_pressed = false;
+        } else shoot_pressed = false;
     }
 
     { // E - Toggle editor/playing

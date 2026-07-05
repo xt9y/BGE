@@ -153,8 +153,9 @@ void GL_START()
     state.data      = malloc(sizeof(*state.data));       memset(state.data,     0, sizeof(*state.data));
     state.cam       = malloc(sizeof(*state.cam));        memset(state.cam,      0, sizeof(*state.cam));
     state.text      = malloc(sizeof(*state.text));       memset(state.text,     0, sizeof(*state.text));
+    state.gun       = malloc(sizeof(*state.gun));        memset(state.gun,      0, sizeof(*state.gun));
     state.editor    = malloc(sizeof(*state.editor));     memset(state.editor,   0, sizeof(*state.editor));
-    ASSERT(state.fb && state.data && state.cam && state.text && state.editor);
+    ASSERT(state.fb && state.data && state.cam && state.text && state.gun && state.editor);
 
     glfwGetWindowContentScale(state.win, &state.fb->scale, NULL);
     glfwGetWindowSize(state.win, &state.fb->ww, &state.fb->wh);
@@ -200,12 +201,14 @@ void GL_END()
     text_shutdown();
     glfwTerminate();
     if (state.data) glDeleteProgram(state.data->program);
-    if (state.text) free(state.text);
-    if (state.cam)  free(state.cam);
-    if (state.data) free(state.data);
-    if (state.fb)   free(state.fb);
+    if (state.text)   free(state.text);
+    if (state.gun)    free(state.gun);
+    if (state.cam)    free(state.cam);
+    if (state.data)   free(state.data);
+    if (state.fb)     free(state.fb);
     if (state.editor) free(state.editor);
     state.text   = 0;
+    state.gun    = 0;
     state.cam    = 0;
     state.data   = 0;
     state.fb     = 0;

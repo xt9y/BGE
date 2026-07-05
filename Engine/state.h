@@ -9,6 +9,7 @@
 
 #include "editor.h"
 #include "level.h"
+#include "gun.h"
 
 typedef enum {
     STATE_MENU,
@@ -39,6 +40,7 @@ typedef struct {
     editor_t* editor;
 
     texture_registry_t* text;
+    gun_registry_t* gun;
 
     vertex_t text_vertices[MAX_TEXT_VERTICES];
     u32 text_vertex_count;

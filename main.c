@@ -89,9 +89,12 @@ static void gun_overlay_init(void)
 }
 
 #define MAX_DEBUG_SHOTS 64
+#define MAX_PATH_POINTS 8
 
 typedef struct {
-    vec3s origin, hit, normal;
+    vec3s points[MAX_PATH_POINTS];
+    i32 point_count;
+    vec3s normal;
     f32 time;
     f32 r, g, b;
     bool active;
@@ -107,7 +110,7 @@ static void debug_init(void)
     glGenBuffers(1, &g_debug_vbo);
     glBindVertexArray(g_debug_vao);
     glBindBuffer(GL_ARRAY_BUFFER, g_debug_vbo);
-    glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_SHOTS * 8 * 8 * (i32)sizeof(f32), NULL, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_SHOTS * 32 * 8 * (i32)sizeof(f32), NULL, GL_DYNAMIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)0);
@@ -122,28 +125,65 @@ static void shoot_bullet(void)
 {
     if (state.id != STATE_PLAYING) return;
 
-    f32 nearest_t = 1e10f;
-    vec3s hit_point = {0}, hit_normal = {0};
-    bool hit_anything = false;
+    vec3s origin = state.cam->pos;
+    vec3s dir = state.cam->front;
+    bool used_portals[256] = {false};
+    vec3s path[MAX_PATH_POINTS];
+    i32 path_count = 0;
+    path[path_count++] = origin;
+    vec3s final_normal = {0};
+    bool hit_wall = false;
 
-    for (i32 s = 0; s < state.editor->level->sector_count; s++)
+    for (i32 depth = 0; depth <= MAX_PORTAL_DEPTH && !hit_wall && path_count < MAX_PATH_POINTS; depth++)
     {
-        const level_sector_data_t* sector = &state.editor->level->sectors[s];
-        for (i32 q = 0; q < sector->quad_count; q++)
+        f32 nearest_t = 1e10f;
+        vec3s nearest_hit = {0};
+        const level_quad_t* nearest_quad = NULL;
+
+        for (i32 s = 0; s < state.editor->level->sector_count; s++)
         {
-            const level_quad_t* quad = &sector->quads[q];
-            if (quad->is_invisible || quad->portal_id > 0) continue;
-            f32 t; vec3s hit;
-            if (level_ray_intersects_quad(state.cam->pos, state.cam->front, quad, &t, &hit, NULL) && t > 0.0f && t < nearest_t) {
-                nearest_t = t;
-                hit_point = hit;
-                hit_normal = quad_world_normal(quad);
-                hit_anything = true;
+            const level_sector_data_t* sector = &state.editor->level->sectors[s];
+            for (i32 q = 0; q < sector->quad_count; q++)
+            {
+                const level_quad_t* quad = &sector->quads[q];
+                if (quad->is_invisible) continue;
+                if (quad->portal_id > 0 && used_portals[quad->portal_id]) continue;
+
+                f32 t; vec3s hit;
+                if (level_ray_intersects_quad(origin, dir, quad, &t, &hit, NULL) && t > 0.001f && t < nearest_t) {
+                    nearest_t = t;
+                    nearest_hit = hit;
+                    nearest_quad = quad;
+                }
             }
         }
+
+        if (!nearest_quad) break;
+
+        path[path_count++] = nearest_hit;
+
+        if (nearest_quad->portal_id <= 0)
+        {
+            final_normal = quad_world_normal(nearest_quad);
+            hit_wall = true;
+            break;
+        }
+
+        portal_link_t link;
+        if (!portal_find_link(state.editor->level, nearest_quad, &link) || link.src != nearest_quad) break;
+
+        used_portals[nearest_quad->portal_id] = true;
+
+        camera_t in = { .pos = origin, .front = dir, .up = {0, 1, 0} };
+        camera_t out;
+        if (!portal_build_camera(link.src, link.dst, &in, &out)) break;
+
+        origin = out.pos;
+        dir = out.front;
+        if (path_count < MAX_PATH_POINTS) path[path_count++] = origin;
     }
 
-    if (!hit_anything) return;
+    if (!hit_wall) return;
 
     i32 slot = 0;
     f32 oldest = g_debug_shots[0].time;
@@ -152,9 +192,9 @@ static void shoot_bullet(void)
         if (g_debug_shots[i].time < oldest) { oldest = g_debug_shots[i].time; slot = i; }
     }
 
-    g_debug_shots[slot].origin = state.cam->pos;
-    g_debug_shots[slot].hit = hit_point;
-    g_debug_shots[slot].normal = hit_normal;
+    for (i32 i = 0; i < path_count; i++) g_debug_shots[slot].points[i] = path[i];
+    g_debug_shots[slot].point_count = path_count;
+    g_debug_shots[slot].normal = final_normal;
     g_debug_shots[slot].time = (f32)glfwGetTime();
     g_debug_shots[slot].r = (f32)(rand() % 256) / 255.0f;
     g_debug_shots[slot].g = (f32)(rand() % 256) / 255.0f;
@@ -165,7 +205,7 @@ static void shoot_bullet(void)
 static void render_debug_shots(void)
 {
     f32 now = (f32)glfwGetTime();
-    f32 verts[MAX_DEBUG_SHOTS * 8 * 8];
+    f32 verts[MAX_DEBUG_SHOTS * 32 * 8];
     i32 total = 0, line_count = 0;
 
     for (i32 i = 0; i < MAX_DEBUG_SHOTS; i++)
@@ -174,16 +214,22 @@ static void render_debug_shots(void)
         if (now - g_debug_shots[i].time > 4.0f) { g_debug_shots[i].active = false; continue; }
 
         f32 r = g_debug_shots[i].r, gr = g_debug_shots[i].g, b = g_debug_shots[i].b;
-        vec3s o = g_debug_shots[i].origin, h = g_debug_shots[i].hit, n = g_debug_shots[i].normal;
+        vec3s n = g_debug_shots[i].normal;
 
-        verts[total*8+0]=o.x; verts[total*8+1]=o.y; verts[total*8+2]=o.z;
-        verts[total*8+3]=r; verts[total*8+4]=gr; verts[total*8+5]=b;
-        verts[total*8+6]=0; verts[total*8+7]=0; total++;
-        verts[total*8+0]=h.x; verts[total*8+1]=h.y; verts[total*8+2]=h.z;
-        verts[total*8+3]=r; verts[total*8+4]=gr; verts[total*8+5]=b;
-        verts[total*8+6]=0; verts[total*8+7]=0; total++;
-        line_count += 2;
+        for (i32 j = 0; j < g_debug_shots[i].point_count - 1; j += 2)
+        {
+            vec3s a = g_debug_shots[i].points[j];
+            vec3s pb = g_debug_shots[i].points[j+1];
+            verts[total*8+0]=a.x; verts[total*8+1]=a.y; verts[total*8+2]=a.z;
+            verts[total*8+3]=r; verts[total*8+4]=gr; verts[total*8+5]=b;
+            verts[total*8+6]=0; verts[total*8+7]=0; total++;
+            verts[total*8+0]=pb.x; verts[total*8+1]=pb.y; verts[total*8+2]=pb.z;
+            verts[total*8+3]=r; verts[total*8+4]=gr; verts[total*8+5]=b;
+            verts[total*8+6]=0; verts[total*8+7]=0; total++;
+            line_count += 2;
+        }
 
+        vec3s h = g_debug_shots[i].points[g_debug_shots[i].point_count - 1];
         vec3s up = {0,1,0};
         if (fabsf(vec3_dot(n, up)) > 0.99f) up = (vec3s){0,0,1};
         vec3s right = vec3_normalize(vec3_cross(n, up));
@@ -206,8 +252,7 @@ static void render_debug_shots(void)
 
     if (!total) return;
 
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_STENCIL_TEST);
+    glDepthFunc(GL_LEQUAL);
 
     glUseProgram(state.data->program);
     f32 identity[16];
@@ -222,8 +267,7 @@ static void render_debug_shots(void)
     if (total > line_count) glDrawArrays(GL_TRIANGLES, line_count, total - line_count);
     glBindVertexArray(0);
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_STENCIL_TEST);
+    glDepthFunc(GL_LESS);
 }
 
 static void render_gun_overlay(i32 rw, i32 rh)
@@ -470,6 +514,7 @@ static void render_portals(const level_data_t* level, const camera_t* cam, i32 d
             glUniformMatrix4fv(state.data->u_proj, 1, GL_FALSE, proj);
 
             level_render(level, &portal_cam);
+            render_debug_shots();
 
             set_camera_uniforms(cam);
 

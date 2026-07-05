@@ -51,6 +51,8 @@ typedef struct {
 
     vertex_t wall_vertices[MAX_WALL_VERTICES];
     u32 wall_vertex_count;
+
+    bool debug_visible;
 } state_t;
 
 extern state_t state;

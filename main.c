@@ -141,6 +141,13 @@ void INPUT()
         if (glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id = STATE_EXIT;
     }
 
+    { // H - Toggle debug bullet visualization
+        static bool h_pressed = false;
+        if (glfwGetKey(state.win, GLFW_KEY_H) == GLFW_PRESS) {
+            if (!h_pressed) { state.debug_visible = !state.debug_visible; h_pressed = true; }
+        } else h_pressed = false;
+    }
+
     { // TAB - Toggle cursor lock
         static bool tab_pressed = false;
         if (glfwGetKey(state.win, GLFW_KEY_TAB) == GLFW_PRESS) {

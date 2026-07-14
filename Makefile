@@ -25,3 +25,9 @@ add:
 	git status
 	git add Makefile README.md *.c *.h Engine/*.c Engine/util/*.c Engine/util/*.h Engine/*.h Engine/res/*.h Engine/res/*.png
 	git status
+
+push: 
+	git push origin opengl-example-game-engine
+
+cloc:
+	cloc --include-ext=c,h main.c Engine

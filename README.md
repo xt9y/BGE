@@ -9,3 +9,4 @@
 #### NOTES:
 - `git clone --recursive ...` is required to fetch the GLFW submodule.
 - Linux build requirements : OpenGL loader/headers, X11
+    -> `pacman -S libx11 libxrandr libxi libxcursor libxinerama xorgproto mesa mesa-utils libglvnd`

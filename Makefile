@@ -10,7 +10,14 @@ deps:
 	git submodule update --init --recursive
 
 configure:
+	cmake -S . -B cmake-build-debug || \
+	cmake -S . -B cmake-build-debug -DUSE_EGL=ON
+
+configure-glx:
 	cmake -S . -B cmake-build-debug
+
+configure-egl:
+	cmake -S . -B cmake-build-debug -DUSE_EGL=ON
 
 build:
 	cmake --build cmake-build-debug --target openglc

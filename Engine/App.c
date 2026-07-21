@@ -132,11 +132,12 @@ void GL_START()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
-#if defined(GLFW_PLATFORM_X11)
-    glfwWindowHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
-#endif
 
     state.win = glfwCreateWindow(WIDTH, HEIGHT, TITLE, 0, 0);
+    if (!state.win) {
+        glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+        state.win = glfwCreateWindow(WIDTH, HEIGHT, TITLE, 0, 0);
+    }
     ASSERT(state.win);
 
     glfwMakeContextCurrent(state.win);

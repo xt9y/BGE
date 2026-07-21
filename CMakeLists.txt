@@ -10,6 +10,13 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_X11 ON CACHE BOOL "" FORCE)
+
+option(USE_EGL "Use EGL backend instead of GLX" OFF)
+if(USE_EGL)
+    set(GLFW_USE_EGL ON CACHE BOOL "" FORCE)
+    add_compile_definitions(USE_EGL=1)
+endif()
+
 add_subdirectory(Vendor/glfw)
 
 add_subdirectory(Engine)

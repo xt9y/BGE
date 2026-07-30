@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
-project(openglc C)
+project(openglc C CXX)
 
 set(CMAKE_C_STANDARD 99)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w -DGL_SILENCE_DEPRECATION")
 
@@ -18,6 +19,7 @@ if(USE_EGL)
 endif()
 
 add_subdirectory(Vendor/glfw)
+add_subdirectory(Vendor/imgui)
 
 add_subdirectory(Engine)
 

@@ -1,6 +1,8 @@
 #include "App.h"
 #include "level.h"
 #include "state.h"
+#include "render.h"
+#include "imgui_c.h"
 #include <glad/glad.h>
 #include "util/types.h"
 #include "cam.h"
@@ -85,11 +87,24 @@ void editor_add_quad(level_sector_data_t* sector, const level_quad_t* template)
     state.editor->selected_quad = &sector->quads[sector->quad_count - 1];
     state.editor->selected_sector = sector;
     state.editor->selected_wall_idx = sector->quad_count - 1;
+    editor_open_wall_window(sector->id, sector->quad_count - 1);
 }
 
 void editor_delete_quad(level_sector_data_t* sector, i32 idx) 
 {
     if (!sector || idx < 0 || idx >= sector->quad_count) return;
+
+    for (i32 i = 0; i < state.editor->ui_wall_window_count; i++) {
+        editor_wall_window_t* w = &state.editor->ui_wall_windows[i];
+        if (w->sector_id != sector->id) continue;
+        if (w->quad_idx == idx) {
+            *w = state.editor->ui_wall_windows[--state.editor->ui_wall_window_count];
+            i--;
+        } else if (w->quad_idx > idx) {
+            w->quad_idx--;
+        }
+    }
+
     for (i32 i = idx; i < sector->quad_count - 1; i++) sector->quads[i] = sector->quads[i + 1];    
     sector->quad_count--;
 }
@@ -113,6 +128,7 @@ level_sector_data_t* get_sector_by_id(i32 id)
 
 void editor_move_quad_to_sector(level_sector_data_t* old_sector, level_sector_data_t* new_sector, i32 quad_idx) {
     if (!old_sector || !new_sector || quad_idx < 0 || quad_idx >= old_sector->quad_count) return;
+    bool sel_was_moved = state.editor->selected_quad == &old_sector->quads[quad_idx];
     old_sector->quads[quad_idx].sector_id = new_sector->id;
     
     if (new_sector->quad_capacity <= new_sector->quad_count) {
@@ -128,6 +144,385 @@ void editor_move_quad_to_sector(level_sector_data_t* old_sector, level_sector_da
     
     for (i32 i = quad_idx; i < old_sector->quad_count - 1; i++) old_sector->quads[i] = old_sector->quads[i + 1];
     old_sector->quad_count--;
+
+    for (i32 i = 0; i < state.editor->ui_wall_window_count; i++) {
+        editor_wall_window_t* w = &state.editor->ui_wall_windows[i];
+        if (w->sector_id != old_sector->id) continue;
+        if (w->quad_idx == quad_idx) { w->sector_id = new_sector->id; w->quad_idx = new_sector->quad_count - 1; }
+        else if (w->quad_idx > quad_idx) w->quad_idx--;
+    }
+
+    if (sel_was_moved) {
+        state.editor->selected_quad = &new_sector->quads[new_sector->quad_count - 1];
+        state.editor->selected_sector = new_sector;
+        state.editor->selected_wall_idx = new_sector->quad_count - 1;
+    }
+}
+
+void editor_sync_template_from_selection(void)
+{
+    if (state.editor->selected_quad) {
+        state.editor->template_quad = *state.editor->selected_quad;
+        state.editor->template_mods = EDITOR_MOD_ALL;
+    }
+}
+
+static void editor_sync_template_from_quad(const level_quad_t* q)
+{
+    if (!q) return;
+    state.editor->template_quad = *q;
+    state.editor->template_mods = EDITOR_MOD_ALL;
+}
+
+static i32 sector_idx_by_id(level_data_t* level, i32 id)
+{
+    for (i32 i = 0; i < level->sector_count; i++)
+        if (level->sectors[i].id == id) return i;
+    return -1;
+}
+
+void editor_open_wall_window(i32 sector_id, i32 quad_idx)
+{
+    for (i32 i = 0; i < state.editor->ui_wall_window_count; i++)
+        if (state.editor->ui_wall_windows[i].sector_id == sector_id &&
+            state.editor->ui_wall_windows[i].quad_idx == quad_idx) return;
+    if (state.editor->ui_wall_window_count >= MAX_WALL_WINDOWS) return;
+
+    static u32 g_next_wall_window_id = 1;
+    editor_wall_window_t* w = &state.editor->ui_wall_windows[state.editor->ui_wall_window_count++];
+    w->id = g_next_wall_window_id++;
+    w->sector_id = sector_id;
+    w->quad_idx = quad_idx;
+}
+
+static level_quad_t* wall_window_quad(const editor_wall_window_t* w, level_sector_data_t** out_sector, i32* out_sector_idx)
+{
+    if (!w) return NULL;
+    i32 si = sector_idx_by_id(state.editor->level, w->sector_id);
+    if (si < 0 || w->quad_idx < 0 || w->quad_idx >= state.editor->level->sectors[si].quad_count) return NULL;
+    if (out_sector) *out_sector = &state.editor->level->sectors[si];
+    if (out_sector_idx) *out_sector_idx = si;
+    return &state.editor->level->sectors[si].quads[w->quad_idx];
+}
+
+static const char* texture_basename(const char* path)
+{
+    if (!path) return "";
+    const char* base = path;
+    for (const char* p = path; *p; p++)
+        if (*p == '/' || *p == '\\') base = p + 1;
+    return base;
+}
+
+static char g_new_level_names[MAX_LEVELS][32];
+static char g_new_level_paths[MAX_LEVELS][32];
+
+void editor_add_level(void)
+{
+    if (state.level_count >= MAX_LEVELS) return;
+    i32 idx = state.level_count;
+
+    snprintf(g_new_level_names[idx], 32, "Level %d", idx + 1);
+    snprintf(g_new_level_paths[idx], 32, "level%d.h", idx + 1);
+
+    level_data_t* lvl = &state.levels[idx];
+    memset(lvl, 0, sizeof(*lvl));
+    lvl->name = g_new_level_names[idx];
+    lvl->path = g_new_level_paths[idx];
+
+    state.editor->selected_sector = NULL;
+    editor_add_sector(lvl);
+    lvl->cam = *state.cam;
+
+    state.level_count++;
+    state.level_id = idx;
+    state.editor->level = lvl;
+    state.editor->selected_quad = NULL;
+    state.editor->ui_sector_open = false;
+    state.editor->portal_link_mode = false;
+    state.editor->portal_link_source = NULL;
+    state.editor->ui_wall_window_count = 0;
+    state.editor->template_quad = get_default_quad(state.cam);
+    state.editor->template_mods = EDITOR_MOD_NONE;
+
+    editor_save(lvl);
+}
+
+void editor_switch_level(i32 idx)
+{
+    if (idx < 0 || idx >= state.level_count || idx == state.level_id) return;
+
+    editor_save(state.editor->level);
+    state.level_id = idx;
+    apply_level_camera(state.cam, &state.levels[idx]);
+    state.cam->firstMouse = true;
+    state.editor->level = &state.levels[idx];
+    state.editor->selected_quad = NULL;
+    state.editor->selected_sector = NULL;
+    state.editor->ui_sector_open = false;
+    state.editor->portal_link_mode = false;
+    state.editor->portal_link_source = NULL;
+    state.editor->ui_wall_window_count = 0;
+    state.editor->template_quad = get_default_quad(state.cam);
+    state.editor->template_mods = EDITOR_MOD_NONE;
+}
+
+static void editor_ui_state(void)
+{
+    imgui_set_next_window_pos(0.0f, 0.0f, IMGUI_COND_ALWAYS);
+    imgui_set_next_window_bg_alpha(0.85f);
+
+    if (imgui_begin("STATE", NULL, IMGUI_WINDOW_ALWAYS_AUTO_RESIZE | IMGUI_WINDOW_NO_MOVE))
+    {
+        imgui_text("FPS: %.1f", GL_GETFPS());
+        imgui_text("POS: %.2f  %.2f  %.2f", state.cam->pos.x, state.cam->pos.y, state.cam->pos.z);
+        imgui_text("YAW: %.1f   PITCH: %.1f", state.cam->yaw, state.cam->pitch);
+        imgui_text("RES: %d x %d   ASPECT: %.3f",
+            state.fb->ww, state.fb->wh,
+            state.fb->wh > 0 ? (f32)state.fb->ww / (f32)state.fb->wh : 0.0f);
+        imgui_text("CURRENT LEVEL ID: %d", state.level_id);
+
+        if (state.id == STATE_EDITOR) {
+            const char* editor_modes[] = { "IDLE", "DRAG", "RESIZE_TOP", "RESIZE_RIGHT", "PAINT" };
+            imgui_text("EDITOR MODE: %s", editor_modes[state.editor->id]);
+        }
+
+        imgui_separator();
+
+        const char* level_names[MAX_LEVELS];
+        for (i32 i = 0; i < state.level_count; i++) level_names[i] = state.levels[i].name ? state.levels[i].name : "?";
+        i32 cur = state.level_id;
+        if (imgui_combo("Level", &cur, level_names, state.level_count))
+            if (cur != state.level_id) editor_switch_level(cur);
+
+        if (imgui_button("Create New Level")) editor_add_level();
+
+        imgui_separator();
+
+        if (imgui_collapsing_header("Hotkey Atlas"))
+        {
+            imgui_text("VIEWPORT");
+            imgui_text("  Click + Drag        Select / move quad");
+            imgui_text("  Ctrl + Click + Drag Resize quad");
+            imgui_text("  V                   Toggle paint mode");
+            imgui_text("  N                   New quad (dup if selected)");
+            imgui_text("  R                   Reset selected quad");
+            imgui_text("  X / Del / Backslash Delete selected quad");
+            imgui_text("  Enter               Deselect selected quad");
+            imgui_text("  7 / 8 / 9           Rotate quad X / Y / Z");
+            imgui_text("  Shift + 7/8/9       Reverse rotate");
+            imgui_separator();
+            imgui_text("GLOBAL");
+            imgui_text("  E                   Toggle editor / play mode");
+            imgui_text("  TAB                 Toggle cursor lock");
+            imgui_text("  WASD                Move camera");
+            imgui_text("  ESC                 Exit");
+        }
+    }
+    imgui_end();
+}
+
+static bool editor_ui_texture_picker(level_quad_t* q)
+{
+    bool changed = false;
+    imgui_text("Choose Texture");
+    const char* cur = (q->tex_id >= 0 && q->tex_id < state.text->count) ? state.text->textures[q->tex_id].name : "none";
+    char label[96];
+    snprintf(label, sizeof(label), "%s  [open atlas]", texture_basename(cur));
+    if (imgui_button(label)) imgui_open_popup("texture_atlas");
+
+    if (imgui_begin_popup("texture_atlas"))
+    {
+        imgui_text("Texture Atlas");
+        imgui_separator();
+        if (imgui_selectable("No Texture (fallback)", q->tex_id < 0)) { q->tex_id = -1; changed = true; imgui_close_current_popup(); }
+
+        if (imgui_begin_child("texgrid", 0.0f, 260.0f, true))
+        {
+            const i32 per_row = 4;
+            i32 col = 0;
+            for (i32 i = 0; i < state.text->count; i++)
+            {
+                texture_t* t = &state.text->textures[i];
+                if (col > 0) imgui_same_line();
+
+                f32 thumb_w = 56.0f, thumb_h = 56.0f;
+                if (t->width > 0 && t->height > 0 && t->width != t->height) {
+                    f32 aspect = (f32)t->width / (f32)t->height;
+                    if (aspect > 1.0f) thumb_h = thumb_w / aspect;
+                    else thumb_w = thumb_h * aspect;
+                }
+
+                imgui_push_id_int(i);
+                bool clicked = imgui_image_button("##tex", t->id, thumb_w, thumb_h);
+                imgui_pop_id();
+                if (clicked) { q->tex_id = i; changed = true; imgui_close_current_popup(); }
+                if (imgui_is_item_hovered()) imgui_set_tooltip("%s", texture_basename(t->name));
+                col++;
+                if (col >= per_row) col = 0;
+            }
+        }
+        imgui_end_child();
+        imgui_end_popup();
+    }
+    return changed;
+}
+
+static bool editor_ui_wall(editor_wall_window_t* w)
+{
+    level_sector_data_t* s = NULL;
+    i32 si = -1;
+    level_quad_t* q = wall_window_quad(w, &s, &si);
+    if (!q) return false;
+
+    imgui_set_next_window_bg_alpha(0.9f);
+    f32 gx = (f32)((w->id - 1) % 3) * 390.0f;
+    f32 gy = (f32)((w->id - 1) / 3) * 400.0f;
+    imgui_set_next_window_pos(380.0f + gx, 10.0f + gy, IMGUI_COND_FIRST_USE_EVER);
+    imgui_set_next_window_size(360.0f, 0.0f, IMGUI_COND_FIRST_USE_EVER);
+
+    char title[32];
+    snprintf(title, sizeof(title), "Wall##%u", w->id);
+
+    bool open = true;
+    if (imgui_begin(title, &open, 0))
+    {
+        if (imgui_button("Open Respected Sector Window"))
+        {
+            state.editor->ui_sector_open = true;
+            state.editor->ui_sector_idx = si;
+        }
+        imgui_separator();
+
+        imgui_text("Sector ID: %d", q->sector_id);
+        imgui_text("Wall ID: %d", w->quad_idx);
+        imgui_text("Pos: %.0f  %.0f  %.0f", q->pos.x, q->pos.y, q->pos.z);
+        imgui_text("Rot: %.0f  %.0f  %.0f", q->rot.x, q->rot.y, q->rot.z);
+        imgui_text("Size: %.0f x %.0f", q->size.x, q->size.y);
+        imgui_text("Portal ID: %d", q->portal_id);
+        imgui_text("Portal Side Flip: %s", q->portal_side_flip ? "ON" : "OFF");
+        imgui_separator();
+
+        {   // Choose Sector
+            level_data_t* level = state.editor->level;
+            const char* s_names[MAX_SECTORS_PER_LEVEL];
+            static char s_buf[MAX_SECTORS_PER_LEVEL][16];
+            i32 s_order[MAX_SECTORS_PER_LEVEL];
+            i32 scount = level->sector_count < MAX_SECTORS_PER_LEVEL ? level->sector_count : MAX_SECTORS_PER_LEVEL;
+            for (i32 i = 0; i < scount; i++) {
+                s_order[i] = i;
+                snprintf(s_buf[i], sizeof(s_buf[i]), "Sector %d", level->sectors[i].id);
+                s_names[i] = s_buf[i];
+            }
+            i32 cur = 0;
+            if (s) for (i32 i = 0; i < scount; i++) if (s_order[i] == si) { cur = i; break; }
+            if (imgui_combo("Choose Sector", &cur, s_names, scount))
+            {
+                level_sector_data_t* target = &level->sectors[s_order[cur]];
+                if (target != s)
+                {
+                    editor_move_quad_to_sector(s, target, w->quad_idx);
+                    state.editor->ui_sector_idx = s_order[cur];
+                    q = wall_window_quad(w, &s, &si);
+                    if (!q) return false;
+                }
+            }
+        }
+
+        {   // Choose Portal
+            bool link = state.editor->portal_link_mode;
+            if (imgui_button(link ? "Cancel portal select" : "SELECT portal target"))
+            {
+                state.editor->portal_link_mode = !state.editor->portal_link_mode;
+                state.editor->portal_link_source = state.editor->portal_link_mode ? q : NULL;
+            }
+            if (link) imgui_text("Click another wall in the viewport to link portal.");
+            if (q->portal_id > 0 && imgui_button("Clear Portal")) q->portal_id = 0;
+            if (imgui_checkbox("Flip Portal Side", &q->portal_side_flip))
+                editor_sync_template_from_quad(q);
+        }
+
+        imgui_separator();
+
+        if (imgui_color_edit3("Color", (f32*)&q->color))
+            editor_sync_template_from_quad(q);
+
+        if (editor_ui_texture_picker(q))
+            editor_sync_template_from_quad(q);
+
+        imgui_separator();
+
+        if (imgui_checkbox("Billboard", &q->is_billboard)) editor_sync_template_from_quad(q);
+        if (imgui_checkbox("Solid", &q->is_solid))       editor_sync_template_from_quad(q);
+        if (imgui_checkbox("Invisible", &q->is_invisible)) editor_sync_template_from_quad(q);
+    }
+    imgui_end();
+    return open;
+}
+
+static void editor_ui_wall_windows(void)
+{
+    i32 i = 0;
+    while (i < state.editor->ui_wall_window_count)
+    {
+        bool keep = editor_ui_wall(&state.editor->ui_wall_windows[i]);
+        if (keep) i++;
+        else {
+            state.editor->ui_wall_windows[i] = state.editor->ui_wall_windows[state.editor->ui_wall_window_count - 1];
+            state.editor->ui_wall_window_count--;
+        }
+    }
+}
+
+static void editor_ui_sector(void)
+{
+    if (!state.editor->ui_sector_open) return;
+
+    level_data_t* level = state.editor->level;
+    i32 s_idx = state.editor->ui_sector_idx;
+    if (state.editor->selected_sector)
+        s_idx = (i32)(state.editor->selected_sector - level->sectors);
+    if (s_idx < 0 || s_idx >= level->sector_count) s_idx = 0;
+    level_sector_data_t* s = &level->sectors[s_idx];
+    state.editor->ui_sector_idx = s_idx;
+
+    imgui_set_next_window_pos(380.0f, 360.0f, IMGUI_COND_FIRST_USE_EVER);
+    imgui_set_next_window_size(280.0f, 0.0f, IMGUI_COND_FIRST_USE_EVER);
+
+    bool open = state.editor->ui_sector_open;
+    if (imgui_begin("Sector", &open, 0))
+    {
+        imgui_text("Sector ID: %d", s->id);
+        imgui_text("Wall Count: %d", s->quad_count);
+        imgui_separator();
+        imgui_text("Walls (click to open):");
+        for (i32 i = 0; i < s->quad_count; i++)
+        {
+            char buf[32];
+            snprintf(buf, sizeof(buf), "Wall %d##w%d", i, i);
+            bool is_cur = state.editor->selected_quad == &s->quads[i];
+            if (imgui_selectable(buf, is_cur))
+            {
+                state.editor->selected_quad = &s->quads[i];
+                state.editor->selected_sector = s;
+                state.editor->selected_wall_idx = i;
+                editor_sync_template_from_selection();
+                editor_open_wall_window(s->id, i);
+            }
+        }
+        imgui_separator();
+        imgui_color_edit3("Sector Light", (f32*)&s->light);
+    }
+    imgui_end();
+    state.editor->ui_sector_open = open;
+}
+
+void editor_ui(void)
+{
+    if (state.id != STATE_EDITOR) return;
+    editor_ui_state();
+    editor_ui_wall_windows();
+    editor_ui_sector();
 }
 
 static vec3s intersect_ray_plane(vec3s ray_origin, vec3s ray_dir, vec3s plane_pos, vec3s plane_normal) 
@@ -165,6 +560,33 @@ editor_look_at_info_t editor_get_look_at_info_with_ray(level_data_t* level, vec3
     return best;
 }
 
+static void editor_pick_ray(vec3s* out_origin, vec3s* out_dir)
+{
+    f64 mx, my;
+    glfwGetCursorPos(state.win, &mx, &my);
+    if (state.cursor_locked) {
+        mx = (f64)state.fb->ww * 0.5;
+        my = (f64)state.fb->wh * 0.5;
+    }
+
+    const f32 fov = DEG2RAD(45.0f);
+    const f32 aspect = state.fb->wh > 0 ? (f32)state.fb->ww / (f32)state.fb->wh : 1.0f;
+
+    vec3s right = vec3_normalize(vec3_cross(state.cam->front, state.cam->up));
+    vec3s up = vec3_normalize(vec3_cross(right, state.cam->front));
+
+    const f32 ndc_x = (f32)((2.0 * mx / (f64)state.fb->ww) - 1.0);
+    const f32 ndc_y = (f32)(1.0 - (2.0 * my / (f64)state.fb->wh));
+
+    const f32 tan_half = tanf(fov * 0.5f);
+    vec3s dir = vec3_add(state.cam->front,
+                 vec3_add(vec3_scale(right, ndc_x * tan_half * aspect),
+                          vec3_scale(up, ndc_y * tan_half)));
+
+    *out_origin = state.cam->pos;
+    *out_dir = vec3_normalize(dir);
+}
+
 void editor_update()
 {
     static bool template_init = false;
@@ -182,15 +604,42 @@ void editor_update()
         };
     }
 
-    editor_look_at_info_t info = editor_get_look_at_info_with_ray(state.editor->level, state.cam->pos, vec3_normalize(state.cam->front), 100.0f);
+    if (state.editor->portal_link_source) {
+        bool valid = false;
+        for (i32 si = 0; si < state.editor->level->sector_count && !valid; si++) {
+            level_sector_data_t* sec = &state.editor->level->sectors[si];
+            for (i32 qi = 0; qi < sec->quad_count; qi++)
+                if (&sec->quads[qi] == state.editor->portal_link_source) { valid = true; break; }
+        }
+        if (!valid) state.editor->portal_link_source = NULL;
+    }
+
+    vec3s ray_origin, ray_dir;
+    editor_pick_ray(&ray_origin, &ray_dir);
+    editor_look_at_info_t info = editor_get_look_at_info_with_ray(state.editor->level, ray_origin, ray_dir, 100.0f);
 
     static bool mouse_was_pressed = false;
     bool mouse_is_pressed = glfwGetMouseButton(state.win, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
     bool ctrl_held = glfwGetKey(state.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+    bool ui_capture = !state.cursor_locked && imgui_want_capture_mouse();
 
-    if (mouse_is_pressed && !mouse_was_pressed) 
+    if (mouse_is_pressed && !mouse_was_pressed && !ui_capture)
     {
-        if (state.editor->id == EDITOR_PAINT) 
+        if (state.editor->portal_link_mode)
+        {
+            level_quad_t* src = state.editor->portal_link_source ? state.editor->portal_link_source : state.editor->selected_quad;
+            if (info.hit && info.quad != src)
+            {
+                i32 pid = 1;
+                while (count_portal_quads(state.editor->level, pid) > 0) pid++;
+                if (src) src->portal_id = pid;
+                info.quad->portal_id = pid;
+                editor_sync_template_from_selection();
+            }
+            state.editor->portal_link_mode = false;
+            state.editor->portal_link_source = NULL;
+        }
+        else if (state.editor->id == EDITOR_PAINT) 
         {
             if (info.hit) {
                 if (state.editor->template_mods & EDITOR_MOD_COLOR) info.quad->color = state.editor->template_quad.color;
@@ -216,6 +665,7 @@ void editor_update()
             state.editor->selected_wall_idx = info.wall_id;
             state.editor->template_quad = *info.quad;
             state.editor->template_mods = EDITOR_MOD_ALL;
+            editor_open_wall_window(info.sector->id, info.wall_id);
             
             state.editor->drag_start_hit = info.hit_position;
             state.editor->drag_plane_normal = vec3_scale(state.cam->front, -1.0f);
@@ -257,7 +707,7 @@ void editor_update()
     if (state.editor->id != EDITOR_IDLE && state.editor->selected_quad) 
     {
         vec3s plane_pos = vec3_add(state.editor->drag_start_hit, vec3_sub(state.cam->pos, state.editor->drag_cam_start_pos));
-        vec3s current_hit = intersect_ray_plane(state.cam->pos, vec3_normalize(state.cam->front), plane_pos, state.editor->drag_plane_normal);
+        vec3s current_hit = intersect_ray_plane(ray_origin, ray_dir, plane_pos, state.editor->drag_plane_normal);
         
         if (state.editor->id == EDITOR_DRAG) 
         {
@@ -364,9 +814,6 @@ static void editor_render_sector(const level_sector_data_t *sector)
     }
 }
 
-void editor_render_info();
-void editor_render_legend();
-
 void editor_render_borders()
 {
     glDisable(GL_STENCIL_TEST);
@@ -380,100 +827,9 @@ void editor_render()
 {
     glDisable(GL_STENCIL_TEST);
     glDisable(GL_DEPTH_TEST);
-    editor_render_info();
-    editor_render_legend();
     for (i32 i = 0; i < state.editor->level->sector_count; i++) editor_render_sector(&state.editor->level->sectors[i]);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);
-}
-
-void editor_render_info()
-{
-    f32 line_height = CHAR_HEIGHT, x = 10.0f, y = CHAR_HEIGHT+20;
-
-    text_draw((vec2s){x, y}, "()*+-./ :;<=>? 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ _ abcdefghijklmnopqrstuvwxyz "); y += line_height;
-    text_draw((vec2s){x, y}, "WIN: %d x %d (FB: %d x %d)", state.fb->ww, state.fb->wh, state.fb->w, state.fb->h); y += line_height;
-    text_draw((vec2s){x, y}, "POS: %.1f %.1f %.1f ; YAW %.1f ; PITCH %.1f", state.cam->pos.x, state.cam->pos.y, state.cam->pos.z, state.cam->yaw, state.cam->pitch); y += line_height;
-    text_draw((vec2s){x, y}, "CURRENT_LVL: %d ; MAX_LVLS: %d", state.level_id + 1, state.level_count); y += line_height;
-
-    if (state.id != STATE_EDITOR) {
-        const char* game_modes[] = { "MENU", "PLAYING", "EDITOR", "EXIT" };
-        text_draw((vec2s){x, y}, "STATE: STATE_%s", game_modes[state.id]); y += line_height;
-    } else {
-        const char* editor_modes[] = { "IDLE", "DRAG", "RESIZE_TOP", "RESIZE_RIGHT", "PAINT" };
-        text_draw((vec2s){x, y}, "EDITOR: EDITOR_%s", editor_modes[state.editor->id]); y += line_height;
-    }
-
-    // Editor quad info
-    y = 150.0f;
-
-    level_quad_t* q = state.editor->selected_quad;
-    level_sector_data_t* s = state.editor->selected_sector;
-    bool is_template = false;
-
-    if (!q) { q = &state.editor->template_quad; s = NULL; is_template = true; }
-
-    text_draw((vec2s){x, y}, is_template ? "TEMPLATE (BRUSH):" : "SELECTED:"); y += line_height;
-    
-    char mod_s = (is_template && (state.editor->template_mods & EDITOR_MOD_SECTOR)) ? '*' : ' ';
-    char mod_t = (is_template && (state.editor->template_mods & EDITOR_MOD_TEXTURE)) ? '*' : ' ';
-    char mod_c = (is_template && (state.editor->template_mods & EDITOR_MOD_COLOR)) ? '*' : ' ';
-    char mod_r = (is_template && (state.editor->template_mods & EDITOR_MOD_ROTATION)) ? '*' : ' ';
-
-    text_draw((vec2s){x, y}, "%c Sector ID: %d", mod_s, is_template ? q->sector_id : s->id); y += line_height;
-    if (!is_template) { text_draw((vec2s){x, y}, "  Wall ID: %d", state.editor->selected_wall_idx); y += line_height; }
-    if (!is_template) { text_draw((vec2s){x, y}, "  Pos: %.0f %.0f %.0f", q->pos.x, q->pos.y, q->pos.z); y += line_height; }
-    text_draw((vec2s){x, y}, "%c Rot: %.0f %.0f %.0f", mod_r, q->rot.x, q->rot.y, q->rot.z); y += line_height;
-    if (!is_template) { text_draw((vec2s){x, y}, "  Size: %.0f %.0f", q->size.x, q->size.y); y += line_height; }
-    text_draw((vec2s){x, y}, "%c Tex ID: %d", mod_t, q->tex_id); y += line_height;
-    if (!is_template) { text_draw((vec2s){x, y}, "  Portal ID: %d", q->portal_id); y += line_height; }
-    if (!is_template) { text_draw((vec2s){x, y}, "  Portal Side Flip: %s", q->portal_side_flip ? "ON" : "OFF"); y += line_height; }
-    if (!is_template && s) { text_draw((vec2s){x, y}, "  Light: %.1f %.1f %.1f", s->light.x, s->light.y, s->light.z); y += line_height; }
-    text_draw((vec2s){x, y}, "%c Color: %.1f %.1f %.1f", mod_c, q->color.x, q->color.y, q->color.z);
-
-    editor_render_legend();
-
-}
-void editor_render_legend()
-{
-    f32 x = 10.0f, y = state.fb->wh - CHAR_HEIGHT;
-    const f32 line_height = CHAR_HEIGHT;
-    
-    y -= line_height;
-    text_draw((vec2s){x, y}, "  ESC          Exit"); y -= line_height;
-    text_draw((vec2s){x, y}, "  TAB          Toggle cursor lock"); y -= line_height;
-    text_draw((vec2s){x, y}, "  E            Toggle editor/play mode"); y -= line_height;
-    text_draw((vec2s){x, y}, "  B            Next level"); y -= line_height;
-    text_draw((vec2s){x, y}, "SETTINGS"); y -= line_height;
-
-    y -= line_height * 0.5f;
-    text_draw((vec2s){x, y}, "  Click        Select quad / start drag"); y -= line_height;
-    text_draw((vec2s){x, y}, "  Ctrl+Click   Resize quad (near edge)"); y -= line_height;
-    text_draw((vec2s){x, y}, "  Enter        Deselect"); y -= line_height;
-    text_draw((vec2s){x, y}, "  N            New quad (dup if selected)"); y -= line_height;
-    text_draw((vec2s){x, y}, "  X / Delete   Delete selected quad"); y -= line_height;
-    text_draw((vec2s){x, y}, "  R            Reset selected quad"); y -= line_height;
-    text_draw((vec2s){x, y}, "  V            Toggle paint mode"); y -= line_height;
-    text_draw((vec2s){x, y}, "QUAD EDITING"); y -= line_height;
-
-    y -= line_height * 0.5f;
-    text_draw((vec2s){x, y}, "  I            Toggle solid"); y -= line_height;
-    text_draw((vec2s){x, y}, "  Shift+I      Toggle invisible"); y -= line_height;
-    text_draw((vec2s){x, y}, "  Shift+B      Toggle billboard"); y -= line_height;
-    text_draw((vec2s){x, y}, "  1 / 2 / 3    Adjust quad RGB"); y -= line_height;
-    text_draw((vec2s){x, y}, "  0            Cycle texture ID"); y -= line_height;
-    text_draw((vec2s){x, y}, "  7 / 8 / 9    Rotate quad X/Y/Z"); y -= line_height;
-    text_draw((vec2s){x, y}, "  Shift+7/8/9  Reverse rotate X/Y/Z"); y -= line_height;
-    text_draw((vec2s){x, y}, "QUAD PROPERTIES"); y -= line_height;
-
-    y -= line_height * 0.5f;
-    text_draw((vec2s){x, y}, "  Q            Next sector"); y -= line_height;
-    text_draw((vec2s){x, y}, "  Shift+Q      Previous sector"); y -= line_height;
-    text_draw((vec2s){x, y}, "  P            Increase portal ID"); y -= line_height;
-    text_draw((vec2s){x, y}, "  Shift+P      Decrease portal ID"); y -= line_height;
-    text_draw((vec2s){x, y}, "  Ctrl+P       Flip portal side"); y -= line_height;
-    text_draw((vec2s){x, y}, "  4 / 5 / 6    Adjust sector light RGB"); y -= line_height;
-    text_draw((vec2s){x, y}, "SECTORS & PORTALS"); y -= line_height;
 }
 
 void editor_save(level_data_t* level)
@@ -521,9 +877,13 @@ void editor_save(level_data_t* level)
     fprintf(f, "static level_sector_data_t level%d_sectors[] = {\n", level_num);
     for (int s = 0; s < level->sector_count; s++) {
         level_sector_data_t* sector = &level->sectors[s];
-        if (sector->quad_count == 0) continue;
-        fprintf(f, "    { .id = %d, .light = {%.1ff, %.1ff, %.1ff}, .quads = level%d_sector%d_quads, .quad_count = sizeof(level%d_sector%d_quads) / sizeof(level%d_sector%d_quads[0]) },\n", 
-            sector->id, sector->light.x, sector->light.y, sector->light.z, level_num, s, level_num, s, level_num, s);
+        if (sector->quad_count > 0) {
+            fprintf(f, "    { .id = %d, .light = {%.1ff, %.1ff, %.1ff}, .quads = level%d_sector%d_quads, .quad_count = sizeof(level%d_sector%d_quads) / sizeof(level%d_sector%d_quads[0]) },\n", 
+                sector->id, sector->light.x, sector->light.y, sector->light.z, level_num, s, level_num, s, level_num, s);
+        } else {
+            fprintf(f, "    { .id = %d, .light = {%.1ff, %.1ff, %.1ff}, .quads = NULL, .quad_count = 0 },\n",
+                sector->id, sector->light.x, sector->light.y, sector->light.z);
+        }
     }
     fprintf(f, "};\n\n");
 

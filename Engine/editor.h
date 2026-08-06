@@ -21,6 +21,14 @@ typedef enum {
     EDITOR_MOD_ALL       = 0xFF
 } editor_mod_e;
 
+#define MAX_WALL_WINDOWS 64
+
+typedef struct {
+    u32 id;
+    i32 sector_id;
+    i32 quad_idx;
+} editor_wall_window_t;
+
 typedef struct {
     level_data_t *level;
     level_quad_t *selected_quad;
@@ -40,6 +48,14 @@ typedef struct {
     
     level_quad_t template_quad;
     u32 template_mods;
+
+    bool portal_link_mode;
+    level_quad_t* portal_link_source;
+    bool ui_sector_open;
+    i32 ui_sector_idx;
+
+    editor_wall_window_t ui_wall_windows[MAX_WALL_WINDOWS];
+    i32 ui_wall_window_count;
 } editor_t;
 
 typedef struct {
@@ -53,9 +69,13 @@ typedef struct {
 
 void editor_render();
 void editor_render_borders();
-void editor_render_info();
 void editor_update();
 void editor_save(level_data_t* level);
+
+void editor_ui();
+void editor_add_level();
+void editor_switch_level(i32 idx);
+void editor_open_wall_window(i32 sector_id, i32 quad_idx);
 
 void editor_add_quad(level_sector_data_t* sector, const level_quad_t* template);
 void editor_delete_quad(level_sector_data_t* sector, i32 idx);

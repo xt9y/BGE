@@ -6,6 +6,7 @@
 #include "state.h"
 #include "text.h"
 #include "util.h"
+#include "imgui_c.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -161,6 +162,9 @@ void GL_START()
     glfwGetWindowContentScale(state.win, &state.fb->scale, NULL);
     glfwGetWindowSize(state.win, &state.fb->ww, &state.fb->wh);
 
+    imgui_init(state.win);
+    imgui_set_mouse_enabled(false);
+
     state.data->program = create_program(VS, FS);
     state.data->u_model = glGetUniformLocation(state.data->program, "model");
     state.data->u_view  = glGetUniformLocation(state.data->program, "view");
@@ -181,11 +185,11 @@ int GL_FRAME()
     state.dt = now - g_last_time;
     g_last_time = now;
 
+    glfwPollEvents();
     INPUT();
     RENDER();
 
     glfwSwapBuffers(state.win);
-    glfwPollEvents();
 
     return !glfwWindowShouldClose(state.win) && state.id != STATE_EXIT;
 }
@@ -200,6 +204,7 @@ void GL_END()
     if (g_post_vbo)     glDeleteBuffers(1, &g_post_vbo);
     if (state.text) texture_registry_cleanup(state.text);
     text_shutdown();
+    imgui_shutdown();
     glfwTerminate();
     if (state.data) glDeleteProgram(state.data->program);
     if (state.text)   free(state.text);

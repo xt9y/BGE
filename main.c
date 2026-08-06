@@ -2,10 +2,16 @@
 #include "Engine/editor.h"
 #include "Engine/App.h"
 #include "Engine/portal.h"
+#include "Engine/imgui_c.h"
 
 #include "Engine/res/level1.h"
 #include "Engine/res/level2.h"
 #include "Engine/res/level3.h"
+#include "Engine/res/level4.h"
+#include "Engine/res/level5.h"
+#include "Engine/res/level6.h"
+#include "Engine/res/level7.h"
+#include "Engine/res/level8.h"
 #include "text.h"
 #include "gun.h"
 #include "render.h"
@@ -77,6 +83,14 @@ void RUN()
         state.levels[state.level_count++] = load_2();
         state.levels[state.level_count++] = load_3();
         state.levels[state.level_count++] = load_1();
+        #define REGISTER_SAVED(loader) \
+            do { level_data_t lv = loader(); if (lv.sector_count > 0 && state.level_count < MAX_LEVELS) state.levels[state.level_count++] = lv; } while (0)
+        REGISTER_SAVED(load_4);
+        REGISTER_SAVED(load_5);
+        REGISTER_SAVED(load_6);
+        REGISTER_SAVED(load_7);
+        REGISTER_SAVED(load_8);
+        #undef REGISTER_SAVED
     }
 
     {   // Editor
@@ -121,11 +135,15 @@ void RENDER()
     glViewport(0, 0, fbw, fbh);
     glDisable(GL_DEPTH_TEST);
 
+    imgui_newframe();
+
     text_begin();
-    text_draw((vec2s){10.0f, 10.0f}, "FPS %.1f", GL_GETFPS());
     text_draw((vec2s){(f32)state.fb->ww * 0.5f - 5.0f, (f32)state.fb->wh * 0.5f - 10.0f}, "+");
-    if (state.id == STATE_EDITOR) editor_render_info();
     text_flush(state.fb->ww, state.fb->wh);
+
+    if (state.id == STATE_EDITOR) editor_ui();
+
+    imgui_render();
 
     glEnable(GL_DEPTH_TEST);
 }
@@ -133,9 +151,10 @@ void RENDER()
 void INPUT()
 {
     glfwSetInputMode(state.win, GLFW_CURSOR, state.cursor_locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    imgui_set_mouse_enabled(!state.cursor_locked);
 
     bool shift_held = glfwGetKey(state.win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
-    bool ctrl_held = glfwGetKey(state.win, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+    bool no_ui = !imgui_want_capture_keyboard();
 
     { // ESC - Exit
         if (glfwGetKey(state.win, GLFW_KEY_ESCAPE) == GLFW_PRESS) state.id = STATE_EXIT;
@@ -189,42 +208,9 @@ void INPUT()
         } else e_pressed = false;
     }
 
-    { // B - Next level (Shift+B - toggle billboard)
-        static bool b_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_B) == GLFW_PRESS) {
-            if (!b_pressed) {
-                if (shift_held && state.editor->selected_quad) {
-                    state.editor->selected_quad->is_billboard = !state.editor->selected_quad->is_billboard;
-                } else {
-                    editor_save(state.editor->level);
-                    state.level_id = (state.level_id + 1) % state.level_count;
-                    apply_level_camera(state.cam, &state.levels[state.level_id]);
-                    state.cam->firstMouse = true;
-                    state.editor->selected_quad = NULL;
-                    state.editor->selected_sector = NULL;
-                    state.editor->template_quad = get_default_quad(state.cam);
-                    state.editor->template_mods = EDITOR_MOD_NONE;
-                } b_pressed = true;
-            }
-        } else b_pressed = false;
-    }
-
-    { // I - Toggle solid (Shift+I - toggle invisible)
-        static bool i_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_I) == GLFW_PRESS) {
-            if (!i_pressed && state.editor->selected_quad) {
-                if (shift_held) {
-                    state.editor->selected_quad->is_invisible = !state.editor->selected_quad->is_invisible;
-                } else {
-                    state.editor->selected_quad->is_solid = !state.editor->selected_quad->is_solid;
-                } i_pressed = true;
-            }
-        } else i_pressed = false;
-    }
-
     { // N - New quad
         static bool n_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_N) == GLFW_PRESS) {
+        if (no_ui && glfwGetKey(state.win, GLFW_KEY_N) == GLFW_PRESS) {
             if (!n_pressed) {
                 i32 s_idx = state.editor->template_quad.sector_id;
                 if (s_idx < 0 || s_idx >= state.editor->level->sector_count) s_idx = 0;
@@ -236,7 +222,7 @@ void INPUT()
 
     { // X - Delete quad
         static bool x_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_X) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_DELETE) == GLFW_PRESS) {
+        if (no_ui && (glfwGetKey(state.win, GLFW_KEY_X) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_DELETE) == GLFW_PRESS || glfwGetKey(state.win, GLFW_KEY_BACKSLASH) == GLFW_PRESS)) {
             if (!x_pressed && state.editor->selected_quad) {
                 editor_delete_quad(state.editor->selected_sector, state.editor->selected_wall_idx);
                 state.editor->selected_quad = NULL;
@@ -247,75 +233,42 @@ void INPUT()
 
     { // R - Reset quad
         static bool r_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_R) == GLFW_PRESS) {
+        if (no_ui && glfwGetKey(state.win, GLFW_KEY_R) == GLFW_PRESS) {
             if (!r_pressed && state.editor->selected_quad) {
                 *state.editor->selected_quad = get_default_quad(state.cam);
+                state.editor->selected_quad->sector_id = state.editor->selected_sector ? state.editor->selected_sector->id : 0;
                 r_pressed = true;
             }
         } else r_pressed = false;
     }
 
-    { // 0 - Cycle texture
-        static f32 tex_timer = 0;
-        if (glfwGetKey(state.win, GLFW_KEY_0) == GLFW_PRESS) {
-            if (tex_timer <= 0) {
+    { // 7-9 - Adjust rotation
+        static bool adj_pressed[9] = {0};
+        static f32 adj_timer[9] = {0};
+        static const int adj_keys[] = { GLFW_KEY_7, GLFW_KEY_8, GLFW_KEY_9 };
+        for (int i = 0; i < 3; i++) {
+            bool triggered = false;
+            int key = adj_keys[i];
+            if (no_ui && glfwGetKey(state.win, key) == GLFW_PRESS) {
+                if (!adj_pressed[i]) { triggered = true; adj_pressed[i] = true; adj_timer[i] = 0.3f; }
+                if (adj_pressed[i]) { adj_timer[i] -= state.dt; if (adj_timer[i] <= 0) { triggered = true; adj_timer[i] = 0.05f; } }
+            }
+            if (glfwGetKey(state.win, key) == GLFW_RELEASE) adj_pressed[i] = false;
+
+            if (triggered) {
                 level_quad_t* q = state.editor->selected_quad ? state.editor->selected_quad : &state.editor->template_quad;
-                q->tex_id++;
-                if (q->tex_id >= state.text->count) q->tex_id = -1;
+                f32* val = (i == 0) ? &q->rot.x : (i == 1) ? &q->rot.y : &q->rot.z;
+                f32 step = shift_held ? -1.0f : 1.0f;
+                *val += step;
+                if (*val >= 360.0f) *val = 0.0f;
+                if (*val < 0.0f)    *val = 359.0f;
+                *val = roundf(*val);
+
                 if (state.editor->selected_quad) {
                     state.editor->template_quad = *state.editor->selected_quad;
                     state.editor->template_mods = EDITOR_MOD_ALL;
-                } else state.editor->template_mods |= EDITOR_MOD_TEXTURE;
-                tex_timer = 0.15f;
-            } tex_timer -= state.dt;
-        } else tex_timer = 0;
-    }
-
-    { // 1-9 - Adjust color/light/rotation
-        static bool adj_pressed[9] = {0};
-        static f32 adj_timer[9] = {0};
-        static const int adj_keys[] = { GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6, GLFW_KEY_7, GLFW_KEY_8, GLFW_KEY_9 };
-        for (int i = 0; i < 9; i++) {
-            bool triggered = false;
-            if (glfwGetKey(state.win, adj_keys[i]) == GLFW_PRESS) {
-                if (!adj_pressed[i]) { triggered = true; adj_pressed[i] = true; adj_timer[i] = 0.3f; }
-                if (adj_pressed[i] && i >= 6) { adj_timer[i] -= state.dt; if (adj_timer[i] <= 0) { triggered = true; adj_timer[i] = 0.05f; } }
-            }
-            if (glfwGetKey(state.win, adj_keys[i]) == GLFW_RELEASE) adj_pressed[i] = false;
-
-            if (triggered) {
-                f32* val = NULL;
-                level_quad_t* q = state.editor->selected_quad ? state.editor->selected_quad : &state.editor->template_quad;
-                level_sector_data_t* s = state.editor->selected_sector;
-
-                if (i == 0) val = &q->color.x;
-                if (i == 1) val = &q->color.y;
-                if (i == 2) val = &q->color.z;
-                if (s && i == 3) val = &s->light.x;
-                if (s && i == 4) val = &s->light.y;
-                if (s && i == 5) val = &s->light.z;
-                if (i == 6) val = &q->rot.x;
-                if (i == 7) val = &q->rot.y;
-                if (i == 8) val = &q->rot.z;
-
-                if (val) {
-                    f32 step = (i < 6) ? 0.1f : 1.0f;
-                    if (i >= 6 && shift_held) step = -step;
-                    *val += step;
-                    if (i < 6 && *val > 1.05f)  *val = 0.0f;
-                    if (i < 6 && *val < -0.05f) *val = 1.0f;
-                    if (i < 6) *val = roundf(*val * 10.0f) / 10.0f;
-                    if (i >= 6 && *val >= 360.0f) *val = 0.0f;
-                    if (i >= 6 && *val < 0.0f)    *val = 359.0f;
-                    if (i >= 6) *val = roundf(*val);
-
-                    if (state.editor->selected_quad) {
-                        state.editor->template_quad = *state.editor->selected_quad;
-                        state.editor->template_mods = EDITOR_MOD_ALL;
-                    } else {
-                        if (i < 3) state.editor->template_mods |= EDITOR_MOD_COLOR;
-                        if (i >= 6) state.editor->template_mods |= EDITOR_MOD_ROTATION;
-                    }
+                } else {
+                    state.editor->template_mods |= EDITOR_MOD_ROTATION;
                 }
             }
         }
@@ -323,7 +276,7 @@ void INPUT()
 
     { // V - Toggle paint mode
         static bool v_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_V) == GLFW_PRESS) {
+        if (no_ui && glfwGetKey(state.win, GLFW_KEY_V) == GLFW_PRESS) {
             if (!v_pressed) {
                 if (state.editor->id == EDITOR_PAINT) state.editor->id = EDITOR_IDLE;
                 else state.editor->id = EDITOR_PAINT;
@@ -332,55 +285,9 @@ void INPUT()
         } else v_pressed = false;
     }
 
-    { // Q - Cycle sectors
-        static bool q_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_Q) == GLFW_PRESS) {
-            if (!q_pressed) {
-                i32 current_idx = 0;
-                for (i32 i = 0; i < state.editor->level->sector_count; i++)
-                    if (state.editor->level->sectors[i].id == state.editor->template_quad.sector_id) { current_idx = i; break; }
-
-                i32 target_idx;
-                if (shift_held) target_idx = (current_idx - 1 + state.editor->level->sector_count) % state.editor->level->sector_count;
-                else {
-                    if (current_idx == state.editor->level->sector_count - 1) editor_add_sector(state.editor->level);
-                    target_idx = (current_idx + 1) % state.editor->level->sector_count;
-                }
-
-                if (state.editor->selected_quad) editor_move_quad_to_sector(state.editor->selected_sector, &state.editor->level->sectors[target_idx], state.editor->selected_wall_idx);
-
-                state.editor->template_quad.sector_id = state.editor->level->sectors[target_idx].id;
-                state.editor->template_mods |= EDITOR_MOD_SECTOR;
-                q_pressed = true;
-            }
-        } else q_pressed = false;
-    }
-
-    { // P - Adjust portal
-        static bool p_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_P) == GLFW_PRESS && state.editor->id != EDITOR_PAINT) {
-            if (!p_pressed) {
-                level_quad_t* q = state.editor->selected_quad ? state.editor->selected_quad : &state.editor->template_quad;
-                if (ctrl_held) q->portal_side_flip = !q->portal_side_flip;
-                else if (shift_held)
-                    do { q->portal_id--; if (q->portal_id < 0) { q->portal_id = 0; break; }
-                    } while (q->portal_id > 0 && count_portal_quads(state.editor->level, q->portal_id) >= 2);
-                else {
-                    u8 limit = 256; do { q->portal_id++;
-                    } while (count_portal_quads(state.editor->level, q->portal_id) > 2 && --limit > 0);
-                }
-                if (state.editor->selected_quad) {
-                    state.editor->template_quad = *state.editor->selected_quad;
-                    state.editor->template_mods = EDITOR_MOD_ALL;
-                }
-                p_pressed = true;
-            }
-        } else p_pressed = false;
-    }
-
     { // ENTER - Deselect
         static bool enter_pressed = false;
-        if (glfwGetKey(state.win, GLFW_KEY_ENTER) == GLFW_PRESS) {
+        if (no_ui && glfwGetKey(state.win, GLFW_KEY_ENTER) == GLFW_PRESS) {
             if (!enter_pressed) {
                 state.editor->selected_quad = NULL;
                 state.editor->template_quad = get_default_quad(state.cam);

@@ -11,6 +11,84 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
+#if defined(__has_include)
+#  if __has_include(<rendercheck/capture.h>) && __has_include(<rendercheck/metrics.h>)
+#    define RENDERCHECK_AVAILABLE 1
+#    include <rendercheck/capture.h>
+#    include <rendercheck/metrics.h>
+#  endif
+#endif
+#ifndef RENDERCHECK_AVAILABLE
+#  define RENDERCHECK_AVAILABLE 0
+#endif
+
+static int rendercheck_enabled(void)
+{
+#if RENDERCHECK_AVAILABLE
+    return getenv("RENDERCHECK") != NULL;
+#else
+    return 0;
+#endif
+}
+
+#if RENDERCHECK_AVAILABLE
+static GLuint g_rendercheck_gpu_query = 0;
+static int g_rendercheck_gpu_query_active = 0;
+static void rendercheck_gpu_begin(void)
+{
+    if (!rendercheck_enabled()) return;
+    if (!g_rendercheck_gpu_query) glGenQueries(1, &g_rendercheck_gpu_query);
+    if (!g_rendercheck_gpu_query) return;
+    glBeginQuery(GL_TIME_ELAPSED, g_rendercheck_gpu_query);
+    g_rendercheck_gpu_query_active = 1;
+}
+static void rendercheck_gpu_end(void)
+{
+    if (!g_rendercheck_gpu_query_active) return;
+    glEndQuery(GL_TIME_ELAPSED);
+    g_rendercheck_gpu_query_active = 0;
+    GLuint64 elapsed_ns = 0;
+    glGetQueryObjectui64v(g_rendercheck_gpu_query, GL_QUERY_RESULT, &elapsed_ns);
+    if (rendercheck_gpu_ms((double)elapsed_ns / 1000000.0) < 0)
+        fprintf(stderr, "RendererCheck: failed to write GPU metric\n");
+}
+static void rendercheck_capture_frame(GLFWwindow* window)
+{
+    if (!rendercheck_enabled() || !rendercheck_capture_requested()) return;
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(window, &width, &height);
+    if (width <= 0 || height <= 0) return;
+    const size_t row_bytes = (size_t)width * 3u;
+    unsigned char* pixels = (unsigned char*)malloc(row_bytes * (size_t)height);
+    if (!pixels) return;
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadBuffer(GL_BACK);
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    for (int y = 0; y < height / 2; ++y) {
+        unsigned char* top = pixels + (size_t)y * row_bytes;
+        unsigned char* bottom = pixels + (size_t)(height - 1 - y) * row_bytes;
+        for (size_t x = 0; x < row_bytes; ++x) {
+            const unsigned char tmp = top[x]; top[x] = bottom[x]; bottom[x] = tmp;
+        }
+    }
+    if (rendercheck_capture_rgb8(pixels, (uint32_t)width, (uint32_t)height, row_bytes) < 0)
+        fprintf(stderr, "RendererCheck: failed to write frame capture\n");
+    free(pixels);
+}
+static void rendercheck_gpu_shutdown(void)
+{
+    if (g_rendercheck_gpu_query) glDeleteQueries(1, &g_rendercheck_gpu_query);
+    g_rendercheck_gpu_query = 0;
+    g_rendercheck_gpu_query_active = 0;
+}
+#else
+static void rendercheck_gpu_begin(void) {}
+static void rendercheck_gpu_end(void) {}
+static void rendercheck_capture_frame(GLFWwindow* window) { (void)window; }
+static void rendercheck_gpu_shutdown(void) {}
+#endif
+
 static f32    g_last_time  = 0.0f;
 static double g_fps_accum  = 0.0;
 static u32    g_fps_frames = 0;
@@ -179,6 +257,8 @@ void GL_START()
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
     if (getenv("RENDERCHECK")) glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
+    if (rendercheck_enabled()) glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+
     state.win = glfwCreateWindow(WIDTH, HEIGHT, TITLE, 0, 0);
     if (!state.win) {
         glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
@@ -226,6 +306,7 @@ void GL_START()
 
 int GL_FRAME()
 {
+    rendercheck_gpu_begin();
     const f32 now = (f32)glfwGetTime();
     state.dt = now - g_last_time;
     g_last_time = now;
@@ -238,10 +319,12 @@ int GL_FRAME()
     if (rendercheck && rendercheck_capture_frame() != 0)
         fprintf(stderr, "BGE: failed to write RendererCheck frame capture\n");
 
+    rendercheck_capture_frame(state.win);
+    rendercheck_gpu_end();
     glfwSwapBuffers(state.win);
 
     if (rendercheck) return 0;
-    return !glfwWindowShouldClose(state.win) && state.id != STATE_EXIT;
+    return rendercheck_enabled() ? 0 : (!glfwWindowShouldClose(state.win) && state.id != STATE_EXIT);
 }
 
 void GL_END()
@@ -255,6 +338,7 @@ void GL_END()
     if (state.text) texture_registry_cleanup(state.text);
     text_shutdown();
     imgui_shutdown();
+    rendercheck_gpu_shutdown();
     if (state.data) glDeleteProgram(state.data->program);
     glfwTerminate();
     if (state.text)   free(state.text);

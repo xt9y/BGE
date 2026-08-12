@@ -16,7 +16,7 @@ add_subdirectory(../Vendor/glfw ${CMAKE_BINARY_DIR}/glfw)
 add_subdirectory(../Vendor/imgui ${CMAKE_BINARY_DIR}/imgui)
 
 add_library(engine STATIC
-    rendercheck_shim.c cam.c gfx.c text.c level.c portal.c editor.c gun.c render.c util/math.c
+    App.c cam.c gfx.c text.c level.c portal.c editor.c gun.c render.c util/math.c
     imgui_c.cpp
 )
 

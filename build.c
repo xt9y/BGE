@@ -37,6 +37,7 @@ static void add_glfw(C_Target *app) {
     c_sources(app, "Vendor/glfw/src/nsgl_context.m");
 #else
     c_define(app, "_GLFW_X11");
+    c_define(app, "_DEFAULT_SOURCE");
     c_sources(app, "Vendor/glfw/src/posix_time.c");
     c_sources(app, "Vendor/glfw/src/posix_module.c");
     c_sources(app, "Vendor/glfw/src/posix_thread.c");

@@ -3,17 +3,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static int bge_rendercheck_enabled(void)
+static int rendercheck_enabled(void)
 {
     return getenv("RENDERCHECK") != NULL;
 }
 
-static void bge_rendercheck_window_hint(void)
+static void rendercheck_window_hint(void)
 {
-    if (bge_rendercheck_enabled()) glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    if (rendercheck_enabled()) glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 }
 
-static int bge_rendercheck_capture_frame(GLFWwindow* window)
+static int rendercheck_capture_frame(GLFWwindow* window)
 {
     const char* path = getenv("RENDERCHECK_CAPTURE_PATH");
     if (!path || !path[0]) return 0;
@@ -57,40 +57,40 @@ static int bge_rendercheck_capture_frame(GLFWwindow* window)
     return close_result == 0 ? 0 : -1;
 }
 
-static void bge_rendercheck_after_render(GLFWwindow* window)
+static void rendercheck_after_render(GLFWwindow* window)
 {
-    if (bge_rendercheck_enabled() && bge_rendercheck_capture_frame(window) != 0)
-        fprintf(stderr, "BGE: failed to write RendererCheck frame capture\n");
+    if (rendercheck_enabled() && rendercheck_capture_frame(window) != 0)
+        fprintf(stderr, "RendererCheck: failed to write frame capture\n");
 }
 
-static GLuint g_bge_rendercheck_gpu_query = 0;
-static int g_bge_rendercheck_gpu_query_active = 0;
+static GLuint g_rendercheck_gpu_query = 0;
+static int g_rendercheck_gpu_query_active = 0;
 
-static void bge_rendercheck_gpu_begin(void)
+static void rendercheck_gpu_begin(void)
 {
-    if (!bge_rendercheck_enabled()) return;
-    if (!g_bge_rendercheck_gpu_query) glGenQueries(1, &g_bge_rendercheck_gpu_query);
-    if (!g_bge_rendercheck_gpu_query) return;
-    glBeginQuery(GL_TIME_ELAPSED, g_bge_rendercheck_gpu_query);
-    g_bge_rendercheck_gpu_query_active = 1;
+    if (!rendercheck_enabled()) return;
+    if (!g_rendercheck_gpu_query) glGenQueries(1, &g_rendercheck_gpu_query);
+    if (!g_rendercheck_gpu_query) return;
+    glBeginQuery(GL_TIME_ELAPSED, g_rendercheck_gpu_query);
+    g_rendercheck_gpu_query_active = 1;
 }
 
-static void bge_rendercheck_gpu_end(void)
+static void rendercheck_gpu_end(void)
 {
-    if (!g_bge_rendercheck_gpu_query_active) return;
+    if (!g_rendercheck_gpu_query_active) return;
 
     glEndQuery(GL_TIME_ELAPSED);
-    g_bge_rendercheck_gpu_query_active = 0;
+    g_rendercheck_gpu_query_active = 0;
 
     GLuint64 elapsed_ns = 0;
-    glGetQueryObjectui64v(g_bge_rendercheck_gpu_query, GL_QUERY_RESULT, &elapsed_ns);
+    glGetQueryObjectui64v(g_rendercheck_gpu_query, GL_QUERY_RESULT, &elapsed_ns);
 
     const char* path = getenv("RENDERCHECK_METRICS_PATH");
     if (!path || !path[0]) return;
 
     FILE* out = fopen(path, "a");
     if (!out) {
-        fprintf(stderr, "BGE: failed to open RendererCheck metrics file\n");
+        fprintf(stderr, "RendererCheck: failed to open metrics file\n");
         return;
     }
 
@@ -98,11 +98,11 @@ static void bge_rendercheck_gpu_end(void)
     fclose(out);
 }
 
-static void bge_rendercheck_gpu_shutdown(void)
+static void rendercheck_gpu_shutdown(void)
 {
-    if (g_bge_rendercheck_gpu_query) {
-        glDeleteQueries(1, &g_bge_rendercheck_gpu_query);
-        g_bge_rendercheck_gpu_query = 0;
+    if (g_rendercheck_gpu_query) {
+        glDeleteQueries(1, &g_rendercheck_gpu_query);
+        g_rendercheck_gpu_query = 0;
     }
-    g_bge_rendercheck_gpu_query_active = 0;
+    g_rendercheck_gpu_query_active = 0;
 }

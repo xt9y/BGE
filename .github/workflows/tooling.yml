@@ -1,4 +1,4 @@
-name: C + RendererCheck
+name: C + RendererCheck Full CI
 
 on:
   push:
@@ -13,13 +13,13 @@ permissions:
   contents: read
 
 jobs:
-  integration:
+  renderercheck:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout BGE
         uses: actions/checkout@v4
 
-      - name: Install graphics build dependencies
+      - name: Install graphics and Vulkan diagnostic dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -27,13 +27,18 @@ jobs:
             cmake \
             xvfb \
             libgl1-mesa-dev \
+            mesa-utils \
             xorg-dev \
             libx11-dev \
             libxrandr-dev \
             libxi-dev \
             libxcursor-dev \
             libxinerama-dev \
-            libxext-dev
+            libxext-dev \
+            libvulkan1 \
+            mesa-vulkan-drivers \
+            vulkan-tools \
+            vulkan-validationlayers
 
       - name: Install C
         run: |
@@ -48,17 +53,114 @@ jobs:
           make -C /tmp/renderercheck
           sudo make -C /tmp/renderercheck install
           rendercheck version
+          rendercheck help >/dev/null
+
+      - name: Test RendererCheck init
+        run: |
+          rm -rf /tmp/rendercheck-init
+          mkdir -p /tmp/rendercheck-init
+          cd /tmp/rendercheck-init
+          rendercheck init
+          test -s rendercheck.toml
+
+      - name: RendererCheck doctor
+        run: rendercheck doctor --verbose
 
       - name: Build through C
         run: c build
 
-      - name: Run RendererCheck through C
-        run: xvfb-run -a rendercheck run
+      - name: Test filtered runtime and real GPU metrics
+        run: |
+          xvfb-run -a rendercheck run runtime
+          test -s .rendercheck/runtime/metrics.txt
+          grep -q '^gpu_ms=' .rendercheck/runtime/metrics.txt
+          test -s .rendercheck/report.md
+          test -s .rendercheck/results.json
+
+      - name: Test missing visual baseline and approve flow
+        run: |
+          rm -rf rendercheck/baselines .rendercheck/visual
+          if xvfb-run -a rendercheck run visual; then
+            echo 'RendererCheck unexpectedly passed without a visual baseline'
+            exit 1
+          fi
+          test -s .rendercheck/visual/actual.ppm
+          rendercheck approve visual
+          test -n "$(find rendercheck/baselines -type f -name '*.ppm' -print -quit)"
+          xvfb-run -a rendercheck run visual
+          rendercheck diff visual
+
+      - name: Test visual regression and diff artifact
+        run: |
+          BASELINE="$(find rendercheck/baselines -type f -name '*.ppm' -print -quit)"
+          test -n "$BASELINE"
+          BASELINE="$BASELINE" python3 - <<'PY'
+          import os
+          from pathlib import Path
+          p = Path(os.environ['BASELINE'])
+          data = bytearray(p.read_bytes())
+          if not data:
+              raise SystemExit('empty baseline')
+          data[-1] ^= 0xff
+          p.write_bytes(data)
+          PY
+          if xvfb-run -a rendercheck run visual; then
+            echo 'RendererCheck unexpectedly accepted a corrupted baseline'
+            exit 1
+          fi
+          test -s .rendercheck/visual/diff.ppm
+          rendercheck approve visual
+          xvfb-run -a rendercheck run visual
+
+      - name: Test GPU performance failure policy
+        run: |
+          cp rendercheck.toml /tmp/rendercheck.toml.saved
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('rendercheck.toml')
+          s = p.read_text()
+          s = s.replace('max_gpu_ms = 5000.0', 'max_gpu_ms = 0.000001', 1)
+          p.write_text(s)
+          PY
+          if xvfb-run -a rendercheck run runtime; then
+            echo 'RendererCheck unexpectedly accepted an impossible GPU budget'
+            exit 1
+          fi
+          mv /tmp/rendercheck.toml.saved rendercheck.toml
+
+      - name: Test process performance failure policy
+        run: |
+          cp rendercheck.toml /tmp/rendercheck.toml.saved
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('rendercheck.toml')
+          s = p.read_text()
+          s = s.replace('max_process_ms = 20000.0', 'max_process_ms = 0.001', 1)
+          p.write_text(s)
+          PY
+          if xvfb-run -a rendercheck run runtime; then
+            echo 'RendererCheck unexpectedly accepted an impossible process budget'
+            exit 1
+          fi
+          mv /tmp/rendercheck.toml.saved rendercheck.toml
+
+      - name: Test complete multi-test run and reports
+        run: |
+          xvfb-run -a rendercheck run
+          test -s .rendercheck/report.md
+          test -s .rendercheck/results.json
+          test -s .rendercheck/runtime/metrics.txt
+          test -s .rendercheck/visual/metrics.txt
+          test -s .rendercheck/visual/actual.ppm
+          grep -q '^gpu_ms=' .rendercheck/runtime/metrics.txt
+          grep -q '^gpu_ms=' .rendercheck/visual/metrics.txt
 
       - name: Upload RendererCheck artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: renderercheck-${{ github.ref_name }}
-          path: .rendercheck/
+          path: |
+            .rendercheck/
+            rendercheck/baselines/
           if-no-files-found: ignore

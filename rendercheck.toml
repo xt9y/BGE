@@ -1,5 +1,5 @@
 [project]
-name = "bge-game-engine"
+name = "bge-opengl"
 command = "c run"
 cwd = "."
 baseline_dir = "rendercheck/baselines"
@@ -9,11 +9,20 @@ vulkan = false
 fail_on_error = true
 fail_on_warning = false
 
+[performance]
+max_gpu_ms = 5000.0
+max_process_ms = 20000.0
+
 [[test]]
-name = "smoke"
-# The engine understands RendererCheck's capture environment as well. Change
-# this to true, inspect the first frame, then run `rendercheck approve smoke`
-# when you want this branch to enforce a committed visual baseline.
+name = "runtime"
 capture = false
+max_gpu_ms = 5000.0
+max_process_ms = 20000.0
+
+[[test]]
+name = "visual"
+capture = true
 pixel_threshold = 1
 max_changed_percent = 0.01
+max_gpu_ms = 5000.0
+max_process_ms = 20000.0

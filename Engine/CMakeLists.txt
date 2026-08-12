@@ -8,7 +8,7 @@ if(NOT WIN32)
 endif()
 
 add_library(engine STATIC
-    App.c cam.c gfx.c text.c level.c portal.c editor.c gun.c render.c util/math.c
+    rendercheck_shim.c cam.c gfx.c text.c level.c portal.c editor.c gun.c render.c util/math.c
     imgui_c.cpp
 )
 

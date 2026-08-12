@@ -12,7 +12,7 @@ void build(C_Build *b) {
 
     C_Dependency *engine = c_git(
         b, "bge-engine", "https://github.com/xt9y/BGE.git",
-        "opengl-example-game-engine"
+        "main"
     );
     c_dep_cmake(engine);
     c_dep_subdir(engine, "Engine");

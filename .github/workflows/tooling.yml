@@ -99,13 +99,18 @@ jobs:
           from pathlib import Path
           p = Path(os.environ['BASELINE'])
           data = bytearray(p.read_bytes())
-          if not data:
-              raise SystemExit('empty baseline')
-          data[-1] ^= 0xff
+          # Preserve the PPM header and invert every RGB byte. This creates a
+          # deliberate near-100% regression, well above the permissive startup
+          # tolerance used by the BGE integration test.
+          pos = 0
+          for _ in range(3):
+              pos = data.index(ord('\n'), pos) + 1
+          for i in range(pos, len(data)):
+              data[i] ^= 0xff
           p.write_bytes(data)
           PY
           if xvfb-run -a rendercheck run visual; then
-            echo 'RendererCheck unexpectedly accepted a corrupted baseline'
+            echo 'RendererCheck unexpectedly accepted an inverted baseline'
             exit 1
           fi
           test -s .rendercheck/visual/diff.ppm

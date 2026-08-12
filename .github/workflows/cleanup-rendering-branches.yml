@@ -1,0 +1,23 @@
+name: Clean up migrated rendering branches
+
+on:
+  push:
+    branches: [opengl-example-game-engine]
+    paths:
+      - '.github/workflows/cleanup-rendering-branches.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete migrated rendering branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            --delete opengl-rendering-triangle opengl-rendering-voxel

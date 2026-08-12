@@ -7,6 +7,14 @@ if(NOT WIN32)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -W")
 endif()
 
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_X11 ON CACHE BOOL "" FORCE)
+add_subdirectory(../Vendor/glfw ${CMAKE_BINARY_DIR}/glfw)
+add_subdirectory(../Vendor/imgui ${CMAKE_BINARY_DIR}/imgui)
+
 add_library(engine STATIC
     rendercheck_shim.c cam.c gfx.c text.c level.c portal.c editor.c gun.c render.c util/math.c
     imgui_c.cpp

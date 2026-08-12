@@ -19,5 +19,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-            --delete opengl-rendering-triangle opengl-rendering-voxel
+          mkdir cleanup-repo
+          cd cleanup-repo
+          git init
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin --delete opengl-rendering-triangle opengl-rendering-voxel

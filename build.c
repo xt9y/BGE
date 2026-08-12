@@ -15,6 +15,7 @@ void build(C_Build *b) {
         "opengl-example-game-engine"
     );
     c_dep_cmake(engine);
+    c_dep_subdir(engine, "Engine");
     c_dep_cmake_option(engine, "-DGLFW_INSTALL=ON");
     c_dep_link(engine, "engine");
     c_dep_link(engine, "imgui");

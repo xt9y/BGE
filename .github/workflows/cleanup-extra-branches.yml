@@ -1,0 +1,26 @@
+name: Clean up extra branches
+
+on:
+  push:
+    branches: [opengl-example-game-engine]
+    paths:
+      - '.github/workflows/cleanup-extra-branches.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete lightning and game-engine-2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir /tmp/bge-cleanup
+          cd /tmp/bge-cleanup
+          git init
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin --delete lightning opengl-example-game-engine-2

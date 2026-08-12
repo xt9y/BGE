@@ -13,17 +13,16 @@
 
 #### NOTES:
 - Please dont clone everything and just do: `git clone --depth 1 https://github.com/xt9y/BGE.git`
-- Build: `make` and `make run` (if the application does not launch)
+- Build and run: `c build run`
 - Linux build requirements : OpenGL loader/headers, X11
     - Example (Arch btw): `sudo pacman -S libx11 libxrandr libxi libxcursor libxinerama xorgproto mesa mesa-utils libglvnd`
 
-#### C build system integration
+#### C build system
 
-This branch can also be built and run with [xt9y/C](https://github.com/xt9y/C):
+Build and run this branch with [xt9y/C](https://github.com/xt9y/C):
 
 ```sh
-c build
-c run
+c build run
 ```
 
 `build.c` keeps the mixed C/C++ engine libraries in C's global dependency cache while the game entry point is built through the `c` workflow. The generated self-dependency lockfile is intentionally ignored because its resolved commit would be self-referential on this integration branch.
@@ -36,7 +35,7 @@ With [xt9y/RendererCheck](https://github.com/xt9y/RendererCheck) installed:
 rendercheck run
 ```
 
-RendererCheck invokes `c run`, so the test exercises both integrations together. When `RENDERCHECK=1` is present, BGE creates a hidden window, renders one frame, supports `RENDERCHECK_CAPTURE_PATH` as an RGB8 PPM framebuffer capture, and exits normally.
+RendererCheck exercises the C build workflow together with BGE. When `RENDERCHECK=1` is present, BGE creates a hidden window, renders one frame, supports `RENDERCHECK_CAPTURE_PATH` as an RGB8 PPM framebuffer capture, and exits normally.
 
 The committed smoke test leaves `capture = false` so a fresh clone passes without requiring an unreviewed image baseline. To turn it into a visual regression test, set `capture = true`, run the test once, inspect `.rendercheck/smoke/actual.ppm`, and approve it with:
 

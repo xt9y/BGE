@@ -18,3 +18,10 @@ target_include_directories(imgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(imgui PRIVATE ../glfw/include ../glad/include)
 
 target_link_libraries(imgui PUBLIC glfw)
+
+include(GNUInstallDirs)
+install(TARGETS imgui
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

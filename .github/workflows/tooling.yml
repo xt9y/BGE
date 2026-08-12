@@ -1,0 +1,64 @@
+name: C + RendererCheck
+
+on:
+  push:
+    branches:
+      - 'opengl-*'
+  pull_request:
+    branches:
+      - 'opengl-*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout BGE
+        uses: actions/checkout@v4
+
+      - name: Install graphics build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            xvfb \
+            libgl1-mesa-dev \
+            xorg-dev \
+            libx11-dev \
+            libxrandr-dev \
+            libxi-dev \
+            libxcursor-dev \
+            libxinerama-dev \
+            libxext-dev
+
+      - name: Install C
+        run: |
+          git clone --depth 1 https://github.com/xt9y/C.git /tmp/xt9y-c
+          make -C /tmp/xt9y-c
+          sudo make -C /tmp/xt9y-c install
+          c --version
+
+      - name: Install RendererCheck
+        run: |
+          git clone --depth 1 https://github.com/xt9y/RendererCheck.git /tmp/renderercheck
+          make -C /tmp/renderercheck
+          sudo make -C /tmp/renderercheck install
+          rendercheck version
+
+      - name: Build through C
+        run: c build
+
+      - name: Run RendererCheck through C
+        run: xvfb-run -a rendercheck run
+
+      - name: Upload RendererCheck artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renderercheck-${{ github.ref_name }}
+          path: .rendercheck/
+          if-no-files-found: ignore

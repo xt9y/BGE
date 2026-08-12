@@ -122,6 +122,50 @@ void post_blit(const i32 src_w, const i32 src_h, const i32 dst_w, const i32 dst_
     glEnable(GL_DEPTH_TEST);
 }
 
+static int rendercheck_capture_frame(void)
+{
+    const char* path = getenv("RENDERCHECK_CAPTURE_PATH");
+    if (!path || !path[0]) return 0;
+
+    i32 width = 0;
+    i32 height = 0;
+    glfwGetFramebufferSize(state.win, &width, &height);
+    if (width <= 0 || height <= 0) return -1;
+
+    const size_t row_bytes = (size_t)width * 3u;
+    const size_t image_bytes = row_bytes * (size_t)height;
+    unsigned char* pixels = (unsigned char*)malloc(image_bytes);
+    if (!pixels) return -1;
+
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadBuffer(GL_BACK);
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+    FILE* out = fopen(path, "wb");
+    if (!out) {
+        free(pixels);
+        return -1;
+    }
+
+    if (fprintf(out, "P6\n%d %d\n255\n", width, height) < 0) {
+        fclose(out);
+        free(pixels);
+        return -1;
+    }
+
+    for (i32 y = height - 1; y >= 0; --y) {
+        if (fwrite(pixels + (size_t)y * row_bytes, 1, row_bytes, out) != row_bytes) {
+            fclose(out);
+            free(pixels);
+            return -1;
+        }
+    }
+
+    const int close_result = fclose(out);
+    free(pixels);
+    return close_result == 0 ? 0 : -1;
+}
+
 void GL_START()
 {
     state = (state_t){0};
@@ -133,6 +177,7 @@ void GL_START()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
+    if (getenv("RENDERCHECK")) glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
     state.win = glfwCreateWindow(WIDTH, HEIGHT, TITLE, 0, 0);
     if (!state.win) {
@@ -189,8 +234,13 @@ int GL_FRAME()
     INPUT();
     RENDER();
 
+    const int rendercheck = getenv("RENDERCHECK") != NULL;
+    if (rendercheck && rendercheck_capture_frame() != 0)
+        fprintf(stderr, "BGE: failed to write RendererCheck frame capture\n");
+
     glfwSwapBuffers(state.win);
 
+    if (rendercheck) return 0;
     return !glfwWindowShouldClose(state.win) && state.id != STATE_EXIT;
 }
 
@@ -205,8 +255,8 @@ void GL_END()
     if (state.text) texture_registry_cleanup(state.text);
     text_shutdown();
     imgui_shutdown();
-    glfwTerminate();
     if (state.data) glDeleteProgram(state.data->program);
+    glfwTerminate();
     if (state.text)   free(state.text);
     if (state.gun)    free(state.gun);
     if (state.cam)    free(state.cam);

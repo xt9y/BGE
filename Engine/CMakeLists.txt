@@ -17,3 +17,10 @@ target_include_directories(engine PUBLIC ../Vendor/glad/include)
 
 target_include_directories(engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ..)
 target_link_libraries(engine PUBLIC glfw imgui)
+
+include(GNUInstallDirs)
+install(TARGETS engine
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

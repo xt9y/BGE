@@ -54,14 +54,21 @@ void build(C_Build *b) {
     C_Target *app = c_executable(b, "bge");
 
     c_sources(app, "main.c");
+    c_sources(app, "Engine/Engine_lifecycle.c");
+    c_sources(app, "Engine/Engine_resources.c");
+    c_sources(app, "Engine/Engine_input.c");
+    c_sources(app, "Engine/Engine_render.c");
+    c_sources(app, "Engine/Engine_rotation.c");
+    c_sources(app, "Engine/Engine_movement.c");
+    c_sources(app, "Engine/App_callbacks.c");
     c_sources(app, "Engine/App.c");
     c_sources(app, "Engine/cam.c");
     c_sources(app, "Engine/gfx.c");
     c_sources(app, "Engine/text.c");
     c_sources(app, "Engine/level.c");
-    c_sources(app, "Engine/level_io.c");
+    c_sources(app, "Engine/level_store.c");
     c_sources(app, "Engine/portal.c");
-    c_sources(app, "Engine/editor.c");
+    c_sources(app, "Engine/editor_runtime.c");
     c_sources(app, "Engine/gun.c");
     c_sources(app, "Engine/render.c");
     c_sources(app, "Engine/util/math.c");

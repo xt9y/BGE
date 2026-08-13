@@ -2,7 +2,6 @@
 
 static void add_imgui(C_Target *app) {
     c_sources(app, "Vendor/imgui/imgui.cpp");
-    c_sources(app, "Vendor/imgui/imgui_demo.cpp");
     c_sources(app, "Vendor/imgui/imgui_draw.cpp");
     c_sources(app, "Vendor/imgui/imgui_tables.cpp");
     c_sources(app, "Vendor/imgui/imgui_widgets.cpp");

@@ -3,9 +3,11 @@ name: C + RendererCheck Full CI
 on:
   push:
     branches:
+      - main
       - 'opengl-*'
   pull_request:
     branches:
+      - main
       - 'opengl-*'
   workflow_dispatch:
 
@@ -68,6 +70,33 @@ jobs:
 
       - name: Build through C
         run: c build
+
+      - name: Test level header generation
+        run: |
+          cat >/tmp/bge-level-generate.c <<'EOF'
+          #include "Engine/level.h"
+          int main(void) {
+              level_data_t source = {0};
+              level_data_t owned = {0};
+              if (!level_clone_owned(&source, &owned)) return 1;
+              if (!level_save_header(&owned, "/tmp/bge-generated-level.h", "load_ci_generated")) return 2;
+              level_free_owned(&owned);
+              return 0;
+          }
+          EOF
+          cc -std=c11 -I. -IEngine /tmp/bge-level-generate.c Engine/level_store.c -o /tmp/bge-level-generate
+          /tmp/bge-level-generate
+          grep -q 'static inline level_data_t load_ci_generated(void)' /tmp/bge-generated-level.h
+          cat >/tmp/bge-level-consume.c <<'EOF'
+          #include "Engine/level.h"
+          #include "/tmp/bge-generated-level.h"
+          int main(void) {
+              level_data_t level = load_ci_generated();
+              return level.sector_count == 1 ? 0 : 1;
+          }
+          EOF
+          cc -std=c11 -I. -IEngine /tmp/bge-level-consume.c -o /tmp/bge-level-consume
+          /tmp/bge-level-consume
 
       - name: Test filtered runtime and real GPU metrics
         run: |

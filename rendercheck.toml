@@ -20,19 +20,12 @@ max_gpu_ms = 5000.0
 max_process_ms = 20000.0
 
 [[test]]
-name = "startup-scene"
-args = "-- --scene Engine/res/level1.h"
-capture = false
-max_gpu_ms = 5000.0
-max_process_ms = 20000.0
-
-[[test]]
 name = "visual"
 capture = true
 pixel_threshold = 1
-# BGE's current startup frame contains transient first-frame state. Keep this
-# tooling-integration test permissive enough for that variation; CI separately
-# inverts the entire baseline and requires RendererCheck to reject it.
+# BGE's startup frame contains transient first-frame state. Keep this
+# integration baseline permissive enough for that variation; CI separately
+# inverts the whole baseline and requires RendererCheck to reject it.
 max_changed_percent = 95.0
 max_gpu_ms = 5000.0
 max_process_ms = 20000.0

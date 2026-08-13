@@ -30,16 +30,22 @@ typedef struct {
     f32 scale;
 } framebuffer_t;
 
+/*
+ * state_t intentionally stores references to subsystem storage owned by the
+ * active engine_runtime.  Nothing in here is independently heap-owned.
+ */
 typedef struct {
     bool cursor_locked;
     GLFWwindow* win;
     state_e id;
     f32 dt;
+
     framebuffer_t* fb;
     data_t* data;
     camera_t* cam;
     editor_t* editor;
     texture_registry_t* text;
+
     vertex_t text_vertices[MAX_TEXT_VERTICES];
     u32 text_vertex_count;
     bool debug_visible;

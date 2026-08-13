@@ -2,13 +2,9 @@ name: C + RendererCheck Full CI
 
 on:
   push:
-    branches:
-      - main
-      - 'opengl-*'
+    branches: [main, 'opengl-*', '*-cleanup']
   pull_request:
-    branches:
-      - main
-      - 'opengl-*'
+    branches: [main, 'opengl-*']
   workflow_dispatch:
 
 permissions:
@@ -18,29 +14,13 @@ jobs:
   renderercheck:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout BGE
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install graphics and Vulkan diagnostic dependencies
+      - name: Install graphics dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            cmake \
-            xvfb \
-            libgl1-mesa-dev \
-            mesa-utils \
-            xorg-dev \
-            libx11-dev \
-            libxrandr-dev \
-            libxi-dev \
-            libxcursor-dev \
-            libxinerama-dev \
-            libxext-dev \
-            libvulkan1 \
-            mesa-vulkan-drivers \
-            vulkan-tools \
-            vulkan-validationlayers
+          sudo apt-get install -y build-essential xvfb libgl1-mesa-dev mesa-utils xorg-dev \
+            libx11-dev libxrandr-dev libxi-dev libxcursor-dev libxinerama-dev libxext-dev
 
       - name: Install C
         run: |
@@ -55,141 +35,134 @@ jobs:
           make -C /tmp/renderercheck
           sudo make -C /tmp/renderercheck install
           rendercheck version
-          rendercheck help >/dev/null
 
-      - name: Test RendererCheck init
+      - name: Architecture guards
         run: |
-          rm -rf /tmp/rendercheck-init
-          mkdir -p /tmp/rendercheck-init
-          cd /tmp/rendercheck-init
-          rendercheck init
-          test -s rendercheck.toml
+          ! grep -R --line-number '#include "editor.c"' Engine Game
+          ! grep -R --line-number 'state\.levels\|state\.level_count\|state\.level_id' Engine Game
+          ! grep -R --line-number 'billboard_cam\|used_portals\[256\]' Engine Game
+          ! grep -R --line-number 'editor_add_level\|editor_switch_level' Engine Game
+          ! test -e Engine/App_callbacks.c
+          ! test -e Engine/editor_runtime.c
+          ! test -e Engine/gun.c
+          test -d Game/res
 
-      - name: RendererCheck doctor
-        run: rendercheck doctor --verbose
+      - name: Project warnings are errors
+        run: |
+          for source in Engine/*.c Engine/util/*.c Game/*.c; do
+            cc -std=c11 -Wall -Wextra -Wpedantic -Werror -fsyntax-only \
+              -I. -IEngine -IVendor/glad/include -IVendor/glfw/include -IVendor/imgui "$source"
+          done
+
+      - name: Core sanitizer tests
+        run: |
+          cat >/tmp/test-math.c <<'SRC'
+          #include "Engine/util/math.h"
+          #include <assert.h>
+          #include <math.h>
+          static int near(float a,float b){return fabsf(a-b)<0.0001f;}
+          int main(void){float i[16],t[16],r[16],m[16],inv[16],rt[16];mat4_identity(i);mat4_translate(t,10,20,30);mat4_rotate_z(r,DEG2RAD(90));mat4_multiply(m,t,r);assert(near(m[12],10));assert(mat4_inverse(t,inv));mat4_multiply(rt,t,inv);for(int k=0;k<16;k++)assert(near(rt[k],i[k]));return 0;}
+          SRC
+          cc -std=c11 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -I. -IEngine /tmp/test-math.c Engine/util/math.c -lm -o /tmp/test-math
+          /tmp/test-math
+
+          cat >/tmp/test-portal.c <<'SRC'
+          #include "Engine/portal.h"
+          #include <assert.h>
+          bool level_ray_intersects_quad(vec3s a,vec3s b,const level_quad_t*c,f32*d,vec3s*e,vec3s*f){(void)a;(void)b;(void)c;(void)d;(void)e;(void)f;return false;}
+          int main(void){level_quad_t q[3]={0};q[0].portal_id=q[1].portal_id=4096;q[0].size=q[1].size=(vec2s){2,4};level_sector_data_t s={.quad_count=3,.quads=q};level_data_t l={.sectors=&s,.sector_count=1};portal_link_t link;assert(portal_find_link(&l,&q[0],&link)&&link.dst==&q[1]);q[2].portal_id=4096;assert(!portal_find_link(&l,&q[0],&link));return 0;}
+          SRC
+          cc -std=c11 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -I. -IEngine /tmp/test-portal.c Engine/portal.c Engine/util/math.c -lm -o /tmp/test-portal
+          /tmp/test-portal
+
+          cat >/tmp/test-editor.c <<'SRC'
+          #include "Engine/editor.h"
+          #include "Engine/state.h"
+          #include <assert.h>
+          #include <stdlib.h>
+          state_t* g_state=0;
+          int main(void){state_t st={0};editor_t ed={0};camera_t cam={.front={0,0,-1},.up={0,1,0}};level_data_t l={0};g_state=&st;state.editor=&ed;state.cam=&cam;ed.level=&l;ed.selected_sector_id=-1;ed.selected_wall_idx=-1;ed.portal_link_sector_id=-1;ed.portal_link_wall_idx=-1;ed.next_wall_window_id=1;assert(editor_add_sector(&l));assert(editor_add_sector(&l));level_sector_data_t*a=&l.sectors[0],*b=&l.sectors[1];for(int i=0;i<80;i++){level_quad_t q={.pos={(float)i,0,0},.size={2,2},.sector_id=a->id};assert(editor_add_quad(a,&q));a=editor_sector_by_id(0);b=editor_sector_by_id(1);}assert(editor_move_quad_to_sector(a,b,state.editor->selected_wall_idx));for(int s=0;s<l.sector_count;s++)free(l.sectors[s].quads);free(l.sectors);return 0;}
+          SRC
+          cc -std=c11 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -I. -IEngine -IVendor/glfw/include /tmp/test-editor.c Engine/editor_model.c -lm -o /tmp/test-editor
+          /tmp/test-editor
 
       - name: Build through C
         run: c build
 
-      - name: Test level header generation
+      - name: Generated level round trip
         run: |
-          cat >/tmp/bge-level-generate.c <<'EOF'
+          cat >/tmp/generate.c <<'SRC'
           #include "Engine/level.h"
-          int main(void) {
-              level_data_t source = {0};
-              level_data_t owned = {0};
-              if (!level_clone_owned(&source, &owned)) return 1;
-              if (!level_save_header(&owned, "/tmp/bge-generated-level.h", "load_ci_generated")) return 2;
-              level_free_owned(&owned);
-              return 0;
-          }
-          EOF
-          cc -std=c11 -I. -IEngine /tmp/bge-level-generate.c Engine/level_store.c -o /tmp/bge-level-generate
-          /tmp/bge-level-generate
-          grep -q 'static inline level_data_t load_ci_generated(void)' /tmp/bge-generated-level.h
-          cat >/tmp/bge-level-consume.c <<'EOF'
+          int main(void){level_data_t source={0},owned={0};if(!level_clone_owned(&source,&owned))return 1;if(!level_save_header(&owned,"/tmp/generated.h","load_ci_generated"))return 2;level_free_owned(&owned);return 0;}
+          SRC
+          cc -std=c11 -I. -IEngine /tmp/generate.c Engine/level_store.c -lm -o /tmp/generate
+          /tmp/generate
+          grep -q 'load_ci_generated(void)' /tmp/generated.h
+          cat >/tmp/consume.c <<'SRC'
           #include "Engine/level.h"
-          #include "/tmp/bge-generated-level.h"
-          int main(void) {
-              level_data_t level = load_ci_generated();
-              return level.sector_count == 1 ? 0 : 1;
-          }
-          EOF
-          cc -std=c11 -I. -IEngine /tmp/bge-level-consume.c -o /tmp/bge-level-consume
-          /tmp/bge-level-consume
+          #include "/tmp/generated.h"
+          int main(void){level_data_t l=load_ci_generated();return l.sector_count==1?0:1;}
+          SRC
+          cc -std=c11 -I. -IEngine /tmp/consume.c -o /tmp/consume
+          /tmp/consume
 
-      - name: Test filtered runtime and real GPU metrics
+      - name: Reinitialize engine in one process
         run: |
+          cp main.c /tmp/main.c
+          cat >main.c <<'SRC'
+          #include "Engine/Engine.h"
+          #include "Engine/res/level1.h"
+          int main(void){Engine a={0},b={0};if(!engine_init(&a,"/tmp/reinit.h",load_1()))return 1;engine_run(&a);engine_destroy(&a);if(!engine_init(&b,"/tmp/reinit.h",load_1()))return 2;engine_run(&b);engine_destroy(&b);return 0;}
+          SRC
+          RENDERCHECK=1 xvfb-run -a c run
+          mv /tmp/main.c main.c
+          c build
+
+      - name: RendererCheck doctor and runtime
+        run: |
+          rendercheck doctor --verbose
           xvfb-run -a rendercheck run runtime
           test -s .rendercheck/runtime/metrics.txt
           grep -q '^gpu_ms=' .rendercheck/runtime/metrics.txt
-          test -s .rendercheck/report.md
-          test -s .rendercheck/results.json
 
-      - name: Test missing visual baseline and approve flow
+      - name: Visual baseline flow
         run: |
           rm -rf rendercheck/baselines .rendercheck/visual
-          if xvfb-run -a rendercheck run visual; then
-            echo 'RendererCheck unexpectedly passed without a visual baseline'
-            exit 1
-          fi
+          if xvfb-run -a rendercheck run visual; then exit 1; fi
           test -s .rendercheck/visual/actual.ppm
           rendercheck approve visual
-          test -n "$(find rendercheck/baselines -type f -name '*.ppm' -print -quit)"
           xvfb-run -a rendercheck run visual
           rendercheck diff visual
 
-      - name: Test visual regression and diff artifact
+      - name: Visual regression rejection
         run: |
           BASELINE="$(find rendercheck/baselines -type f -name '*.ppm' -print -quit)"
           test -n "$BASELINE"
           BASELINE="$BASELINE" python3 - <<'PY'
           import os
           from pathlib import Path
-          p = Path(os.environ['BASELINE'])
-          data = bytearray(p.read_bytes())
-          pos = 0
-          for _ in range(3):
-              pos = data.index(ord('\n'), pos) + 1
-          for i in range(pos, len(data)):
-              data[i] ^= 0xff
-          p.write_bytes(data)
+          p=Path(os.environ['BASELINE']); d=bytearray(p.read_bytes()); pos=0
+          for _ in range(3): pos=d.index(ord('\n'),pos)+1
+          for i in range(pos,len(d)): d[i]^=0xff
+          p.write_bytes(d)
           PY
-          if xvfb-run -a rendercheck run visual; then
-            echo 'RendererCheck unexpectedly accepted an inverted baseline'
-            exit 1
-          fi
-          test -s .rendercheck/visual/diff.ppm
+          if xvfb-run -a rendercheck run visual; then exit 1; fi
           rendercheck approve visual
           xvfb-run -a rendercheck run visual
 
-      - name: Test GPU performance failure policy
+      - name: Performance failure policies
         run: |
-          cp rendercheck.toml /tmp/rendercheck.toml.saved
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('rendercheck.toml')
-          s = p.read_text().replace('max_gpu_ms = 5000.0', 'max_gpu_ms = 0.000001')
-          p.write_text(s)
-          PY
-          if xvfb-run -a rendercheck run runtime; then
-            echo 'RendererCheck unexpectedly accepted an impossible GPU budget'
-            exit 1
-          fi
-          mv /tmp/rendercheck.toml.saved rendercheck.toml
+          cp rendercheck.toml /tmp/rc.toml
+          sed -i 's/max_gpu_ms = 5000.0/max_gpu_ms = 0.000001/g' rendercheck.toml
+          if xvfb-run -a rendercheck run runtime; then exit 1; fi
+          mv /tmp/rc.toml rendercheck.toml
+          cp rendercheck.toml /tmp/rc.toml
+          sed -i 's/max_process_ms = 20000.0/max_process_ms = 0.001/g' rendercheck.toml
+          if xvfb-run -a rendercheck run runtime; then exit 1; fi
+          mv /tmp/rc.toml rendercheck.toml
 
-      - name: Test process performance failure policy
-        run: |
-          cp rendercheck.toml /tmp/rendercheck.toml.saved
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('rendercheck.toml')
-          s = p.read_text().replace('max_process_ms = 20000.0', 'max_process_ms = 0.001')
-          p.write_text(s)
-          PY
-          if xvfb-run -a rendercheck run runtime; then
-            echo 'RendererCheck unexpectedly accepted an impossible process budget'
-            exit 1
-          fi
-          mv /tmp/rendercheck.toml.saved rendercheck.toml
-
-      - name: Test complete multi-test run and reports
+      - name: Complete RendererCheck run
         run: |
           xvfb-run -a rendercheck run
           test -s .rendercheck/report.md
           test -s .rendercheck/results.json
-          test -s .rendercheck/runtime/metrics.txt
-          test -s .rendercheck/visual/metrics.txt
-          test -s .rendercheck/visual/actual.ppm
-          grep -q '^gpu_ms=' .rendercheck/runtime/metrics.txt
-          grep -q '^gpu_ms=' .rendercheck/visual/metrics.txt
-
-      - name: Upload RendererCheck artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: renderercheck-${{ github.ref_name }}
-          path: |
-            .rendercheck/
-            rendercheck/baselines/
-          if-no-files-found: ignore

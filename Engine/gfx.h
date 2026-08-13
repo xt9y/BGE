@@ -1,5 +1,6 @@
-#ifndef GFX_H
-#define GFX_H
+#ifndef BGE_GFX_H
+#define BGE_GFX_H
+
 #include <glad/glad.h>
 #include "util/types.h"
 
@@ -15,10 +16,12 @@ u32 create_program(const char* vs, const char* fs);
     "uniform mat4 model;\n" \
     "uniform mat4 view;\n" \
     "uniform mat4 projection;\n" \
+    "uniform vec3 u_tint;\n" \
+    "uniform vec2 u_uv_scale;\n" \
     "void main(){\n" \
     "    gl_Position=projection * view * model * vec4(aPos,1.0);\n" \
-    "    ourColor=aColor;\n" \
-    "    TexCoord=aTexCoord;\n" \
+    "    ourColor=aColor * u_tint;\n" \
+    "    TexCoord=aTexCoord * u_uv_scale;\n" \
     "}"
 
 #define FS "#version 330 core\n" \
@@ -26,10 +29,9 @@ u32 create_program(const char* vs, const char* fs);
     "in vec3 ourColor;\n" \
     "in vec2 TexCoord;\n" \
     "uniform sampler2D texture1;\n" \
-    "uniform sampler2D texture2;\n" \
     "void main(){\n" \
-    "    vec4 texColor = texture(texture1, TexCoord);\n" \
-    "    FragColor = vec4(texColor.rgb * ourColor, 1.0);\n" \
+    "    vec4 texColor=texture(texture1,TexCoord);\n" \
+    "    FragColor=vec4(texColor.rgb*ourColor,texColor.a);\n" \
     "}"
 
 #endif

@@ -1,14 +1,15 @@
-#ifndef RENDER_H
-#define RENDER_H
+#ifndef BGE_RENDER_H
+#define BGE_RENDER_H
 
-#include "level.h"
 #include "cam.h"
+#include "level.h"
 
-void render_init(void);
+#define MAX_DEBUG_TRACE_POINTS 8
+
+bool render_init(void);
 void render_shutdown(void);
-void render_main(i32 rw, i32 rh);
-void shoot_bullet(void);
-void apply_level_camera(camera_t *cam, level_data_t *level);
-void player_collide_quads(const level_data_t* level, camera_t* cam);
+bool render_main(i32 rw, i32 rh);
+void render_debug_trace_add(const vec3s* points, i32 point_count, vec3s normal, vec3s color);
+void apply_level_camera(camera_t* cam, const level_data_t* level);
 
 #endif

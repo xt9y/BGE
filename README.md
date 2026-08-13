@@ -1,33 +1,62 @@
-#### BGE - Basic Game Engine (cool name right)
-- last showcase of engine:`https://youtu.be/8IT8n9sierU?si=2kPJQaqm_F3vs9J3`
+# BGE
 
+BGE is a small C/OpenGL game engine and editor with recursive stencil portals. The repository also contains a demo game under `Game/`; demo gameplay code is deliberately kept outside `Engine/`.
 
-#### THIS IS IT:
+## Build
 
-![IMG](./Engine/res/GAME2.png)
-
-![IMG](./Engine/res/GAME1.png)
-
-![IMG](./Engine/res/GAME3.png)
-
-
-#### NOTES:
-- Please dont clone everything and just do: `git clone --depth 1 https://github.com/xt9y/BGE.git`
-- Build and run: `c build run`
-- Linux build requirements : OpenGL loader/headers, X11
-    - Example (Arch btw): `sudo pacman -S libx11 libxrandr libxi libxcursor libxinerama xorgproto mesa mesa-utils libglvnd`
-
-#### C build system
-
-Build and run this branch with [xt9y/C](https://github.com/xt9y/C):
+Install [xt9y/C](https://github.com/xt9y/C), then:
 
 ```sh
+git clone --depth 1 https://github.com/xt9y/BGE.git
+cd BGE
 c build run
 ```
 
-`build.c` keeps the mixed C/C++ engine libraries in C's global dependency cache while the game entry point is built through the `c` workflow. The generated self-dependency lockfile is intentionally ignored because its resolved commit would be self-referential on this integration branch.
+Linux/X11 example dependencies on Arch Linux:
 
-#### RendererCheck integration
+```sh
+sudo pacman -S libx11 libxrandr libxi libxcursor libxinerama xorgproto mesa mesa-utils libglvnd
+```
+
+## Minimal entry point
+
+```c
+#include "Engine/Engine.h"
+#include "Engine/res/level1.h"
+
+int main(void)
+{
+    Engine app = {0};
+    if (!engine_init(&app, "Engine/res/level1.h", load_1())) return 1;
+    engine_run(&app);
+    engine_destroy(&app);
+    return 0;
+}
+```
+
+The runtime uses the `level_data_t` returned by the loader. The path is the persistence target; BGE does not parse generated C source at runtime.
+
+## Layout
+
+```text
+Engine/   platform, renderer, editor, resources, world/level infrastructure
+Game/     demo player, weapons, gameplay input, and demo assets
+main.c    level selection + engine lifecycle only
+```
+
+Ownership rules:
+
+- `engine_runtime` owns camera, framebuffer metadata, editor state, texture registry, and editable level.
+- The texture registry has one owner; OpenGL handles are not duplicated across registries.
+- Editor selection uses stable sector/quad handles instead of pointers into reallocating arrays.
+- Level data contains no transient render-camera pointers.
+- Renderer-owned OpenGL objects have explicit shutdown paths, so init/destroy/init in one process is supported.
+
+## Levels
+
+Generated level headers are currently the source format. BGE deep-copies generated static data before editing and writes updates through `Engine/level_store.c` using a temporary file and replacement step.
+
+## RendererCheck
 
 With [xt9y/RendererCheck](https://github.com/xt9y/RendererCheck) installed:
 
@@ -35,10 +64,10 @@ With [xt9y/RendererCheck](https://github.com/xt9y/RendererCheck) installed:
 rendercheck run
 ```
 
-RendererCheck exercises the C build workflow together with BGE. When `RENDERCHECK=1` is present, BGE creates a hidden window, renders one frame, supports `RENDERCHECK_CAPTURE_PATH` as an RGB8 PPM framebuffer capture, and exits normally.
+When `RENDERCHECK` is present, BGE creates a hidden window, records GPU timing, optionally captures the framebuffer, renders one deterministic startup frame, and exits normally.
 
-The committed smoke test leaves `capture = false` so a fresh clone passes without requiring an unreviewed image baseline. To turn it into a visual regression test, set `capture = true`, run the test once, inspect `.rendercheck/smoke/actual.ppm`, and approve it with:
+CI also checks project warnings, core sanitizer tests, generated-level compilation, repeated engine initialization, RendererCheck failure policies, and visual regression behavior.
 
-```sh
-rendercheck approve smoke
-```
+## Third-party code
+
+Vendored GLFW and Dear ImGui retain their upstream licenses under `Vendor/`. Project warning policy is applied to BGE/Game sources separately from upstream vendor code.

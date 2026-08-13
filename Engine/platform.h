@@ -2,6 +2,7 @@
 #define BGE_APP_INTERNAL_H
 
 #include <stdbool.h>
+
 #include "state.h"
 
 #define TITLE "BGE"
@@ -15,6 +16,7 @@ bool app_frame_begin(void);
 void app_frame_end(void);
 void app_platform_shutdown(void);
 double app_get_fps(void);
+
 bool fbo_resize(i32 w, i32 h);
 void post_blit(i32 src_w, i32 src_h, i32 dst_w, i32 dst_h);
 u32 app_framebuffer(void);

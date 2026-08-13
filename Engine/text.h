@@ -1,12 +1,11 @@
-#ifndef TEXTURE_H
-#define TEXTURE_H
+#ifndef BGE_TEXT_H
+#define BGE_TEXT_H
 
 #include "gfx.h"
 #include "util/types.h"
 
-#define MAX_TEXTURES 100
-#define MAX_TEXT_VERTICES 8096
-#define MAX_LEVELS 8
+#define MAX_TEXTURES 128
+#define MAX_TEXT_VERTICES 8192
 
 #define CHAR_WIDTH 12.0f
 #define CHAR_HEIGHT CHAR_WIDTH
@@ -32,7 +31,7 @@ typedef struct {
     tex_filter_t filter;
     tex_wrap_t wrap_s, wrap_t;
     bool has_alpha;
-    char name[64];
+    char name[128];
 } texture_t;
 
 typedef struct {
@@ -53,21 +52,22 @@ typedef struct {
 
 extern glyph_uv_t glyphs[128];
 
+bool texture_registry_init(texture_registry_t* reg);
+void texture_registry_cleanup(texture_registry_t* reg);
 texture_t* texture_create(const char* path, tex_filter_t filter, tex_wrap_t wrap);
 texture_t* texture_create_solid(u32 r, u32 g, u32 b);
 texture_t* texture_get_by_name(const char* name);
-void texture_bind(texture_t* tex, u32 unit);
-void texture_destroy(texture_t* tex);
-void texture_registry_init(texture_registry_t* reg);
-void texture_registry_cleanup(texture_registry_t* reg);
-
 const texture_t* texture_get_fallback(void);
+void texture_bind(const texture_t* tex, u32 unit);
+void texture_destroy(texture_t* tex);
 
-void text_init();
-void text_shutdown();
-void text_begin();
+bool text_init(void);
+void text_shutdown(void);
+void text_begin(void);
 void text_draw(vec2s pos, const char* fmt, ...);
-void text_flush(int fbw, int fbh);
+void text_flush(i32 fbw, i32 fbh);
 u32 text_get_program(void);
+GLint text_projection_uniform(void);
+GLint text_sampler_uniform(void);
 
 #endif

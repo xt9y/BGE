@@ -3,25 +3,31 @@
 #include "state.h"
 #include "text.h"
 
+#define REGISTER_TEXTURE(expr) \
+    do { \
+        if (state.text->count < MAX_TEXTURES) \
+            state.text->textures[state.text->count++] = *(expr); \
+    } while (0)
+
 void engine_register_resources(void)
 {
     texture_registry_init(state.text);
-    texture_create("Engine/res/ground.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    texture_create("Engine/res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    texture_create("Engine/res/awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    texture_create_solid(255, 255, 255);
-    texture_create("Engine/res/metal_a.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    texture_create("Engine/res/metal_b.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    texture_create("Engine/res/grate.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    texture_create("Engine/res/spider.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    texture_create("Engine/res/banana.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    texture_create("Engine/res/water.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    texture_create("Engine/res/gun_doom.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    texture_create("Engine/res/gun_portal.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    texture_create("Engine/res/hand_shoot_flash.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    texture_create("Engine/res/hand_shoot_3.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    texture_create("Engine/res/hand_shoot_4.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
-    texture_create("Engine/res/hand_shoot_5.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT);
+    REGISTER_TEXTURE(texture_create("Engine/res/ground.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
+    REGISTER_TEXTURE(texture_create("Engine/res/stone.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
+    REGISTER_TEXTURE(texture_create("Engine/res/awesomeface.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
+    REGISTER_TEXTURE(texture_create_solid(255, 255, 255));
+    REGISTER_TEXTURE(texture_create("Engine/res/metal_a.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
+    REGISTER_TEXTURE(texture_create("Engine/res/metal_b.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
+    REGISTER_TEXTURE(texture_create("Engine/res/grate.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
+    REGISTER_TEXTURE(texture_create("Engine/res/spider.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
+    REGISTER_TEXTURE(texture_create("Engine/res/banana.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
+    REGISTER_TEXTURE(texture_create("Engine/res/water.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
+    REGISTER_TEXTURE(texture_create("Engine/res/gun_doom.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
+    REGISTER_TEXTURE(texture_create("Engine/res/gun_portal.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
+    REGISTER_TEXTURE(texture_create("Engine/res/hand_shoot_flash.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
+    REGISTER_TEXTURE(texture_create("Engine/res/hand_shoot_3.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
+    REGISTER_TEXTURE(texture_create("Engine/res/hand_shoot_4.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
+    REGISTER_TEXTURE(texture_create("Engine/res/hand_shoot_5.png", TEX_FILTER_LINEAR, TEX_WRAP_REPEAT));
     text_init();
     render_init();
 
@@ -47,3 +53,5 @@ void engine_register_resources(void)
     };
     gun_init();
 }
+
+#undef REGISTER_TEXTURE

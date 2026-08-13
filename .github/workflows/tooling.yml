@@ -83,7 +83,9 @@ jobs:
           state_t* g_state=0;
           int main(void){state_t st={0};editor_t ed={0};camera_t cam={.front={0,0,-1},.up={0,1,0}};level_data_t l={0};g_state=&st;state.editor=&ed;state.cam=&cam;ed.level=&l;ed.selected_sector_id=-1;ed.selected_wall_idx=-1;ed.portal_link_sector_id=-1;ed.portal_link_wall_idx=-1;ed.next_wall_window_id=1;assert(editor_add_sector(&l));assert(editor_add_sector(&l));level_sector_data_t*a=&l.sectors[0],*b=&l.sectors[1];for(int i=0;i<80;i++){level_quad_t q={.pos={(float)i,0,0},.size={2,2},.sector_id=a->id};assert(editor_add_quad(a,&q));a=editor_sector_by_id(0);b=editor_sector_by_id(1);}assert(editor_move_quad_to_sector(a,b,state.editor->selected_wall_idx));for(int s=0;s<l.sector_count;s++)free(l.sectors[s].quads);free(l.sectors);return 0;}
           SRC
-          cc -std=c11 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -I. -IEngine -IVendor/glfw/include /tmp/test-editor.c Engine/editor_model.c -lm -o /tmp/test-editor
+          cc -std=c11 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined \
+            -I. -IEngine -IVendor/glad/include -IVendor/glfw/include \
+            /tmp/test-editor.c Engine/editor_model.c -lm -o /tmp/test-editor
           /tmp/test-editor
 
       - name: Build through C

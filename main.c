@@ -16,8 +16,51 @@
 #include "gun.h"
 #include "render.h"
 
-void RUN()
+static level_data_t g_startup_level;
+static bool g_startup_level_active = false;
+
+static const char* startup_scene_arg(int argc, char** argv)
 {
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--scene") == 0) {
+            if (i + 1 >= argc || !argv[i + 1][0]) {
+                fprintf(stderr, "BGE: --scene requires a scene header path\n");
+                exit(2);
+            }
+            return argv[i + 1];
+        }
+        if (strncmp(argv[i], "--scene=", 8) == 0) {
+            if (!argv[i][8]) {
+                fprintf(stderr, "BGE: --scene requires a scene header path\n");
+                exit(2);
+            }
+            return argv[i] + 8;
+        }
+    }
+    return NULL;
+}
+
+static level_data_t* current_level(void)
+{
+    return g_startup_level_active ? &g_startup_level : &state.levels[state.level_id];
+}
+
+static void release_startup_level(void)
+{
+    if (!g_startup_level_active) return;
+    level_free_loaded_header(&g_startup_level);
+    g_startup_level_active = false;
+}
+
+void RUN(int argc, char** argv)
+{
+    const char* startup_scene_path = startup_scene_arg(argc, argv);
+    if (startup_scene_path) {
+        if (!level_load_header(startup_scene_path, &g_startup_level)) exit(EXIT_FAILURE);
+        g_startup_level_active = true;
+        fprintf(stderr, "BGE: startup scene override: %s\n", startup_scene_path);
+    }
+
     GL_START();
 
     {   // Textures
@@ -94,7 +137,7 @@ void RUN()
     }
 
     {   // Editor
-        state.editor->level = &state.levels[state.level_id];
+        state.editor->level = current_level();
     }
 
     {   // Camera
@@ -103,18 +146,21 @@ void RUN()
         state.cam->lastX = (f32)state.fb->ww * 0.5f;
         state.cam->lastY = (f32)state.fb->wh * 0.5f;
         state.cursor_locked = false;
-        apply_level_camera(state.cam, &state.levels[state.level_id]);
+        apply_level_camera(state.cam, current_level());
     }
 
     while (GL_FRAME())
     {
-        state.editor->level = &state.levels[state.level_id];
+        if (g_startup_level_active && state.editor->level != &g_startup_level)
+            release_startup_level();
+        state.editor->level = current_level();
         if (state.id == STATE_EDITOR) editor_update();
     }
 
     gun_shutdown();
     render_shutdown();
     editor_save(state.editor->level);
+    release_startup_level();
     GL_END();
 }
 
@@ -165,6 +211,22 @@ void INPUT()
         if (glfwGetKey(state.win, GLFW_KEY_H) == GLFW_PRESS) {
             if (!h_pressed) { state.debug_visible = !state.debug_visible; h_pressed = true; }
         } else h_pressed = false;
+    }
+
+    { // B - Switch level
+        static bool b_pressed = false;
+        if (glfwGetKey(state.win, GLFW_KEY_B) == GLFW_PRESS) {
+            if (!b_pressed && state.level_count > 0) {
+                if (g_startup_level_active) {
+                    state.level_id = -1;
+                    editor_switch_level(0);
+                    release_startup_level();
+                } else {
+                    editor_switch_level((state.level_id + 1) % state.level_count);
+                }
+                b_pressed = true;
+            }
+        } else b_pressed = false;
     }
 
     { // TAB - Toggle cursor lock

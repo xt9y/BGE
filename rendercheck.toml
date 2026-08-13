@@ -20,6 +20,13 @@ max_gpu_ms = 5000.0
 max_process_ms = 20000.0
 
 [[test]]
+name = "startup-scene"
+args = "-- --scene Engine/res/level1.h"
+capture = false
+max_gpu_ms = 5000.0
+max_process_ms = 20000.0
+
+[[test]]
 name = "visual"
 capture = true
 pixel_threshold = 1

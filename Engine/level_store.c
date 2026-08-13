@@ -17,7 +17,7 @@
 static char* bge_strdup(const char* s)
 {
     if (!s) s = "";
-    size_t n = strlen(s) + 1;
+    const size_t n = strlen(s) + 1;
     char* out = (char*)malloc(n);
     if (out) memcpy(out, s, n);
     return out;
@@ -38,7 +38,7 @@ void level_free_owned(level_data_t* level)
 
 bool level_clone_owned(const level_data_t* src, level_data_t* out)
 {
-    if (!src || !out) return false;
+    if (!src || !out || src == out) return false;
     memset(out, 0, sizeof(*out));
 
     out->name = bge_strdup(src->name && src->name[0] ? src->name : "Level");
@@ -72,6 +72,10 @@ bool level_clone_owned(const level_data_t* src, level_data_t* out)
         i32 qcount = src->sectors[s].quad_count;
         if (qcount < 0) qcount = 0;
         if (qcount > MAX_WALL_VERTICES) qcount = MAX_WALL_VERTICES;
+        if (qcount > 0 && !src->sectors[s].quads) {
+            level_free_owned(out);
+            return false;
+        }
         out->sectors[s].quad_count = qcount;
         out->sectors[s].quad_capacity = qcount;
         if (!qcount) continue;
@@ -100,13 +104,13 @@ bool level_set_owned_path(level_data_t* level, const char* path)
 static bool ensure_parent_dirs(const char* path)
 {
     char buf[1024];
-    size_t n = strlen(path);
+    const size_t n = strlen(path);
     if (n >= sizeof(buf)) return false;
     memcpy(buf, path, n + 1);
 
     for (size_t i = 1; i < n; ++i) {
         if (buf[i] != '/' && buf[i] != '\\') continue;
-        char saved = buf[i];
+        const char saved = buf[i];
         buf[i] = '\0';
         if (buf[0] && BGE_MKDIR(buf) != 0 && errno != EEXIST) return false;
         buf[i] = saved;
@@ -119,7 +123,7 @@ static void write_c_string(FILE* f, const char* s)
     fputc('"', f);
     if (s) {
         for (; *s; ++s) {
-            unsigned char c = (unsigned char)*s;
+            const unsigned char c = (unsigned char)*s;
             if (c == '\\' || c == '"') { fputc('\\', f); fputc(c, f); }
             else if (c == '\n') fputs("\\n", f);
             else if (c == '\r') fputs("\\r", f);
@@ -139,9 +143,26 @@ static bool valid_identifier(const char* s)
     return true;
 }
 
+static bool valid_level_for_save(const level_data_t* level)
+{
+    if (!level || !level->sectors || level->sector_count <= 0 ||
+        level->sector_count > MAX_SECTORS_PER_LEVEL)
+        return false;
+
+    for (i32 s = 0; s < level->sector_count; ++s) {
+        const level_sector_data_t* sector = &level->sectors[s];
+        if (sector->quad_count < 0 || sector->quad_count > MAX_WALL_VERTICES)
+            return false;
+        if (sector->quad_count > 0 && !sector->quads)
+            return false;
+    }
+    return true;
+}
+
 bool level_save_header(const level_data_t* level, const char* path, const char* loader_name)
 {
-    if (!level || !path || !path[0] || !valid_identifier(loader_name)) return false;
+    if (!valid_level_for_save(level) || !path || !path[0] || !valid_identifier(loader_name))
+        return false;
     if (!ensure_parent_dirs(path)) return false;
 
     char tmp_path[1200];
@@ -207,11 +228,18 @@ bool level_save_header(const level_data_t* level, const char* path, const char* 
         level->cam.pos.x, level->cam.pos.y, level->cam.pos.z,
         level->cam.yaw, level->cam.pitch);
 
-    bool ok = !ferror(f) && fclose(f) == 0;
-    if (!ok) { remove(tmp_path); return false; }
+    const bool write_ok = ferror(f) == 0;
+    const bool close_ok = fclose(f) == 0;
+    if (!write_ok || !close_ok) {
+        remove(tmp_path);
+        return false;
+    }
 #ifdef _WIN32
     remove(path);
 #endif
-    if (rename(tmp_path, path) != 0) { remove(tmp_path); return false; }
+    if (rename(tmp_path, path) != 0) {
+        remove(tmp_path);
+        return false;
+    }
     return true;
 }

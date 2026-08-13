@@ -23,7 +23,7 @@ typedef struct {
 } level_sector_data_t;
 
 typedef struct {
-    const char* name; 
+    const char* name;
     const char* path;
     level_sector_data_t* sectors;
     i32 sector_count, sector_capacity;
@@ -31,16 +31,15 @@ typedef struct {
 } level_data_t;
 
 void level_render_quad(const level_quad_t* quad, vec4s color);
-void level_render(const level_data_t *level, const camera_t *cam);
+void level_render(const level_data_t* level, const camera_t* cam);
 void level_set_frustum(const f32* view, const f32* proj);
 bool quad_visible(const level_quad_t* quad);
-bool level_ray_intersects_quad(const vec3s ray_origin, const vec3s ray_dir, const level_quad_t* quad, f32* out_t, vec3s* out_hit, vec3s* out_local_hit);
+bool level_ray_intersects_quad(vec3s ray_origin, vec3s ray_dir, const level_quad_t* quad, f32* out_t, vec3s* out_hit, vec3s* out_local_hit);
 bool level_get_height(const level_data_t* level, vec3s pos, f32* h);
 
-// Load the C header format emitted by editor_save() as runtime scene data.
-// This is used by the optional --scene startup override and does not modify
-// the normal compiled level registry.
-bool level_load_header(const char* path, level_data_t* out);
-void level_free_loaded_header(level_data_t* level);
+bool level_clone_owned(const level_data_t* src, level_data_t* out);
+void level_free_owned(level_data_t* level);
+bool level_set_owned_path(level_data_t* level, const char* path);
+bool level_save_header(const level_data_t* level, const char* path, const char* loader_name);
 
-#endif // LEVEL_H
+#endif

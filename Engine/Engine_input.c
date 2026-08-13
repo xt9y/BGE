@@ -2,6 +2,7 @@
 #include "editor.h"
 #include "gun.h"
 #include "imgui_c.h"
+#include "render.h"
 #include "state.h"
 
 void engine_update_rotation_hotkeys(engine_runtime* runtime, bool no_ui, bool shift_held);

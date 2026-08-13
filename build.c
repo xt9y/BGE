@@ -67,6 +67,7 @@ void build(C_Build *b) {
     c_sources(app, "Engine/text.c");
     c_sources(app, "Engine/level.c");
     c_sources(app, "Engine/level_store.c");
+    c_sources(app, "Engine/level_guard.c");
     c_sources(app, "Engine/portal.c");
     c_sources(app, "Engine/editor_runtime.c");
     c_sources(app, "Engine/gun.c");

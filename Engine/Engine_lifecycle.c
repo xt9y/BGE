@@ -5,6 +5,7 @@
 #include "render.h"
 #include "runtime.h"
 #include "state.h"
+#include "text.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -114,6 +115,10 @@ void engine_destroy(Engine* app)
         editor_shutdown();
         gun_shutdown();
         render_shutdown();
+
+        texture_t* private_font = texture_get_by_name("Engine/res/font.png");
+        if (private_font) texture_destroy(private_font);
+
         GL_END();
     }
 

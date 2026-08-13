@@ -23,9 +23,8 @@ max_process_ms = 20000.0
 name = "visual"
 capture = true
 pixel_threshold = 1
-# BGE's startup frame contains transient first-frame state. Keep this
-# integration baseline permissive enough for that variation; CI separately
-# inverts the whole baseline and requires RendererCheck to reject it.
-max_changed_percent = 95.0
+# Mesa's first headless frame varies slightly across runs. The observed delta is
+# below 1%, so 2% keeps the test stable without making it meaningless.
+max_changed_percent = 2.0
 max_gpu_ms = 5000.0
 max_process_ms = 20000.0

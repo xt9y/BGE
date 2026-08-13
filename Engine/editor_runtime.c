@@ -19,6 +19,8 @@ static bool bge_editor_combo(const char* label, i32* current_idx,
     return imgui_combo(label, current_idx, items, items_count);
 }
 
+void bge_legacy_editor_save(level_data_t* level);
+
 #define imgui_button bge_editor_button
 #define imgui_combo bge_editor_combo
 #define editor_add_level bge_legacy_editor_add_level

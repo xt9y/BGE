@@ -1,6 +1,8 @@
 #ifndef LEVEL_H
 #define LEVEL_H
 
+#include <stddef.h>
+
 #include "util/types.h"
 #include "util/math.h"
 #include "cam.h"

@@ -3,6 +3,9 @@ name = "bge-opengl"
 command = "c run"
 cwd = "."
 baseline_dir = "rendercheck/baselines"
+headless = "auto"
+renderer = "auto"
+timeout_ms = 30000.0
 
 [validation]
 vulkan = false
@@ -22,10 +25,8 @@ max_process_ms = 20000.0
 [[test]]
 name = "visual"
 capture = true
+warmup_frames = 30
 pixel_threshold = 1
-# BGE's current startup frame contains transient first-frame state. Keep this
-# tooling-integration test permissive enough for that variation; CI separately
-# inverts the entire baseline and requires RendererCheck to reject it.
-max_changed_percent = 95.0
+max_changed_percent = 0.1
 max_gpu_ms = 5000.0
 max_process_ms = 20000.0

@@ -8,9 +8,9 @@
 #include "util.h"
 #include "imgui_c.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 
 #if defined(__has_include)
 #  if __has_include(<rendercheck/capture.h>) && __has_include(<rendercheck/metrics.h>)
@@ -35,6 +35,7 @@ static int rendercheck_enabled(void)
 #if RENDERCHECK_AVAILABLE
 static GLuint g_rendercheck_gpu_query = 0;
 static int g_rendercheck_gpu_query_active = 0;
+static uint64_t g_rendercheck_frame_index = 0;
 static void rendercheck_gpu_begin(void)
 {
     if (!rendercheck_enabled()) return;
@@ -53,9 +54,9 @@ static void rendercheck_gpu_end(void)
     if (rendercheck_gpu_ms((double)elapsed_ns / 1000000.0) < 0)
         fprintf(stderr, "RendererCheck: failed to write GPU metric\n");
 }
-static void rendercheck_capture_frame(GLFWwindow* window)
+static void rendercheck_capture_frame(GLFWwindow* window, uint64_t frame_index)
 {
-    if (!rendercheck_enabled() || !rendercheck_capture_requested()) return;
+    if (!rendercheck_enabled() || !rendercheck_capture_due(frame_index)) return;
     int width = 0, height = 0;
     glfwGetFramebufferSize(window, &width, &height);
     if (width <= 0 || height <= 0) return;
@@ -85,7 +86,7 @@ static void rendercheck_gpu_shutdown(void)
 #else
 static void rendercheck_gpu_begin(void) {}
 static void rendercheck_gpu_end(void) {}
-static void rendercheck_capture_frame(GLFWwindow* window) { (void)window; }
+static void rendercheck_capture_frame(GLFWwindow* window, uint64_t frame_index) { (void)window; (void)frame_index; }
 static void rendercheck_gpu_shutdown(void) {}
 #endif
 
@@ -257,24 +258,38 @@ void GL_START()
     glStencilFunc(GL_ALWAYS, 0, 0xFF);
     state.id = STATE_PLAYING;
     g_last_time = (f32)glfwGetTime();
+#if RENDERCHECK_AVAILABLE
+    g_rendercheck_frame_index = 0;
+#endif
 }
 
 int GL_FRAME()
 {
     rendercheck_gpu_begin();
     const f32 now = (f32)glfwGetTime();
-    state.dt = now - g_last_time;
+    state.dt = rendercheck_enabled() ? (1.0f / 60.0f) : (now - g_last_time);
     g_last_time = now;
 
     glfwPollEvents();
     INPUT();
     RENDER();
 
-    rendercheck_capture_frame(state.win);
+#if RENDERCHECK_AVAILABLE
+    rendercheck_capture_frame(state.win, g_rendercheck_frame_index);
+#else
+    rendercheck_capture_frame(state.win, 0);
+#endif
     rendercheck_gpu_end();
     glfwSwapBuffers(state.win);
 
-    return rendercheck_enabled() ? 0 : (!glfwWindowShouldClose(state.win) && state.id != STATE_EXIT);
+#if RENDERCHECK_AVAILABLE
+    if (rendercheck_enabled()) {
+        const int keep_running = !rendercheck_frame_is_last(g_rendercheck_frame_index);
+        ++g_rendercheck_frame_index;
+        return keep_running;
+    }
+#endif
+    return !glfwWindowShouldClose(state.win) && state.id != STATE_EXIT;
 }
 
 void GL_END()

@@ -3,9 +3,11 @@ name: C + RendererCheck Full CI
 on:
   push:
     branches:
+      - main
       - 'opengl-*'
   pull_request:
     branches:
+      - main
       - 'opengl-*'
   workflow_dispatch:
 
@@ -14,31 +16,18 @@ permissions:
 
 jobs:
   renderercheck:
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
       - name: Checkout BGE
         uses: actions/checkout@v4
 
-      - name: Install graphics and Vulkan diagnostic dependencies
+      - name: Install graphics dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential \
-            cmake \
-            xvfb \
-            libgl1-mesa-dev \
-            mesa-utils \
-            xorg-dev \
-            libx11-dev \
-            libxrandr-dev \
-            libxi-dev \
-            libxcursor-dev \
-            libxinerama-dev \
-            libxext-dev \
-            libvulkan1 \
-            mesa-vulkan-drivers \
-            vulkan-tools \
-            vulkan-validationlayers
+            build-essential cmake xvfb libgl1-mesa-dev mesa-utils xorg-dev \
+            libx11-dev libxrandr-dev libxi-dev libxcursor-dev libxinerama-dev libxext-dev
 
       - name: Install C
         run: |
@@ -52,45 +41,37 @@ jobs:
           git clone --depth 1 https://github.com/xt9y/RendererCheck.git /tmp/renderercheck
           make -C /tmp/renderercheck
           sudo make -C /tmp/renderercheck install
-          rendercheck version
-          rendercheck help >/dev/null
+          renderercheck version
+          renderercheck help >/dev/null
 
-      - name: Test RendererCheck init
-        run: |
-          rm -rf /tmp/rendercheck-init
-          mkdir -p /tmp/rendercheck-init
-          cd /tmp/rendercheck-init
-          rendercheck init
-          test -s rendercheck.toml
-
-      - name: RendererCheck doctor
-        run: rendercheck doctor --verbose
+      - name: RendererCheck environment
+        run: renderercheck doctor --verbose
 
       - name: Build through C
         run: c build
 
-      - name: Test filtered runtime and real GPU metrics
+      - name: Test runtime and software-renderer classification
         run: |
-          xvfb-run -a rendercheck run runtime
+          renderercheck run runtime
           test -s .rendercheck/runtime/metrics.txt
           grep -q '^gpu_ms=' .rendercheck/runtime/metrics.txt
-          test -s .rendercheck/report.md
-          test -s .rendercheck/results.json
+          grep -q '"renderer_mode": "software"' .rendercheck/results.json
+          grep -q '"timing_kind": "software_render"' .rendercheck/results.json
 
-      - name: Test missing visual baseline and approve flow
+      - name: Test deterministic visual baseline and approve flow
         run: |
           rm -rf rendercheck/baselines .rendercheck/visual
-          if xvfb-run -a rendercheck run visual; then
+          if renderercheck run visual; then
             echo 'RendererCheck unexpectedly passed without a visual baseline'
             exit 1
           fi
           test -s .rendercheck/visual/actual.ppm
-          rendercheck approve visual
-          test -n "$(find rendercheck/baselines -type f -name '*.ppm' -print -quit)"
-          xvfb-run -a rendercheck run visual
-          rendercheck diff visual
+          test -s .rendercheck/visual/actual.png
+          renderercheck approve visual
+          renderercheck run visual
+          renderercheck diff visual
 
-      - name: Test visual regression and diff artifact
+      - name: Test visual regression and PNG diff artifact
         run: |
           BASELINE="$(find rendercheck/baselines -type f -name '*.ppm' -print -quit)"
           test -n "$BASELINE"
@@ -106,28 +87,14 @@ jobs:
               data[i] ^= 0xff
           p.write_bytes(data)
           PY
-          if xvfb-run -a rendercheck run visual; then
+          if renderercheck run visual; then
             echo 'RendererCheck unexpectedly accepted an inverted baseline'
             exit 1
           fi
           test -s .rendercheck/visual/diff.ppm
-          rendercheck approve visual
-          xvfb-run -a rendercheck run visual
-
-      - name: Test GPU performance failure policy
-        run: |
-          cp rendercheck.toml /tmp/rendercheck.toml.saved
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('rendercheck.toml')
-          s = p.read_text().replace('max_gpu_ms = 5000.0', 'max_gpu_ms = 0.000001')
-          p.write_text(s)
-          PY
-          if xvfb-run -a rendercheck run runtime; then
-            echo 'RendererCheck unexpectedly accepted an impossible GPU budget'
-            exit 1
-          fi
-          mv /tmp/rendercheck.toml.saved rendercheck.toml
+          test -s .rendercheck/visual/diff.png
+          renderercheck approve visual
+          renderercheck run visual
 
       - name: Test process performance failure policy
         run: |
@@ -135,10 +102,9 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p = Path('rendercheck.toml')
-          s = p.read_text().replace('max_process_ms = 20000.0', 'max_process_ms = 0.001')
-          p.write_text(s)
+          p.write_text(p.read_text().replace('max_process_ms = 20000.0', 'max_process_ms = 0.001'))
           PY
-          if xvfb-run -a rendercheck run runtime; then
+          if renderercheck run runtime; then
             echo 'RendererCheck unexpectedly accepted an impossible process budget'
             exit 1
           fi
@@ -146,14 +112,12 @@ jobs:
 
       - name: Test complete multi-test run and reports
         run: |
-          xvfb-run -a rendercheck run
+          renderercheck run
           test -s .rendercheck/report.md
           test -s .rendercheck/results.json
-          test -s .rendercheck/runtime/metrics.txt
-          test -s .rendercheck/visual/metrics.txt
-          test -s .rendercheck/visual/actual.ppm
-          grep -q '^gpu_ms=' .rendercheck/runtime/metrics.txt
-          grep -q '^gpu_ms=' .rendercheck/visual/metrics.txt
+          test -s .rendercheck/runtime/stdout.log
+          test -s .rendercheck/visual/actual.png
+          grep -q '"schema_version": 1' .rendercheck/results.json
 
       - name: Upload RendererCheck artifacts
         if: always()

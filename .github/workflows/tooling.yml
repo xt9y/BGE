@@ -115,7 +115,7 @@ jobs:
           renderercheck run
           test -s .rendercheck/report.md
           test -s .rendercheck/results.json
-          test -s .rendercheck/runtime/stdout.log
+          test -f .rendercheck/runtime/stdout.log
           test -s .rendercheck/visual/actual.png
           grep -q '"schema_version": 1' .rendercheck/results.json
 

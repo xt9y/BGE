@@ -10,6 +10,7 @@ static f32 g_swing = 0.0f, g_swing_vel = 0.0f;
 static bool g_a_prev = false, g_d_prev = false;
 static f32 g_flash_timer = 0.0f;
 static f32 g_anim_time = 0.0f;
+static f32 g_bob_time = 0.0f;
 
 void gun_reg_init(gun_registry_t* reg)
 {
@@ -19,6 +20,14 @@ void gun_reg_init(gun_registry_t* reg)
 
 void gun_init(void)
 {
+    g_swing = 0.0f;
+    g_swing_vel = 0.0f;
+    g_a_prev = false;
+    g_d_prev = false;
+    g_flash_timer = 0.0f;
+    g_anim_time = 0.0f;
+    g_bob_time = 0.0f;
+
     vertex_t verts[6] = {
         {{0,0,0}, {0,0}, {1,1,1,1}},
         {{1,1,0}, {1,1}, {1,1,1,1}},
@@ -82,7 +91,8 @@ void gun_render(i32 rw, i32 rh)
     g_swing_vel += (-150.0f * g_swing - 12.0f * g_swing_vel) * state.dt;
     g_swing += g_swing_vel * state.dt;
 
-    f32 t = (f32)glfwGetTime();
+    g_bob_time += state.dt;
+    f32 t = g_bob_time;
     f32 aspect = (f32)tex->width / (f32)tex->height;
     f32 gh = (f32)rh * w->gun_size;
     f32 gw = gh * aspect;

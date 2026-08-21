@@ -153,8 +153,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: renderercheck-${{ github.ref_name }}
+          name: renderercheck-${{ github.run_id }}
           path: |
             .rendercheck/
             rendercheck/baselines/
+          include-hidden-files: true
           if-no-files-found: ignore

@@ -1,6 +1,6 @@
 [project]
 name = "bge-opengl"
-command = "c run"
+command = "./build/debug/bge"
 cwd = "."
 baseline_dir = "rendercheck/baselines"
 headless = "auto"

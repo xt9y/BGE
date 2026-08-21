@@ -26,20 +26,48 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential cmake xvfb libgl1-mesa-dev mesa-utils xorg-dev \
+            build-essential cmake git xvfb libgl1-mesa-dev mesa-utils xorg-dev \
             libx11-dev libxrandr-dev libxi-dev libxcursor-dev libxinerama-dev libxext-dev
 
-      - name: Install C
+      - name: Install C-BuildSystem
+        shell: bash
         run: |
-          git clone --depth 1 https://github.com/xt9y/C.git /tmp/xt9y-c
+          set -euo pipefail
+          clone_retry() {
+            local url="$1" dest="$2"
+            for attempt in 1 2 3; do
+              rm -rf "$dest"
+              if git clone --depth 1 "$url" "$dest"; then
+                return 0
+              fi
+              echo "clone attempt $attempt failed: $url" >&2
+              sleep $((attempt * 2))
+            done
+            return 1
+          }
+          clone_retry https://github.com/xt9y/C-BuildSystem.git /tmp/xt9y-c
           make -C /tmp/xt9y-c
           sudo make -C /tmp/xt9y-c install
           c --version
 
       - name: Install RendererCheck
+        shell: bash
         run: |
-          git clone --depth 1 https://github.com/xt9y/RendererCheck.git /tmp/renderercheck
-          make -C /tmp/renderercheck
+          set -euo pipefail
+          clone_retry() {
+            local url="$1" dest="$2"
+            for attempt in 1 2 3; do
+              rm -rf "$dest"
+              if git clone --depth 1 "$url" "$dest"; then
+                return 0
+              fi
+              echo "clone attempt $attempt failed: $url" >&2
+              sleep $((attempt * 2))
+            done
+            return 1
+          }
+          clone_retry https://github.com/xt9y/RendererCheck.git /tmp/renderercheck
+          make -C /tmp/renderercheck CXXFLAGS='-std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror'
           sudo make -C /tmp/renderercheck install
           renderercheck version
           renderercheck help >/dev/null
@@ -99,6 +127,7 @@ jobs:
       - name: Test process performance failure policy
         run: |
           cp rendercheck.toml /tmp/rendercheck.toml.saved
+          trap 'mv /tmp/rendercheck.toml.saved rendercheck.toml' EXIT
           python3 - <<'PY'
           from pathlib import Path
           p = Path('rendercheck.toml')
@@ -109,6 +138,7 @@ jobs:
             exit 1
           fi
           mv /tmp/rendercheck.toml.saved rendercheck.toml
+          trap - EXIT
 
       - name: Test complete multi-test run and reports
         run: |
@@ -123,8 +153,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: renderercheck-${{ github.ref_name }}
+          name: renderercheck-${{ github.run_id }}
           path: |
             .rendercheck/
             rendercheck/baselines/
+          include-hidden-files: true
           if-no-files-found: ignore

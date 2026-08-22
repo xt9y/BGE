@@ -13,7 +13,6 @@
 
 #### NOTES:
 - Please dont clone everything and just do: `git clone --depth 1 https://github.com/xt9y/BGE.git`
-- Build and run: `c build run`
 - Linux build requirements : OpenGL loader/headers, X11
     - Example (Arch btw): `sudo pacman -S libx11 libxrandr libxi libxcursor libxinerama xorgproto mesa mesa-utils libglvnd`
 

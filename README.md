@@ -24,20 +24,10 @@ Build and run this branch with [xt9y/C](https://github.com/xt9y/C):
 c build run
 ```
 
-`build.c` keeps the mixed C/C++ engine libraries in C's global dependency cache while the game entry point is built through the `c` workflow. The generated self-dependency lockfile is intentionally ignored because its resolved commit would be self-referential on this integration branch.
-
 #### RendererCheck integration
 
 With [xt9y/RendererCheck](https://github.com/xt9y/RendererCheck) installed:
 
 ```sh
 rendercheck run
-```
-
-RendererCheck exercises the C build workflow together with BGE. When `RENDERCHECK=1` is present, BGE creates a hidden window, renders one frame, supports `RENDERCHECK_CAPTURE_PATH` as an RGB8 PPM framebuffer capture, and exits normally.
-
-The committed smoke test leaves `capture = false` so a fresh clone passes without requiring an unreviewed image baseline. To turn it into a visual regression test, set `capture = true`, run the test once, inspect `.rendercheck/smoke/actual.ppm`, and approve it with:
-
-```sh
-rendercheck approve smoke
 ```

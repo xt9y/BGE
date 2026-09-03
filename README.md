@@ -18,7 +18,7 @@
 
 #### C build system
 
-Build and run this branch with [xt9y/C](https://github.com/xt9y/C):
+Build and run this branch with [xt9y/C](https://github.com/xt9y/C-BuildSystem):
 
 ```sh
 c build run
